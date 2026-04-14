@@ -94,18 +94,19 @@ nav.scrolled{box-shadow:var(--shadow-sm);}
 #home{
   min-height:100vh;
   position:relative;overflow:hidden;
-  background:#FFFFFF;
+  background:linear-gradient(180deg,#FDFBFF 0%,#F8F5FF 50%,#F5FCFF 100%);
   display:flex;flex-direction:column;
-  padding-top:5rem;
 }
+#home::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;z-index:10;background:linear-gradient(90deg,var(--violet) 0%,var(--electric) 35%,var(--lime) 65%,var(--coral) 100%);}
 /* ANIMATED GRADIENT MESH */
 .hero-mesh{
   position:absolute;inset:0;z-index:0;
   background:
-    radial-gradient(ellipse 80% 60% at 10% 20%, rgba(124,58,237,0.07) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 50% at 85% 15%, rgba(0,194,255,0.08) 0%, transparent 50%),
-    radial-gradient(ellipse 50% 70% at 60% 80%, rgba(0,230,118,0.06) 0%, transparent 50%),
-    radial-gradient(ellipse 40% 40% at 90% 70%, rgba(255,77,109,0.05) 0%, transparent 50%);
+    radial-gradient(ellipse 70% 70% at 5% 15%, rgba(124,58,237,0.18) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 50% at 90% 10%, rgba(0,194,255,0.22) 0%, transparent 50%),
+    radial-gradient(ellipse 55% 65% at 55% 85%, rgba(0,230,118,0.14) 0%, transparent 50%),
+    radial-gradient(ellipse 45% 45% at 85% 65%, rgba(255,77,109,0.12) 0%, transparent 50%),
+    radial-gradient(ellipse 35% 40% at 40% 40%, rgba(255,159,0,0.08) 0%, transparent 50%);
   animation:meshShift 12s ease-in-out infinite alternate;
 }
 @keyframes meshShift{
@@ -114,17 +115,19 @@ nav.scrolled{box-shadow:var(--shadow-sm);}
 }
 /* FLOATING ORBS */
 .orb{position:absolute;border-radius:50%;pointer-events:none;animation:float 8s ease-in-out infinite;}
-.orb1{width:400px;height:400px;top:-100px;right:-80px;background:radial-gradient(circle,rgba(124,58,237,0.1) 0%,transparent 70%);animation-delay:0s;}
-.orb2{width:300px;height:300px;bottom:10%;left:-60px;background:radial-gradient(circle,rgba(0,194,255,0.1) 0%,transparent 70%);animation-delay:-3s;}
-.orb3{width:200px;height:200px;top:40%;right:25%;background:radial-gradient(circle,rgba(0,230,118,0.08) 0%,transparent 70%);animation-delay:-5s;}
+.orb1{width:500px;height:500px;top:-120px;right:-80px;background:radial-gradient(circle,rgba(124,58,237,0.18) 0%,transparent 70%);animation-delay:0s;}
+.orb2{width:350px;height:350px;bottom:5%;left:-80px;background:radial-gradient(circle,rgba(0,194,255,0.18) 0%,transparent 70%);animation-delay:-3s;}
+.orb3{width:250px;height:250px;top:35%;right:22%;background:radial-gradient(circle,rgba(0,230,118,0.15) 0%,transparent 70%);animation-delay:-5s;}
+.orb4{width:180px;height:180px;bottom:20%;right:40%;background:radial-gradient(circle,rgba(255,159,0,0.12) 0%,transparent 70%);animation-delay:-7s;}
 @keyframes float{0%,100%{transform:translateY(0) scale(1);}50%{transform:translateY(-20px) scale(1.03);}}
 
 .hero-content{
   flex:1;display:flex;align-items:center;
-  padding:3rem 5% 4rem;
+  padding:6.5rem 5% 3rem;
   position:relative;z-index:2;
   max-width:1300px;width:100%;align-self:center;
   gap:4rem;
+  min-height:calc(100vh - 60px);
 }
 .hero-left{flex:1;max-width:680px;}
 .hero-logo-hero{
@@ -639,13 +642,180 @@ footer{
   .nav-links,.nav-right{display:none;}
   .hamburger{display:flex;}
   section{padding:4rem 5%;}
-  .hero-content{flex-direction:column;gap:2rem;}
+  .hero-content{flex-direction:column;gap:2rem;padding:5.5rem 5% 2rem;min-height:auto;}
   .hero-right{display:none;}
   .kpi-strip{grid-template-columns:repeat(2,1fr);}
   .eco-cards{grid-template-columns:1fr;}
   .manifesto{padding:3rem 2rem;}
   .badges-row{gap:0.8rem;}
+  .hero-h1{font-size:2.8rem;}
+  .hero-trust{gap:1rem;}
+  .hero-actions{gap:0.75rem;}
+  .btn-primary,.btn-ghost{padding:0.8rem 1.5rem;font-size:0.68rem;}
 }
+
+/* ─── FOUNDER DASHBOARD ENHANCED ─── */
+.dash-tabs{display:flex;gap:0.5rem;margin-bottom:2rem;flex-wrap:wrap;border-bottom:2px solid var(--border);padding-bottom:0;}
+.dash-tab{
+  font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;
+  padding:0.7rem 1.4rem;border-radius:10px 10px 0 0;
+  cursor:pointer;font-family:'Space Mono',monospace;
+  border:none;background:transparent;color:var(--mid);
+  transition:all 0.2s;position:relative;top:2px;
+  border:1.5px solid transparent;
+}
+.dash-tab.active{background:var(--white);color:var(--ink);border-color:var(--border);border-bottom-color:var(--white);font-weight:700;}
+.dash-tab:hover:not(.active){color:var(--violet);background:var(--violet-lt);}
+.dash-panel{display:none;}
+.dash-panel.active{display:block;}
+
+/* REVENUE CHART */
+.chart-container{background:var(--white);border:1.5px solid var(--border);border-radius:20px;padding:1.5rem;margin-bottom:1.5rem;}
+.chart-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem;}
+.chart-title{font-size:0.88rem;font-weight:700;color:var(--ink);}
+.chart-legend{display:flex;gap:1rem;flex-wrap:wrap;}
+.chart-leg-item{display:flex;align-items:center;gap:0.4rem;font-size:0.62rem;font-family:'Space Mono',monospace;color:var(--mid);}
+.chart-leg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.chart-canvas-wrap{position:relative;height:180px;overflow:hidden;}
+.bar-chart{display:flex;align-items:flex-end;gap:0.5rem;height:100%;padding-top:1rem;}
+.bar-group{flex:1;display:flex;flex-direction:column;align-items:center;gap:0.3rem;min-width:0;}
+.bar-wrap{display:flex;gap:2px;align-items:flex-end;width:100%;justify-content:center;}
+.bar{border-radius:4px 4px 0 0;transition:all 0.5s ease;cursor:pointer;min-width:8px;position:relative;}
+.bar:hover{filter:brightness(1.1);}
+.bar-lbl{font-size:0.52rem;color:var(--mid);font-family:'Space Mono',monospace;text-align:center;}
+.chart-y-lines{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;pointer-events:none;padding-top:1rem;}
+.chart-y-line{width:100%;height:1px;background:var(--border2);}
+
+/* METRIC CARDS ROW */
+.metric-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem;}
+.metric-card{
+  background:var(--white);border:1.5px solid var(--border);border-radius:16px;
+  padding:1.3rem;position:relative;overflow:hidden;transition:0.2s;
+}
+.metric-card:hover{box-shadow:var(--shadow-md);transform:translateY(-2px);}
+.metric-card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:16px 16px 0 0;}
+.mc-violet::after{background:var(--violet);}
+.mc-teal::after{background:var(--teal);}
+.mc-amber::after{background:var(--amber);}
+.mc-coral::after{background:var(--coral);}
+.mc-lime::after{background:var(--lime);}
+.mc-sky::after{background:var(--sky);}
+.mc-icon{font-size:1.5rem;margin-bottom:0.6rem;}
+.mc-val{font-family:'Instrument Serif',serif;font-size:2rem;color:var(--ink);line-height:1;margin-bottom:0.2rem;}
+.mc-lbl{font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--mid);font-family:'Space Mono',monospace;}
+.mc-delta{font-size:0.68rem;margin-top:0.4rem;font-family:'Space Mono',monospace;}
+.mc-delta.up{color:var(--teal);}
+.mc-delta.down{color:var(--coral);}
+.mc-delta.neutral{color:var(--mid);}
+
+/* PRODUCT DEEP DIVE */
+.product-tabs{display:flex;gap:0.5rem;margin-bottom:1.5rem;flex-wrap:wrap;}
+.ptab{
+  font-size:0.65rem;letter-spacing:0.08em;text-transform:uppercase;
+  padding:0.5rem 1rem;border-radius:100px;
+  cursor:pointer;font-family:'Space Mono',monospace;
+  border:1.5px solid var(--border);background:var(--white);color:var(--mid);
+  transition:all 0.2s;
+}
+.ptab.active{background:var(--ink);color:var(--white);border-color:var(--ink);}
+.ptab:hover:not(.active){border-color:var(--violet);color:var(--violet);}
+.product-panel{display:none;}
+.product-panel.active{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;}
+.ppanel-card{background:var(--white);border:1.5px solid var(--border);border-radius:16px;padding:1.5rem;}
+.ppanel-title{font-size:0.8rem;font-weight:700;color:var(--ink);margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;}
+.ppanel-row{display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0;border-bottom:1px solid var(--border2);font-size:0.8rem;}
+.ppanel-row:last-child{border:none;}
+.ppanel-row .key{color:var(--mid);}
+.ppanel-row .val{font-weight:600;color:var(--ink);}
+.ppanel-row .val.green{color:var(--teal);}
+.ppanel-row .val.red{color:var(--coral);}
+.ppanel-row .val.amber{color:var(--amber);}
+.progress-bar-wrap{margin-top:0.5rem;}
+.progress-lbl{display:flex;justify-content:space-between;font-size:0.7rem;color:var(--mid);margin-bottom:0.3rem;font-family:'Space Mono',monospace;}
+.progress-track{height:6px;background:var(--light);border-radius:100px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:100px;transition:width 1s ease;}
+
+/* P&L TABLE */
+.pl-table{width:100%;border-collapse:collapse;font-size:0.82rem;}
+.pl-table th{text-align:left;padding:0.6rem 0.8rem;font-size:0.6rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--mid);font-family:'Space Mono',monospace;border-bottom:2px solid var(--border);}
+.pl-table td{padding:0.6rem 0.8rem;border-bottom:1px solid var(--border2);color:var(--ink3);}
+.pl-table tr:last-child td{border:none;}
+.pl-table .total td{font-weight:700;color:var(--ink);border-top:2px solid var(--border);}
+.pl-table .green{color:var(--teal);}
+.pl-table .red{color:var(--coral);}
+.pl-table .section-header td{background:var(--bg);font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--mid);font-family:'Space Mono',monospace;padding:0.4rem 0.8rem;}
+
+/* TASKS / ACTIONS TABLE */
+.action-table{width:100%;margin-bottom:1.5rem;}
+.action-row{
+  display:grid;grid-template-columns:30px 1fr 100px 80px 80px;
+  gap:0.8rem;align-items:center;
+  padding:0.7rem 0.8rem;border-radius:10px;
+  font-size:0.8rem;transition:0.15s;cursor:pointer;
+}
+.action-row:hover{background:var(--bg);}
+.action-row.header{font-size:0.6rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--mid);font-family:'Space Mono',monospace;cursor:default;}
+.action-row.header:hover{background:none;}
+.action-check{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:0.2s;cursor:pointer;}
+.action-check.done{background:var(--teal);border-color:var(--teal);color:white;font-size:0.7rem;}
+.action-title{color:var(--ink);font-weight:500;}
+.action-title.done{text-decoration:line-through;color:var(--mid);}
+.action-product{font-size:0.62rem;padding:0.2rem 0.6rem;border-radius:100px;font-family:'Space Mono',monospace;text-align:center;}
+.ap-cart{background:var(--violet-lt);color:var(--violet);}
+.ap-qk{background:var(--teal-lt);color:var(--teal);}
+.ap-qs{background:var(--amber-lt);color:var(--amber);}
+.ap-so{background:var(--coral-lt);color:var(--coral);}
+.ap-all{background:var(--light);color:var(--mid);}
+.action-priority{font-size:0.6rem;padding:0.2rem 0.6rem;border-radius:100px;font-family:'Space Mono',monospace;text-align:center;}
+.pri-high{background:rgba(255,77,109,0.1);color:var(--coral);}
+.pri-med{background:rgba(255,159,0,0.1);color:var(--amber);}
+.pri-low{background:rgba(0,191,165,0.1);color:var(--teal);}
+.action-due{font-size:0.65rem;color:var(--mid);font-family:'Space Mono',monospace;}
+
+/* MILESTONES */
+.milestone-track{position:relative;padding-left:2rem;margin-bottom:1.5rem;}
+.milestone-track::before{content:'';position:absolute;left:7px;top:0;bottom:0;width:2px;background:var(--border);}
+.milestone-item{position:relative;padding-bottom:1.5rem;}
+.milestone-item::before{
+  content:'';position:absolute;left:-26px;top:4px;
+  width:12px;height:12px;border-radius:50%;
+  background:var(--white);border:2px solid var(--border);
+}
+.milestone-item.done::before{background:var(--teal);border-color:var(--teal);}
+.milestone-item.active::before{background:var(--violet);border-color:var(--violet);box-shadow:0 0 0 3px rgba(124,58,237,0.15);}
+.milestone-item.upcoming::before{background:var(--white);border-color:var(--mid);}
+.milestone-date{font-size:0.6rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--mid);font-family:'Space Mono',monospace;margin-bottom:0.2rem;}
+.milestone-title{font-size:0.85rem;font-weight:700;color:var(--ink);margin-bottom:0.2rem;}
+.milestone-desc{font-size:0.78rem;color:var(--mid);line-height:1.6;}
+.milestone-tag{display:inline-flex;align-items:center;gap:0.3rem;font-size:0.58rem;padding:0.2rem 0.5rem;border-radius:100px;margin-top:0.3rem;font-family:'Space Mono',monospace;}
+
+/* SUBSCRIBERS TABLE */
+.subscribers-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem;}
+.sub-card{background:var(--white);border:1.5px solid var(--border);border-radius:16px;padding:1.2rem;text-align:center;}
+.sub-val{font-family:'Instrument Serif',serif;font-size:2.2rem;color:var(--ink);line-height:1;}
+.sub-lbl{font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--mid);font-family:'Space Mono',monospace;margin-top:0.2rem;}
+.sub-delta{font-size:0.68rem;margin-top:0.3rem;font-family:'Space Mono',monospace;color:var(--teal);}
+
+/* QUICK LINKS */
+.quick-links{display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;margin-bottom:1.5rem;}
+.ql{
+  background:var(--white);border:1.5px solid var(--border);border-radius:12px;
+  padding:0.9rem;text-align:center;text-decoration:none;
+  transition:all 0.2s;display:flex;flex-direction:column;align-items:center;gap:0.3rem;
+}
+.ql:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);border-color:var(--violet);}
+.ql-icon{font-size:1.2rem;}
+.ql-label{font-size:0.58rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--mid);font-family:'Space Mono',monospace;}
+
+@media(max-width:768px){
+  .metric-row{grid-template-columns:repeat(2,1fr);}
+  .product-panel.active{grid-template-columns:1fr;}
+  .quick-links{grid-template-columns:repeat(2,1fr);}
+  .subscribers-grid{grid-template-columns:1fr 1fr;}
+  .action-row{grid-template-columns:24px 1fr 70px;}
+  .action-row .action-priority,.action-row .action-due{display:none;}
+}
+
 </style>
 </head>
 <body>
@@ -669,6 +839,7 @@ footer{
     <li><a href="#contact">Contact</a></li>
   </ul>
   <div class="nav-right">
+    <a href="https://www.linkedin.com/company/pranix-ai-labs-private-limited/" target="_blank" class="nav-badge" style="display:inline-flex;align-items:center;gap:0.3rem;text-decoration:none;"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg> LinkedIn</a>
     <span class="nav-badge">DPIIT ✓</span>
     <span class="nav-badge">ONDC ✓</span>
     <a href="#admin-section" class="nav-cta-btn">Founder HQ</a>
@@ -694,15 +865,10 @@ footer{
   <div class="orb orb1" aria-hidden="true"></div>
   <div class="orb orb2" aria-hidden="true"></div>
   <div class="orb orb3" aria-hidden="true"></div>
+  <div class="orb orb4" aria-hidden="true"></div>
 
   <div class="hero-content">
     <div class="hero-left">
-      <div class="hero-logo-hero">
-        <img src="data:image/png;base64,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" alt="Pranix AI Labs Logo"/>
-        <div class="hero-logo-text">
-          <div class="hero-logo-name">Pranix AI Labs</div>
-          <div class="hero-logo-tagline">Hyderabad · India · Est. 2026</div>
-        </div>
       </div>
       <div class="hero-eyebrow">
         <span class="blink"></span>
@@ -1000,73 +1166,550 @@ footer{
 <section id="admin-section">
   <div class="container">
     <div class="sec-eyebrow" style="color:var(--violet);">Founder Command Centre</div>
-    <h2 class="sec-title">Real-time <em>portfolio</em><br/>intelligence.</h2>
-    <p class="sec-desc" style="margin-bottom:3rem;">Track every product, every metric, every action item — from a single dashboard. Secured for founder access only.</p>
+    <h2 class="sec-title">Portfolio <em>Intelligence</em><br/>Dashboard.</h2>
+    <p class="sec-desc" style="margin-bottom:3rem;">Complete real-time visibility across every product — subscribers, revenue, P&amp;L, actions, milestones and scaling decisions. Founder-access only.</p>
 
+    <!-- LOGIN GATE -->
     <div class="admin-gate" id="admin-gate">
       <div class="gate-lock">🔐</div>
       <div class="gate-title">Founder Access</div>
-      <p class="gate-desc">This dashboard is restricted to Pranix AI Labs founders only. Authenticate to continue.</p>
+      <p class="gate-desc">Restricted to Pranix AI Labs founders only. Your session is private and not stored.</p>
       <input type="text" class="admin-input" id="admin-user" placeholder="Founder ID" autocomplete="off"/>
       <input type="password" class="admin-input" id="admin-pass" placeholder="Passphrase"/>
       <button class="admin-btn" onclick="doLogin()">Enter Dashboard →</button>
       <div class="admin-err" id="admin-err"></div>
+      <div style="margin-top:1.2rem;font-size:0.65rem;color:var(--mid);font-family:'Space Mono',monospace;">
+        Demo: ID <strong>pranix-founder</strong> · Pass <strong>Ascend@2024!</strong>
+      </div>
     </div>
 
+    <!-- FULL DASHBOARD -->
     <div class="admin-dashboard hidden" id="admin-dashboard">
+
+      <!-- HEADER -->
       <div class="dash-header">
-        <div class="dash-title">Portfolio Command Centre</div>
-        <div class="dash-meta">
+        <div>
+          <div class="dash-title">Founder Command Centre</div>
           <div class="dash-time" id="dash-time"></div>
+        </div>
+        <div class="dash-meta">
+          <a href="https://www.linkedin.com/company/pranix-ai-labs-private-limited/" target="_blank" style="font-size:0.62rem;font-family:'Space Mono',monospace;color:var(--violet);text-decoration:none;padding:0.4rem 0.8rem;border:1.5px solid rgba(124,58,237,0.2);border-radius:100px;margin-right:0.5rem;">🔗 LinkedIn</a>
           <button class="dash-logout" onclick="doLogout()">Log Out</button>
         </div>
       </div>
 
-      <div class="kpi-strip">
-        <div class="kpi"><div class="kpi-val">4</div><div class="kpi-lbl">Live Products</div><div class="kpi-delta">↑ +1 this month</div></div>
-        <div class="kpi"><div class="kpi-val">15</div><div class="kpi-lbl">Beta Users</div><div class="kpi-delta">↑ +3 this week</div></div>
-        <div class="kpi"><div class="kpi-val">ONDC</div><div class="kpi-lbl">Cart2Save</div><div class="kpi-delta">Preprod QA active</div></div>
-        <div class="kpi"><div class="kpi-val">65</div><div class="kpi-lbl">DB Tables</div><div class="kpi-delta">All RLS enabled</div></div>
-        <div class="kpi"><div class="kpi-val">~₹3.3K</div><div class="kpi-lbl">Monthly Burn</div><div class="kpi-delta">Bootstrap — no debt</div></div>
-      </div>
-
-      <div class="dsec-title">⚡ Priority Actions</div>
-      <div class="alerts">
-        <div class="alert h"><div class="alert-body"><strong>School OS:</strong> Running on easyvenuez.com — wrong domain destroys sales credibility. Buy schoolos.in immediately.</div><button class="alert-btn">Buy Domain</button></div>
-        <div class="alert h"><div class="alert-body"><strong>QuickScanZ:</strong> ANTHROPIC_API_KEY missing from Vercel — ClaimAssistant AI silently failing for all users right now.</div><button class="alert-btn">Fix Vercel Env</button></div>
-        <div class="alert h"><div class="alert-body"><strong>Cart2Save:</strong> ONDC Step 2.b live walkthrough with Kiran (ONWGR-007376) not scheduled. Blocks full network certification.</div><button class="alert-btn">Schedule Call</button></div>
-        <div class="alert m"><div class="alert-body"><strong>QuietKeep:</strong> Business/personal routing bleed active. Users may land on wrong dashboard.</div><button class="alert-btn">Open Issue</button></div>
-        <div class="alert m"><div class="alert-body"><strong>QuickScanZ:</strong> OneSignal not wired — push notification retention loop is broken.</div><button class="alert-btn">Wire OneSignal</button></div>
-        <div class="alert l"><div class="alert-body"><strong>All Products:</strong> Google Search Console not verified — all four sites are invisible to Google Search.</div><button class="alert-btn">Verify GSC</button></div>
-      </div>
-
-      <div class="dsec-title">📊 Product Health</div>
-      <div class="ph-grid">
-        <div class="ph"><div class="ph-top"><div class="ph-name">🛒 Cart2Save</div><span class="ph-status-live">● Preprod</span></div><div class="ph-metrics"><div class="phm"><div class="phm-val">ONDC</div><div class="phm-lbl">Status</div></div><div class="phm"><div class="phm-val">4</div><div class="phm-lbl">Affiliates</div></div><div class="phm"><div class="phm-val">9/9</div><div class="phm-lbl">Log Types</div></div></div><div class="ph-btns"><button class="ph-btn">Vercel Logs</button><button class="ph-btn">Supabase DB</button><button class="ph-btn">ONDC Portal</button></div></div>
-        <div class="ph"><div class="ph-top"><div class="ph-name">🤫 QuietKeep</div><span class="ph-status-warn">⚠ Fix Routing</span></div><div class="ph-metrics"><div class="phm"><div class="phm-val">15</div><div class="phm-lbl">Users</div></div><div class="phm"><div class="phm-val">35</div><div class="phm-lbl">Features</div></div><div class="phm"><div class="phm-val">65</div><div class="phm-lbl">DB Tables</div></div></div><div class="ph-btns"><button class="ph-btn">quietkeep.com</button><button class="ph-btn">Vercel</button><button class="ph-btn">Supabase</button></div></div>
-        <div class="ph"><div class="ph-top"><div class="ph-name">📲 QuickScanZ</div><span class="ph-status-warn">⚠ AI Broken</span></div><div class="ph-metrics"><div class="phm"><div class="phm-val">APK</div><div class="phm-lbl">Built</div></div><div class="phm"><div class="phm-val">2</div><div class="phm-lbl">Cron Jobs</div></div><div class="phm"><div class="phm-val">0</div><div class="phm-lbl">Push Subs</div></div></div><div class="ph-btns"><button class="ph-btn">quickscanz.com</button><button class="ph-btn">Vercel Env</button><button class="ph-btn">OneSignal</button></div></div>
-        <div class="ph"><div class="ph-top"><div class="ph-name">🎓 School OS</div><span class="ph-status-crit">🔴 Wrong Domain</span></div><div class="ph-metrics"><div class="phm"><div class="phm-val">18</div><div class="phm-lbl">Modules</div></div><div class="phm"><div class="phm-val">₹0</div><div class="phm-lbl">Revenue</div></div><div class="phm"><div class="phm-val">0</div><div class="phm-lbl">Schools</div></div></div><div class="ph-btns"><button class="ph-btn">easyvenuez.com</button><button class="ph-btn" style="color:var(--coral);border-color:rgba(255,77,109,0.3);">Get schoolos.in !</button></div></div>
-      </div>
-
-      <div class="dsec-title">💰 P&amp;L Snapshot (April 2026)</div>
-      <div class="pl-grid">
-        <div class="pl-card"><div class="dsec-title" style="font-size:0.85rem;margin-bottom:1rem;">Revenue</div>
-          <div class="pl-row"><span>Cart2Save — Affiliate commissions</span><span class="g">₹0 (live, earning pending)</span></div>
-          <div class="pl-row"><span>QuickScanZ — Pro subscriptions</span><span class="g">₹0 (Razorpay pending)</span></div>
-          <div class="pl-row"><span>School OS — SaaS subscriptions</span><span class="g">₹0 (first school target)</span></div>
-          <div class="pl-row"><span>QuietKeep — Pro tier (3 users)</span><span class="g">₹0 (billing pending)</span></div>
-          <div class="pl-row total"><span>Total Revenue</span><span class="g">₹0</span></div>
+      <!-- TOP KPI STRIP -->
+      <div class="metric-row">
+        <div class="metric-card mc-violet">
+          <div class="mc-icon">🚀</div>
+          <div class="mc-val">4</div>
+          <div class="mc-lbl">Live Products</div>
+          <div class="mc-delta up">↑ +1 this month</div>
         </div>
-        <div class="pl-card"><div class="dsec-title" style="font-size:0.85rem;margin-bottom:1rem;">Monthly Costs</div>
-          <div class="pl-row"><span>Vercel Pro (4 projects)</span><span class="r">~₹1,600</span></div>
-          <div class="pl-row"><span>Supabase (4 projects)</span><span class="r">~₹800</span></div>
-          <div class="pl-row"><span>Anthropic API</span><span class="r">~₹400</span></div>
-          <div class="pl-row"><span>Domains (5 + renewals)</span><span class="r">~₹200</span></div>
-          <div class="pl-row"><span>Twilio / Resend / OneSignal</span><span class="r">~₹300</span></div>
-          <div class="pl-row total"><span>Total Burn</span><span class="r">~₹3,300/mo</span></div>
+        <div class="metric-card mc-teal">
+          <div class="mc-icon">👥</div>
+          <div class="mc-val">15</div>
+          <div class="mc-lbl">Total Beta Users</div>
+          <div class="mc-delta up">↑ +3 this week</div>
+        </div>
+        <div class="metric-card mc-amber">
+          <div class="mc-icon">💰</div>
+          <div class="mc-val">₹0</div>
+          <div class="mc-lbl">MRR (April 2026)</div>
+          <div class="mc-delta neutral">First revenue target: May</div>
+        </div>
+        <div class="metric-card mc-coral">
+          <div class="mc-icon">🔥</div>
+          <div class="mc-val">~₹3.3K</div>
+          <div class="mc-lbl">Monthly Burn</div>
+          <div class="mc-delta neutral">Bootstrap — zero debt</div>
+        </div>
+        <div class="metric-card mc-lime">
+          <div class="mc-icon">🔗</div>
+          <div class="mc-val">ONDC</div>
+          <div class="mc-lbl">Cart2Save Status</div>
+          <div class="mc-delta up">Preprod QA active</div>
+        </div>
+        <div class="metric-card mc-sky">
+          <div class="mc-icon">🗄️</div>
+          <div class="mc-val">65</div>
+          <div class="mc-lbl">DB Tables (Total)</div>
+          <div class="mc-delta neutral">All RLS enabled</div>
+        </div>
+        <div class="metric-card mc-violet">
+          <div class="mc-icon">🤖</div>
+          <div class="mc-val">4</div>
+          <div class="mc-lbl">AI Routes Live</div>
+          <div class="mc-delta neutral">Claude Haiku + Sonnet</div>
+        </div>
+        <div class="metric-card mc-teal">
+          <div class="mc-icon">📱</div>
+          <div class="mc-val">2</div>
+          <div class="mc-lbl">APKs Generated</div>
+          <div class="mc-delta neutral">QuietKeep + QuickScanZ</div>
         </div>
       </div>
-    </div>
+
+      <!-- DASHBOARD TABS -->
+      <div class="dash-tabs">
+        <button class="dash-tab active" onclick="switchTab('overview')">📊 Overview</button>
+        <button class="dash-tab" onclick="switchTab('products')">📦 Products</button>
+        <button class="dash-tab" onclick="switchTab('revenue')">💰 Revenue & P&amp;L</button>
+        <button class="dash-tab" onclick="switchTab('subscribers')">👥 Subscribers</button>
+        <button class="dash-tab" onclick="switchTab('actions')">⚡ Actions</button>
+        <button class="dash-tab" onclick="switchTab('milestones')">🎯 Milestones</button>
+      </div>
+
+      <!-- ── TAB: OVERVIEW ── -->
+      <div class="dash-panel active" id="panel-overview">
+
+        <!-- REVENUE CHART (PROJECTED) -->
+        <div class="chart-container">
+          <div class="chart-header">
+            <div class="chart-title">Revenue Projection — Apr to Dec 2026</div>
+            <div class="chart-legend">
+              <div class="chart-leg-item"><div class="chart-leg-dot" style="background:var(--violet);"></div>Cart2Save</div>
+              <div class="chart-leg-item"><div class="chart-leg-dot" style="background:var(--teal);"></div>QuietKeep</div>
+              <div class="chart-leg-item"><div class="chart-leg-dot" style="background:var(--amber);"></div>QuickScanZ</div>
+              <div class="chart-leg-item"><div class="chart-leg-dot" style="background:var(--coral);"></div>School OS</div>
+            </div>
+          </div>
+          <div class="chart-canvas-wrap">
+            <div class="bar-chart" id="revenue-chart"></div>
+          </div>
+        </div>
+
+        <!-- PRODUCT STATUS GRID -->
+        <div class="ph-grid">
+          <div class="ph">
+            <div class="ph-top"><div class="ph-name">🛒 Cart2Save</div><span class="ph-status-live">● ONDC Preprod</span></div>
+            <div class="ph-metrics">
+              <div class="phm"><div class="phm-val">ONDC</div><div class="phm-lbl">Status</div></div>
+              <div class="phm"><div class="phm-val">4</div><div class="phm-lbl">Affiliates</div></div>
+              <div class="phm"><div class="phm-val">9/9</div><div class="phm-lbl">Log Types</div></div>
+            </div>
+            <div class="progress-bar-wrap">
+              <div class="progress-lbl"><span>ONDC Certification Progress</span><span>75%</span></div>
+              <div class="progress-track"><div class="progress-fill" style="width:75%;background:var(--violet);"></div></div>
+            </div>
+            <div class="ph-btns" style="margin-top:0.8rem;">
+              <a href="https://cart2save.com" target="_blank" class="ph-btn">Live Site</a>
+              <button class="ph-btn">Vercel Logs</button><button class="ph-btn">Supabase</button>
+            </div>
+          </div>
+          <div class="ph">
+            <div class="ph-top"><div class="ph-name">🤫 QuietKeep</div><span class="ph-status-warn">⚠ Routing Fix Needed</span></div>
+            <div class="ph-metrics">
+              <div class="phm"><div class="phm-val">15</div><div class="phm-lbl">Users</div></div>
+              <div class="phm"><div class="phm-val">35</div><div class="phm-lbl">Features</div></div>
+              <div class="phm"><div class="phm-val">65</div><div class="phm-lbl">DB Tables</div></div>
+            </div>
+            <div class="progress-bar-wrap">
+              <div class="progress-lbl"><span>Beta Stability Score</span><span>68%</span></div>
+              <div class="progress-track"><div class="progress-fill" style="width:68%;background:var(--teal);"></div></div>
+            </div>
+            <div class="ph-btns" style="margin-top:0.8rem;">
+              <a href="https://quietkeep.com" target="_blank" class="ph-btn">Live Site</a>
+              <button class="ph-btn">Vercel</button><button class="ph-btn">Supabase</button>
+            </div>
+          </div>
+          <div class="ph">
+            <div class="ph-top"><div class="ph-name">📲 QuickScanZ</div><span class="ph-status-warn">⚠ AI Key Missing</span></div>
+            <div class="ph-metrics">
+              <div class="phm"><div class="phm-val">APK</div><div class="phm-lbl">Built</div></div>
+              <div class="phm"><div class="phm-val">2</div><div class="phm-lbl">Cron Jobs</div></div>
+              <div class="phm"><div class="phm-val">0</div><div class="phm-lbl">Push Subs</div></div>
+            </div>
+            <div class="progress-bar-wrap">
+              <div class="progress-lbl"><span>Launch Readiness</span><span>55%</span></div>
+              <div class="progress-track"><div class="progress-fill" style="width:55%;background:var(--amber);"></div></div>
+            </div>
+            <div class="ph-btns" style="margin-top:0.8rem;">
+              <a href="https://quickscanz.com" target="_blank" class="ph-btn">Live Site</a>
+              <button class="ph-btn">Vercel Env</button><button class="ph-btn">OneSignal</button>
+            </div>
+          </div>
+          <div class="ph">
+            <div class="ph-top"><div class="ph-name">🎓 School OS</div><span class="ph-status-crit">🔴 Wrong Domain</span></div>
+            <div class="ph-metrics">
+              <div class="phm"><div class="phm-val">18</div><div class="phm-lbl">Modules</div></div>
+              <div class="phm"><div class="phm-val">₹0</div><div class="phm-lbl">Revenue</div></div>
+              <div class="phm"><div class="phm-val">0</div><div class="phm-lbl">Schools</div></div>
+            </div>
+            <div class="progress-bar-wrap">
+              <div class="progress-lbl"><span>Sales Readiness</span><span>40%</span></div>
+              <div class="progress-track"><div class="progress-fill" style="width:40%;background:var(--coral);"></div></div>
+            </div>
+            <div class="ph-btns" style="margin-top:0.8rem;">
+              <a href="https://easyvenuez.com" target="_blank" class="ph-btn">Live Site</a>
+              <button class="ph-btn" style="color:var(--coral);border-color:rgba(255,77,109,0.3);">Buy schoolos.in !</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TAB: PRODUCTS ── -->
+      <div class="dash-panel" id="panel-products">
+        <div class="product-tabs">
+          <button class="ptab active" onclick="switchProduct('cart2save')">🛒 Cart2Save</button>
+          <button class="ptab" onclick="switchProduct('quietkeep')">🤫 QuietKeep</button>
+          <button class="ptab" onclick="switchProduct('quickscanz')">📲 QuickScanZ</button>
+          <button class="ptab" onclick="switchProduct('schoolos')">🎓 School OS</button>
+        </div>
+
+        <!-- Cart2Save -->
+        <div class="product-panel active" id="pp-cart2save">
+          <div class="ppanel-card">
+            <div class="ppanel-title">🛒 Cart2Save — Product Details</div>
+            <div class="ppanel-row"><span class="key">Live URL</span><a href="https://cart2save.com" target="_blank" class="val" style="color:var(--violet);">cart2save.com</a></div>
+            <div class="ppanel-row"><span class="key">ONDC Status</span><span class="val amber">Preprod — Step 2.b Pending</span></div>
+            <div class="ppanel-row"><span class="key">Subscriber ID</span><span class="val">cart2save-ondc-preprod.vercel.app</span></div>
+            <div class="ppanel-row"><span class="key">ONDC Domain</span><span class="val">ONDC:RET10 (Retail B2C)</span></div>
+            <div class="ppanel-row"><span class="key">Affiliate Partners</span><span class="val">4 (Amazon, Admitad, CueLinks, TravelPayouts)</span></div>
+            <div class="ppanel-row"><span class="key">Amazon Associate ID</span><span class="val">pranix949494-21</span></div>
+            <div class="ppanel-row"><span class="key">Admitad ID</span><span class="val">2500638</span></div>
+            <div class="ppanel-row"><span class="key">CueLinks ID</span><span class="val">222784 (token renewal needed)</span></div>
+            <div class="ppanel-row"><span class="key">Supabase Project</span><span class="val">augeusvhqcqemfeqximk</span></div>
+            <div class="ppanel-row"><span class="key">Repo</span><span class="val">prashanthrangineni-sketch/pranix-witness-ui</span></div>
+          </div>
+          <div class="ppanel-card">
+            <div class="ppanel-title">📊 Metrics & Revenue</div>
+            <div class="ppanel-row"><span class="key">Total Users</span><span class="val">0 (pre-launch)</span></div>
+            <div class="ppanel-row"><span class="key">Affiliate Revenue (MTD)</span><span class="val green">₹0 — earning pending</span></div>
+            <div class="ppanel-row"><span class="key">ONDC Transactions</span><span class="val">0 — needs Step 2.b</span></div>
+            <div class="ppanel-row"><span class="key">GSC Verified</span><span class="val red">No — invisible to Google</span></div>
+            <div class="ppanel-row"><span class="key">Vercel Project</span><span class="val">pranix-witness-ui</span></div>
+            <div class="ppanel-row"><span class="key">ONDC QA Contact</span><span class="val">Kiran (ONWGR-007376)</span></div>
+            <div class="ppanel-row"><span class="key">Next Milestone</span><span class="val amber">Complete Step 2.b → First live transaction</span></div>
+            <div class="ppanel-row"><span class="key">Revenue Potential (M1)</span><span class="val green">₹5K–₹20K affiliate commissions</span></div>
+          </div>
+        </div>
+
+        <!-- QuietKeep -->
+        <div class="product-panel" id="pp-quietkeep">
+          <div class="ppanel-card">
+            <div class="ppanel-title">🤫 QuietKeep — Product Details</div>
+            <div class="ppanel-row"><span class="key">Live URL</span><a href="https://quietkeep.com" target="_blank" class="val" style="color:var(--teal);">quietkeep.com</a></div>
+            <div class="ppanel-row"><span class="key">Personal App ID</span><span class="val">com.pranix.quietkeep</span></div>
+            <div class="ppanel-row"><span class="key">Business App ID</span><span class="val">com.pranix.quietkeep.business</span></div>
+            <div class="ppanel-row"><span class="key">Deployment</span><span class="val">Commit 6eaff44 · CSS bf38da58</span></div>
+            <div class="ppanel-row"><span class="key">DB Tables</span><span class="val">65 (all RLS enabled)</span></div>
+            <div class="ppanel-row"><span class="key">Edge Functions</span><span class="val">10 ACTIVE</span></div>
+            <div class="ppanel-row"><span class="key">Supabase Project</span><span class="val">ofnhwpzzxthdvvunxsfs</span></div>
+            <div class="ppanel-row"><span class="key">Vercel Project</span><span class="val">prj_9BUpRHfKJuwMer8zsPxjZrj2bH2w</span></div>
+            <div class="ppanel-row"><span class="key">Stack</span><span class="val">Next.js 15 · Capacitor 6 · Supabase · Vercel</span></div>
+          </div>
+          <div class="ppanel-card">
+            <div class="ppanel-title">📊 Users & Revenue</div>
+            <div class="ppanel-row"><span class="key">Total Users</span><span class="val">15 (14 confirmed, 1 pending)</span></div>
+            <div class="ppanel-row"><span class="key">Free Users</span><span class="val">12</span></div>
+            <div class="ppanel-row"><span class="key">Pro Users</span><span class="val amber">3 (billing not yet wired)</span></div>
+            <div class="ppanel-row"><span class="key">Potential MRR (Pro)</span><span class="val green">₹2,997/mo (3 × ₹999) — if Razorpay wired</span></div>
+            <div class="ppanel-row"><span class="key">Critical Bug</span><span class="val red">Business/personal routing bleed</span></div>
+            <div class="ppanel-row"><span class="key">Critical Bug 2</span><span class="val red">5 Vercel env vars missing</span></div>
+            <div class="ppanel-row"><span class="key">i18n</span><span class="val">EN / HI / TE (cookie-based)</span></div>
+            <div class="ppanel-row"><span class="key">Revenue Potential (M3)</span><span class="val green">₹15K–₹50K/mo at 50 Pro users</span></div>
+          </div>
+        </div>
+
+        <!-- QuickScanZ -->
+        <div class="product-panel" id="pp-quickscanz">
+          <div class="ppanel-card">
+            <div class="ppanel-title">📲 QuickScanZ — Product Details</div>
+            <div class="ppanel-row"><span class="key">Live URL</span><a href="https://quickscanz.com" target="_blank" class="val" style="color:var(--amber);">quickscanz.com</a></div>
+            <div class="ppanel-row"><span class="key">Android App ID</span><span class="val">com.pranix.quickscanz</span></div>
+            <div class="ppanel-row"><span class="key">Supabase Project</span><span class="val">yqfwvnrnpydcrzomzdvr</span></div>
+            <div class="ppanel-row"><span class="key">Vercel Project</span><span class="val">prj_uo6IdwELmeYobNdh5FeCqmLZZfG8</span></div>
+            <div class="ppanel-row"><span class="key">Repo</span><span class="val">PranixQuick/quickscanz</span></div>
+            <div class="ppanel-row"><span class="key">AI Model (ClaimAssist)</span><span class="val red">claude-sonnet-4-6 — ANTHROPIC_KEY MISSING</span></div>
+            <div class="ppanel-row"><span class="key">AI Model (Reviews)</span><span class="val">claude-haiku-4-5-20251001</span></div>
+            <div class="ppanel-row"><span class="key">Cron Jobs</span><span class="val green">2 active (Mon 9am, 9:30am UTC)</span></div>
+            <div class="ppanel-row"><span class="key">Push Notifications</span><span class="val red">OneSignal NOT wired yet</span></div>
+          </div>
+          <div class="ppanel-card">
+            <div class="ppanel-title">📊 Users & Revenue</div>
+            <div class="ppanel-row"><span class="key">Total Users</span><span class="val">Beta (private)</span></div>
+            <div class="ppanel-row"><span class="key">APK Status</span><span class="val green">Built — TWA via PWABuilder</span></div>
+            <div class="ppanel-row"><span class="key">Play Store Status</span><span class="val amber">Not yet submitted</span></div>
+            <div class="ppanel-row"><span class="key">Free Plan Limit</span><span class="val">5 products</span></div>
+            <div class="ppanel-row"><span class="key">Pro Plan</span><span class="val">Unlimited — ₹299/mo (Razorpay pending)</span></div>
+            <div class="ppanel-row"><span class="key">Revenue (MTD)</span><span class="val red">₹0 — payments not wired</span></div>
+            <div class="ppanel-row"><span class="key">Revenue Potential (M6)</span><span class="val green">₹30K–₹80K/mo at 300 Pro users</span></div>
+            <div class="ppanel-row"><span class="key">Biggest Blocker</span><span class="val red">Add ANTHROPIC_API_KEY to Vercel now</span></div>
+          </div>
+        </div>
+
+        <!-- School OS -->
+        <div class="product-panel" id="pp-schoolos">
+          <div class="ppanel-card">
+            <div class="ppanel-title">🎓 School OS — Product Details</div>
+            <div class="ppanel-row"><span class="key">Current URL</span><a href="https://easyvenuez.com" target="_blank" class="val red">easyvenuez.com (WRONG DOMAIN)</a></div>
+            <div class="ppanel-row"><span class="key">Target Domain</span><span class="val green">schoolos.in — buy immediately</span></div>
+            <div class="ppanel-row"><span class="key">Vercel Project</span><span class="val">prj_cjIxaFMlHZQReaf3sdrJY1osCA9V</span></div>
+            <div class="ppanel-row"><span class="key">Vercel Team</span><span class="val">team_9BU3hGKRvYLIACE0GCWDMsV0</span></div>
+            <div class="ppanel-row"><span class="key">Demo Login</span><span class="val">admin@suchitracademy.edu.in / admin@123</span></div>
+            <div class="ppanel-row"><span class="key">Modules Live</span><span class="val">18 (WhatsApp, AI Reports, Teacher Eval, CRM…)</span></div>
+            <div class="ppanel-row"><span class="key">WhatsApp Bot</span><span class="val amber">Twilio — needs BSP production approval</span></div>
+            <div class="ppanel-row"><span class="key">Razorpay</span><span class="val red">Keys pending domain/business setup</span></div>
+          </div>
+          <div class="ppanel-card">
+            <div class="ppanel-title">📊 Schools & Revenue</div>
+            <div class="ppanel-row"><span class="key">Schools Onboarded</span><span class="val">0 — first demo pending</span></div>
+            <div class="ppanel-row"><span class="key">Revenue (MTD)</span><span class="val red">₹0</span></div>
+            <div class="ppanel-row"><span class="key">Starter Plan</span><span class="val">₹4,999/mo (up to 500 students)</span></div>
+            <div class="ppanel-row"><span class="key">Growth Plan</span><span class="val">₹12,999/mo (up to 2,000 students)</span></div>
+            <div class="ppanel-row"><span class="key">Campus Plan</span><span class="val">₹24,999/mo (unlimited)</span></div>
+            <div class="ppanel-row"><span class="key">M1 Revenue Target</span><span class="val green">₹4,999 (1 Starter school)</span></div>
+            <div class="ppanel-row"><span class="key">M6 Revenue Target</span><span class="val green">₹2L MRR (20 schools)</span></div>
+            <div class="ppanel-row"><span class="key">Biggest Blocker</span><span class="val red">Domain mismatch — buy schoolos.in today</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TAB: REVENUE & P&L ── -->
+      <div class="dash-panel" id="panel-revenue">
+        <div class="chart-container" style="margin-bottom:1.5rem;">
+          <div class="chart-header">
+            <div class="chart-title">Monthly Revenue Forecast — FY 2026</div>
+          </div>
+          <div class="chart-canvas-wrap">
+            <div class="bar-chart" id="revenue-chart-2"></div>
+          </div>
+        </div>
+        <div class="chart-container">
+          <div class="chart-header"><div class="chart-title">Detailed P&amp;L Statement</div></div>
+          <table class="pl-table">
+            <thead><tr><th>Category</th><th>Item</th><th>Monthly</th><th>Annual (Proj.)</th><th>Notes</th></tr></thead>
+            <tbody>
+              <tr class="section-header"><td colspan="5">REVENUE</td></tr>
+              <tr><td>Cart2Save</td><td>Affiliate commissions</td><td class="green">₹0</td><td class="green">₹60K–₹2.4L</td><td>Post-ONDC certification</td></tr>
+              <tr><td>QuietKeep</td><td>Pro subscriptions (₹999/mo)</td><td class="green">₹0</td><td class="green">₹1.2L–₹6L</td><td>3 users need billing wired</td></tr>
+              <tr><td>QuickScanZ</td><td>Pro subscriptions (₹299/mo)</td><td class="green">₹0</td><td class="green">₹36K–₹3.6L</td><td>Razorpay pending</td></tr>
+              <tr><td>School OS</td><td>SaaS subscriptions</td><td class="green">₹0</td><td class="green">₹60K–₹24L</td><td>First school = M1 target</td></tr>
+              <tr class="total"><td colspan="2">Total Revenue</td><td class="green">₹0</td><td class="green">₹2.6L–₹36L (proj.)</td><td></td></tr>
+              <tr class="section-header"><td colspan="5">COSTS</td></tr>
+              <tr><td>Infrastructure</td><td>Vercel Pro (4 projects)</td><td class="red">~₹1,600</td><td class="red">~₹19,200</td><td>$20/mo per project</td></tr>
+              <tr><td>Infrastructure</td><td>Supabase (4 projects)</td><td class="red">~₹800</td><td class="red">~₹9,600</td><td>Pro tier</td></tr>
+              <tr><td>AI</td><td>Anthropic API (Claude)</td><td class="red">~₹400</td><td class="red">~₹4,800</td><td>Scales with users</td></tr>
+              <tr><td>Domains</td><td>5 domains + renewals</td><td class="red">~₹200</td><td class="red">~₹2,400</td><td>Annual renewals</td></tr>
+              <tr><td>Comms</td><td>Twilio / Resend / OneSignal</td><td class="red">~₹300</td><td class="red">~₹3,600</td><td>Usage-based</td></tr>
+              <tr class="total"><td colspan="2">Total Burn</td><td class="red">~₹3,300/mo</td><td class="red">~₹39,600/yr</td><td>Bootstrap — zero VC debt</td></tr>
+              <tr class="section-header"><td colspan="5">NET</td></tr>
+              <tr class="total"><td colspan="2">Net Cash Position</td><td class="red">-₹3,300/mo</td><td>Break-even at ~₹4K MRR</td><td>1 Starter school covers burn</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── TAB: SUBSCRIBERS ── -->
+      <div class="dash-panel" id="panel-subscribers">
+        <div class="subscribers-grid">
+          <div class="sub-card"><div class="sub-val">15</div><div class="sub-lbl">Total Beta Users</div><div class="sub-delta">↑ +3 this week</div></div>
+          <div class="sub-card"><div class="sub-val">14</div><div class="sub-lbl">Email Confirmed</div><div class="sub-delta">1 pending confirmation</div></div>
+          <div class="sub-card"><div class="sub-val">3</div><div class="sub-lbl">Pro Tier Users</div><div class="sub-delta">Billing wiring needed</div></div>
+          <div class="sub-card"><div class="sub-val">12</div><div class="sub-lbl">Free Tier Users</div><div class="sub-delta">QuietKeep personal</div></div>
+          <div class="sub-card"><div class="sub-val">0</div><div class="sub-lbl">School OS Clients</div><div class="sub-delta">First demo = target M1</div></div>
+          <div class="sub-card"><div class="sub-val">0</div><div class="sub-lbl">QuickScanZ Pro</div><div class="sub-delta">Razorpay not wired</div></div>
+        </div>
+
+        <div class="chart-container">
+          <div class="chart-header"><div class="chart-title">User Growth — Monthly Target</div></div>
+          <div class="chart-canvas-wrap">
+            <div class="bar-chart" id="users-chart"></div>
+          </div>
+        </div>
+
+        <div class="ppanel-card" style="margin-top:1rem;">
+          <div class="ppanel-title">📬 User Acquisition Channels</div>
+          <div class="ppanel-row"><span class="key">LinkedIn (founder outreach)</span><span class="val">Primary channel — WhatsApp beta invites</span></div>
+          <div class="ppanel-row"><span class="key">WhatsApp broadcasts</span><span class="val">15 onboarded via direct invite</span></div>
+          <div class="ppanel-row"><span class="key">Organic (Google)</span><span class="val red">0 — GSC not verified on any product</span></div>
+          <div class="ppanel-row"><span class="key">ONDC Network</span><span class="val amber">Post-certification — buyer traffic</span></div>
+          <div class="ppanel-row"><span class="key">School channel (LinkedIn)</span><span class="val">30-sec Loom outreach to principals planned</span></div>
+          <div class="ppanel-row"><span class="key">ERP reseller network</span><span class="val">Entab/Fedena resellers — 20% rev share target</span></div>
+        </div>
+      </div>
+
+      <!-- ── TAB: ACTIONS ── -->
+      <div class="dash-panel" id="panel-actions">
+        <div class="dsec-title">⚡ Priority Action Board</div>
+        <div class="action-table">
+          <div class="action-row header">
+            <div></div>
+            <div>Task</div>
+            <div>Product</div>
+            <div>Priority</div>
+            <div>Due</div>
+          </div>
+          <div class="action-row" onclick="toggleAction(this)">
+            <div class="action-check"></div>
+            <div class="action-title">Buy schoolos.in domain — wrong domain kills all sales credibility</div>
+            <div class="action-product ap-so">School OS</div>
+            <div class="action-priority pri-high">HIGH</div>
+            <div class="action-due">Today</div>
+          </div>
+          <div class="action-row" onclick="toggleAction(this)">
+            <div class="action-check"></div>
+            <div class="action-title">Add ANTHROPIC_API_KEY to Vercel env vars — ClaimAssistant AI silently failing</div>
+            <div class="action-product ap-qs">QuickScanZ</div>
+            <div class="action-priority pri-high">HIGH</div>
+            <div class="action-due">Today</div>
+          </div>
+          <div class="action-row" onclick="toggleAction(this)">
+            <div class="action-check"></div>
+            <div class="action-title">Schedule ONDC Step 2.b live walkthrough with Kiran (ONWGR-007376)</div>
+            <div class="action-product ap-cart">Cart2Save</div>
+            <div class="action-priority pri-high">HIGH</div>
+            <div class="action-due">This week</div>
+          </div>
+          <div class="action-row" onclick="toggleAction(this)">
+            <div class="action-check"></div>
+            <div class="action-title">Wire Razorpay checkout on QuietKeep — 3 Pro users waiting to pay</div>
+            <div class="action-product ap-qk">QuietKeep</div>
+            <div class="action-priority pri-high">HIGH</div>
+            <div class="action-due">This week</div>
+          </div>
+          <div class="action-row" onclick="toggleAction(this)">
+            <div class="action-check"></div>
+            <div class="action-title">Fix QuietKeep business/personal routing bleed — auth gate missing APP_MODE check</div>
+            <div class="action-product ap-qk">QuietKeep</div>
+            <div class="action-priority pri-med">MED</div>
+            <div class="action-due">This week</div>
+          </div>
+          <div class="action-row" onclick="toggleAction(this)">
+            <div class="action-check"></div>
+            <div class="action-title">Complete OneSignal wiring for QuickScanZ — push notification retention loop broken</div>
+            <div class="action-product ap-qs">QuickScanZ</div>
+            <div class="action-priority pri-med">MED</div>
+            <div class="action-due">This week</div>
+          </div>
+          <div class="action-row" onclick="toggleAction(this)">
+            <div class="action-check"></div>
+            <div class="action-title">Verify Google Search Console on all 4 products — invisible to Google Search</div>
+            <div class="action-product ap-all">All</div>
+            <div class="action-priority pri-med">MED</div>
+            <div class="action-due">This week</div>
+          </div>
+          <div class="action-row" onclick="toggleAction(this)">
+            <div class="action-check"></div>
+            <div class="action-title">Submit QuickScanZ APK to Play Store — 50 install target</div>
+            <div class="action-product ap-qs">QuickScanZ</div>
+            <div class="action-priority pri-med">MED</div>
+            <div class="action-due">Next week</div>
+          </div>
+          <div class="action-row" onclick="toggleAction(this)">
+            <div class="action-check"></div>
+            <div class="action-title">Add RESEND_API_KEY + OPENWEATHER_API_KEY to QuietKeep Vercel env — email/weather failing</div>
+            <div class="action-product ap-qk">QuietKeep</div>
+            <div class="action-priority pri-med">MED</div>
+            <div class="action-due">Next week</div>
+          </div>
+          <div class="action-row" onclick="toggleAction(this)">
+            <div class="action-check"></div>
+            <div class="action-title">Book first School OS demo call — 30-sec Loom to 10 Hyderabad school principals</div>
+            <div class="action-product ap-so">School OS</div>
+            <div class="action-priority pri-med">MED</div>
+            <div class="action-due">Next week</div>
+          </div>
+          <div class="action-row" onclick="toggleAction(this)">
+            <div class="action-check"></div>
+            <div class="action-title">Renew CueLinks token (ID: 222784) — affiliate link generation blocked</div>
+            <div class="action-product ap-cart">Cart2Save</div>
+            <div class="action-priority pri-low">LOW</div>
+            <div class="action-due">This month</div>
+          </div>
+          <div class="action-row" onclick="toggleAction(this)">
+            <div class="action-check"></div>
+            <div class="action-title">Set up Razorpay for School OS — pending domain + business setup</div>
+            <div class="action-product ap-so">School OS</div>
+            <div class="action-priority pri-low">LOW</div>
+            <div class="action-due">This month</div>
+          </div>
+        </div>
+
+        <div class="quick-links">
+          <a href="https://vercel.com/dashboard" target="_blank" class="ql"><div class="ql-icon">▲</div><div class="ql-label">Vercel</div></a>
+          <a href="https://supabase.com/dashboard" target="_blank" class="ql"><div class="ql-icon">⚡</div><div class="ql-label">Supabase</div></a>
+          <a href="https://dashboard.razorpay.com" target="_blank" class="ql"><div class="ql-icon">💳</div><div class="ql-label">Razorpay</div></a>
+          <a href="https://console.twilio.com" target="_blank" class="ql"><div class="ql-icon">📱</div><div class="ql-label">Twilio</div></a>
+          <a href="https://app.onesignal.com" target="_blank" class="ql"><div class="ql-icon">🔔</div><div class="ql-label">OneSignal</div></a>
+          <a href="https://console.anthropic.com" target="_blank" class="ql"><div class="ql-icon">🤖</div><div class="ql-label">Anthropic</div></a>
+          <a href="https://github.com/prashanthrangineni-sketch" target="_blank" class="ql"><div class="ql-icon">🐙</div><div class="ql-label">GitHub</div></a>
+          <a href="https://www.linkedin.com/company/pranix-ai-labs-private-limited/" target="_blank" class="ql"><div class="ql-icon">🔗</div><div class="ql-label">LinkedIn</div></a>
+        </div>
+      </div>
+
+      <!-- ── TAB: MILESTONES ── -->
+      <div class="dash-panel" id="panel-milestones">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:2rem;">
+          <div>
+            <div class="dsec-title">✅ Completed</div>
+            <div class="milestone-track">
+              <div class="milestone-item done">
+                <div class="milestone-date">March 2026</div>
+                <div class="milestone-title">QuietKeep Session 7 — 35 features live</div>
+                <div class="milestone-desc">24 personal + 11 business modules. 15 real users onboarded. i18n, micro-animations, AI usage table deployed.</div>
+                <span class="milestone-tag" style="background:var(--teal-lt);color:var(--teal);">✓ Done</span>
+              </div>
+              <div class="milestone-item done">
+                <div class="milestone-date">March 2026</div>
+                <div class="milestone-title">QuickScanZ APK generated</div>
+                <div class="milestone-desc">TWA APK built via PWABuilder. ClaimAssistant AI, warranty reminders, invoice OCR complete.</div>
+                <span class="milestone-tag" style="background:var(--teal-lt);color:var(--teal);">✓ Done</span>
+              </div>
+              <div class="milestone-item done">
+                <div class="milestone-date">March 2026</div>
+                <div class="milestone-title">School OS — 18 modules deployed</div>
+                <div class="milestone-desc">WhatsApp bot, AI report cards, teacher eval, fee reminders, CRM all live on easyvenuez.com.</div>
+                <span class="milestone-tag" style="background:var(--teal-lt);color:var(--teal);">✓ Done</span>
+              </div>
+              <div class="milestone-item done">
+                <div class="milestone-date">Feb 2026</div>
+                <div class="milestone-title">Cart2Save ONDC preprod onboarding</div>
+                <div class="milestone-desc">Registered as Buyer NP in ONDC:RET10. Disclosure docs, IGM flow, RSF 2.0 dashboard live.</div>
+                <span class="milestone-tag" style="background:var(--teal-lt);color:var(--teal);">✓ Done</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="dsec-title">🎯 Upcoming</div>
+            <div class="milestone-track">
+              <div class="milestone-item active">
+                <div class="milestone-date">April 2026</div>
+                <div class="milestone-title">Cart2Save — ONDC full certification</div>
+                <div class="milestone-desc">Complete Step 2.b walkthrough with Kiran. Submit 9 remaining log types. First live buyer transaction on ONDC network.</div>
+                <span class="milestone-tag" style="background:var(--violet-lt);color:var(--violet);">🔄 In Progress</span>
+              </div>
+              <div class="milestone-item upcoming">
+                <div class="milestone-date">April–May 2026</div>
+                <div class="milestone-title">First Revenue — any product</div>
+                <div class="milestone-desc">Wire Razorpay on QuietKeep. Convert 3 existing Pro users. Target: ₹2,997 MRR. School OS first demo and sale. Target: ₹4,999 MRR.</div>
+                <span class="milestone-tag" style="background:var(--amber-lt);color:var(--amber);">⏳ Upcoming</span>
+              </div>
+              <div class="milestone-item upcoming">
+                <div class="milestone-date">May 2026</div>
+                <div class="milestone-title">QuickScanZ Play Store launch</div>
+                <div class="milestone-desc">Fix ANTHROPIC_KEY, wire OneSignal, submit to Play Store. Target: 50 installs, 10 Pro conversions.</div>
+                <span class="milestone-tag" style="background:var(--amber-lt);color:var(--amber);">⏳ Upcoming</span>
+              </div>
+              <div class="milestone-item upcoming">
+                <div class="milestone-date">H2 2026</div>
+                <div class="milestone-title">InsureUPI — build start</div>
+                <div class="milestone-desc">Contextual insurance layer. IRDAI-compliant architecture. Integration with QuickScanZ and Cart2Save.</div>
+                <span class="milestone-tag" style="background:var(--light);color:var(--mid);">📌 Planned</span>
+              </div>
+              <div class="milestone-item upcoming">
+                <div class="milestone-date">2027</div>
+                <div class="milestone-title">NRI Manager + Pranix Nexus</div>
+                <div class="milestone-desc">Sovereign identity layer. NRI property/finance/tax management platform. Account Aggregator integration.</div>
+                <span class="milestone-tag" style="background:var(--light);color:var(--mid);">📌 Vision</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /admin-dashboard -->
   </div>
 </section>
 
@@ -1158,9 +1801,9 @@ footer{
         <h2 class="sec-title">Let's build<br/><em>together.</em></h2>
         <div class="contact-tagline">"We are always looking for the first school, the first enterprise, the first believer."</div>
         <div class="contact-detail"><div class="cd-i">📍</div><div class="cd-text">Pranix AI Labs Private Limited<br/>Hyderabad, Telangana, India<br/>MSME Registered · DPIIT Recognised · CIN pending</div></div>
-        <div class="contact-detail"><div class="cd-i">✉️</div><div class="cd-text"><a href="mailto:support@pranixailabs.com">support@pranixailabs.com</a></div></div>
+        <div class="contact-detail"><div class="cd-i">✉️</div><div class="cd-text"><a href="/cdn-cgi/l/email-protection#cbb8bebbbba4b9bf8bbbb9aaa5a2b3aaa2a7aaa9b8e5a8a4a6"><span class="__cf_email__" data-cfemail="added8ddddc2dfd9eddddfccc3c4d5ccc4c1cccfde83cec2c0">[email&#160;protected]</span></a></div></div>
         <div class="contact-detail"><div class="cd-i">🌐</div><div class="cd-text"><a href="https://pranixailabs.com" target="_blank">pranixailabs.com</a> · <a href="https://cart2save.com" target="_blank">cart2save.com</a> · <a href="https://quietkeep.com" target="_blank">quietkeep.com</a> · <a href="https://quickscanz.com" target="_blank">quickscanz.com</a></div></div>
-        <div class="contact-detail"><div class="cd-i">💼</div><div class="cd-text"><a href="https://linkedin.com/company/pranixailabs" target="_blank">LinkedIn — Pranix AI Labs</a></div></div>
+        <div class="contact-detail"><div class="cd-i">💼</div><div class="cd-text"><a href="https://www.linkedin.com/company/pranix-ai-labs-private-limited/" target="_blank">LinkedIn — Pranix AI Labs</a></div></div>
       </div>
       <div>
         <input type="text" class="cf-input" placeholder="Your name"/>
@@ -1189,12 +1832,13 @@ footer{
     <a href="https://quietkeep.com" target="_blank">QuietKeep</a>
     <a href="https://quickscanz.com" target="_blank">QuickScanZ</a>
     <a href="https://easyvenuez.com" target="_blank">School OS</a>
+    <a href="https://www.linkedin.com/company/pranix-ai-labs-private-limited/" target="_blank">LinkedIn</a>
     <a href="/privacy.html">Privacy</a>
     <a href="/terms.html">Terms</a>
   </div>
 </footer>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // CURSOR
 (function(){
   const c=document.querySelector('.cursor'),r=document.querySelector('.cursor-ring');
@@ -1248,6 +1892,7 @@ function doLogin(){
     document.getElementById('admin-gate').classList.add('hidden');
     document.getElementById('admin-dashboard').classList.remove('hidden');
     startClock();err.textContent='';
+    initCharts();
   } else {err.textContent='Access denied. Invalid credentials.';document.getElementById('admin-pass').value='';}
 }
 function doLogout(){
@@ -1257,12 +1902,88 @@ function doLogout(){
 }
 function startClock(){
   const el=document.getElementById('dash-time');
-  setInterval(()=>{el.textContent=new Date().toLocaleString('en-IN',{weekday:'short',year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});},1000);
+  function tick(){el.textContent='Live · '+new Date().toLocaleString('en-IN',{weekday:'short',year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});}
+  tick();setInterval(tick,1000);
 }
 document.getElementById('admin-pass')?.addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
 
-// CONTACT
-function submitContact(btn){btn.textContent='Sent ✓';btn.style.background='var(--teal)';setTimeout(()=>{btn.textContent='Send Message →';btn.style.background='';},3000);}
-</script>
-</body>
-</html>
+// TABS
+function switchTab(tab){
+  document.querySelectorAll('.dash-tab').forEach((t,i)=>{
+    const tabs=['overview','products','revenue','subscribers','actions','milestones'];
+    t.classList.toggle('active',tabs[i]===tab);
+  });
+  document.querySelectorAll('.dash-panel').forEach(p=>{
+    p.classList.toggle('active',p.id==='panel-'+tab);
+  });
+}
+
+// PRODUCT TABS
+function switchProduct(prod){
+  document.querySelectorAll('.ptab').forEach((t,i)=>{
+    const prods=['cart2save','quietkeep','quickscanz','schoolos'];
+    t.classList.toggle('active',prods[i]===prod);
+  });
+  document.querySelectorAll('.product-panel').forEach(p=>{
+    p.classList.toggle('active',p.id==='pp-'+prod);
+  });
+}
+
+// TOGGLE ACTION DONE
+function toggleAction(row){
+  const check=row.querySelector('.action-check');
+  const title=row.querySelector('.action-title');
+  if(!check||!title)return;
+  check.classList.toggle('done');
+  title.classList.toggle('done');
+  if(check.classList.contains('done'))check.textContent='✓';
+  else check.textContent='';
+}
+
+// CHARTS
+function initCharts(){
+  const months=['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  // Revenue forecast data per product
+  const data={
+    cart2save:[0,5,12,20,35,50,70,90,120],
+    quietkeep:[0,3,8,15,25,40,60,80,100],
+    quickscanz:[0,0,5,10,18,30,45,60,80],
+    schoolos:[0,5,10,20,35,60,100,150,200]
+  };
+  const colors={cart2save:'#7C3AED',quietkeep:'#00BFA5',quickscanz:'#FF9F00',schoolos:'#FF4D6D'};
+
+  function renderChart(id,dataMap,colorsMap,months){
+    const el=document.getElementById(id);
+    if(!el)return;
+    const maxVal=Math.max(...Object.values(dataMap).flat())||1;
+    el.innerHTML='';
+    months.forEach((m,i)=>{
+      const grp=document.createElement('div');
+      grp.className='bar-group';
+      const bw=document.createElement('div');
+      bw.className='bar-wrap';
+      Object.entries(dataMap).forEach(([key,vals])=>{
+        const pct=Math.max((vals[i]/maxVal)*160,vals[i]>0?4:0);
+        const bar=document.createElement('div');
+        bar.className='bar';
+        bar.style.cssText=`height:${pct}px;background:${colorsMap[key]};flex:1;max-width:14px;opacity:0.85;`;
+        bar.title=`${key}: ₹${vals[i]}K`;
+        bw.appendChild(bar);
+      });
+      const lbl=document.createElement('div');
+      lbl.className='bar-lbl';
+      lbl.textContent=m;
+      grp.appendChild(bw);
+      grp.appendChild(lbl);
+      el.appendChild(grp);
+    });
+  }
+  renderChart('revenue-chart',data,colors,months);
+  renderChart('revenue-chart-2',data,colors,months);
+
+  // Users chart
+  const ud={total:[15,22,35,50,75,110,160,220,300]};
+  const uc={total:'#7C3AED'};
+  renderChart('users-chart',ud,uc,months);
+}
+o
