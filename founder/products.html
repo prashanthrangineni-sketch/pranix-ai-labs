@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Products — Founder</title>
+<meta name="robots" content="noindex,nofollow"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,800;1,700;1,800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/founder/styles.css"/>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.js"></script>
+<script src="/founder/app.js"></script>
+<script>
+(async function () {
+  const { sb } = await pranix.bootstrap();
+  const root = document.getElementById("root");
+  const page = pranix.h("div", { class: "page" });
+  root.appendChild(page);
+
+  page.appendChild(pranix.h("div", { class: "page-head" }, [
+    pranix.h("div", null, [
+      pranix.h("h1", { class: "page-title" }, "Products"),
+      pranix.h("p", { class: "page-sub" }, "Every project_registry row, with its latest audit summary and one-click re-run."),
+    ]),
+  ]));
+
+  const card = pranix.h("div", { class: "card" }, [
+    pranix.h("div", { id: "tbl-wrap", class: "skel", style: "height:300px" })
+  ]);
+  page.appendChild(card);
+
+  const [products, audits] = await Promise.all([
+    sb.from("project_registry").select("*").order("project_name"),
+    sb.from("audit_runs").select("product_name,started_at,status,summary").order("started_at",{ascending:false}).limit(500),
+  ]);
+
+  const latest = {};
+  for (const a of audits.data || []) {
+    if (!a.product_name) continue;
+    if (!latest[a.product_name]) latest[a.product_name] = a;
+  }
+
+  const wrap = document.getElementById("tbl-wrap");
+  wrap.classList.remove("skel"); wrap.style.height = "auto";
+
+  if (!products.data?.length) {
+    wrap.appendChild(pranix.h("div", { class: "empty" }, [
+      pranix.h("div", { class: "empty-mark" }, "📦"),
+      pranix.h("div", null, "No products in registry yet."),
+    ]));
+    return;
+  }
+
+  const tbl = pranix.h("table", { class: "tbl" }, [
+    pranix.h("thead", null, pranix.h("tr", null, [
+      pranix.h("th", null, "Name"),
+      pranix.h("th", null, "Tier"),
+      pranix.h("th", null, "GitHub"),
+      pranix.h("th", null, "Vercel"),
+      pranix.h("th", null, "Last audit"),
+      pranix.h("th", null, "Findings"),
+      pranix.h("th", { style: "text-align:right" }, ""),
+    ])),
+    pranix.h("tbody", { id: "tbody" }),
+  ]);
+  wrap.appendChild(tbl);
+
+  const tbody = pranix.$("#tbody");
+  for (const p of products.data) {
+    const a = latest[p.project_name];
+    const f = a?.summary?.findings || {};
+    const row = pranix.h("tr", null, [
+      pranix.h("td", null, pranix.h("a", { href: "/founder/products/" + p.project_name }, p.project_name)),
+      pranix.h("td", null, pranix.h("span", { class: "pill " + (p.account_tier === "secondary" ? "pill-active" : "pill-infra") }, p.account_tier || "—")),
+      pranix.h("td", { class: "tbl-mono" }, p.github_repo || "—"),
+      pranix.h("td", { class: "tbl-mono" }, p.vercel_project_id ? p.vercel_project_id.slice(0, 18) + "…" : "—"),
+      pranix.h("td", { class: "tbl-muted" }, a ? pranix.fmtAge(a.started_at) : "—"),
+      pranix.h("td", { style: "font-family:var(--font-mono);font-size:11px;" }, [
+        f.critical ? pranix.h("span", { class: "sev-critical" }, f.critical + "c ") : null,
+        f.error    ? pranix.h("span", { class: "sev-error" },    f.error + "e ")    : null,
+        f.warn     ? pranix.h("span", { class: "sev-warn" },     f.warn + "w ")     : null,
+        f.info     ? pranix.h("span", { class: "sev-info" },     f.info + "i")      : null,
+        (!f.total ? pranix.h("span", { class: "tbl-muted" }, "—") : null),
+      ]),
+      pranix.h("td", { style: "text-align:right" }, runBtn(p.project_name)),
+    ]);
+    tbody.appendChild(row);
+  }
+
+  function runBtn(productName) {
+    const btn = pranix.h("button", { class: "btn btn-secondary btn-sm" }, "Run audit");
+    btn.addEventListener("click", async () => {
+      btn.disabled = true; btn.textContent = "Submitting…";
+      const { data, error } = await sb.rpc("enqueue_audit_full_product", { p_product: productName });
+      if (error) { btn.textContent = "✗ " + error.message.slice(0, 30); btn.classList.add("btn-danger"); return; }
+      btn.textContent = "✓ queued · " + (data || "").slice(0, 6);
+    });
+    return btn;
+  }
+})();
+</script>
+</body>
+</html>

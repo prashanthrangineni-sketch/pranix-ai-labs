@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Commands — Founder</title>
+<meta name="robots" content="noindex,nofollow"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,800;1,700;1,800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/founder/styles.css"/>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.js"></script>
+<script src="/founder/app.js"></script>
+<script>
+(async function () {
+  const { sb } = await pranix.bootstrap();
+  const root = document.getElementById("root");
+  const page = pranix.h("div", { class: "page" });
+  root.appendChild(page);
+
+  page.appendChild(pranix.h("div", { class: "page-head" }, [
+    pranix.h("div", null, [
+      pranix.h("h1", { class: "page-title" }, "Commands"),
+      pranix.h("p", { class: "page-sub" }, "Natural-language commands routed by the agent engine. Examples: 'audit cart2save', 'redeploy quickscanz'."),
+    ]),
+  ]));
+
+  // ---- Submit form ----
+  const form = pranix.h("div", { class: "card", style: "margin-bottom:24px;" }, [
+    pranix.h("label", null, "Command"),
+    pranix.h("textarea", { class: "textarea", id: "cmd-text", placeholder: "audit all\nredeploy cart2save\ncheck health" }),
+    pranix.h("div", { style: "display:flex;gap:14px;align-items:center;justify-content:space-between;margin-top:12px;flex-wrap:wrap;" }, [
+      pranix.h("label", { style: "display:flex;gap:8px;align-items:center;text-transform:none;letter-spacing:0;font-weight:500;color:var(--mid);font-size:12px;cursor:pointer;" }, [
+        pranix.h("input", { type: "checkbox", id: "skip-approve" }),
+        "skip approval gate (audits only — never use for redeploy/destructive)",
+      ]),
+      pranix.h("button", { class: "btn btn-primary", id: "submit-btn" }, "Submit command"),
+    ]),
+    pranix.h("div", { id: "submit-msg", style: "margin-top:10px;font-size:13px;color:var(--mid);" }),
+  ]);
+  page.appendChild(form);
+
+  pranix.$("#submit-btn").addEventListener("click", submit);
+
+  async function submit() {
+    const text = pranix.$("#cmd-text").value.trim();
+    const skip = pranix.$("#skip-approve").checked;
+    const msg = pranix.$("#submit-msg");
+    const btn = pranix.$("#submit-btn");
+    if (text.length < 3) { msg.textContent = "Command too short."; return; }
+    btn.disabled = true; btn.textContent = "Sending…"; msg.textContent = "";
+    const { data, error } = await sb.rpc("submit_command", { p_text: text, p_skip_approval: skip });
+    if (error) { msg.textContent = "Error: " + error.message; btn.disabled = false; btn.textContent = "Submit command"; return; }
+    msg.innerHTML = "✓ Enqueued task <code style='font-family:var(--font-mono)'>" + (data || "").slice(0, 8) + "</code>. Refreshing…";
+    pranix.$("#cmd-text").value = "";
+    setTimeout(loadHistory, 1500);
+    btn.disabled = false; btn.textContent = "Submit command";
+  }
+
+  // ---- History ----
+  page.appendChild(pranix.h("h2", { style: "font-size:1.2rem;margin-bottom:14px;" }, "History"));
+  const histWrap = pranix.h("div", { id: "history" });
+  page.appendChild(histWrap);
+
+  const STATUS_PILL = {
+    pending_parse:    "pill-paused",
+    planned:          "pill-active",
+    pending_approval: "pill-validation",
+    approved:         "pill-active",
+    executing:        "pill-active",
+    completed:        "pill-live",
+    rejected:         "pill-experimental",
+    errored:          "pill-experimental",
+  };
+
+  await loadHistory();
+
+  async function loadHistory() {
+    histWrap.innerHTML = "";
+    histWrap.appendChild(pranix.h("div", { class: "skel", style: "height:60px;border-radius:14px;margin-bottom:8px;" }));
+    histWrap.appendChild(pranix.h("div", { class: "skel", style: "height:60px;border-radius:14px;margin-bottom:8px;" }));
+
+    const { data, error } = await sb.from("command_invocations")
+      .select("id,founder_command_text,status,parsed_intent,planned_actions,approved_at,created_at")
+      .order("created_at",{ascending:false}).limit(50);
+    histWrap.innerHTML = "";
+
+    if (error || !data?.length) {
+      histWrap.appendChild(pranix.h("div", { class: "empty" }, [
+        pranix.h("div", { class: "empty-mark" }, "—"),
+        pranix.h("div", null, error ? error.message : "No commands yet."),
+      ]));
+      return;
+    }
+    data.forEach(c => {
+      const intent = c.parsed_intent?.intent || "—";
+      const planLen = Array.isArray(c.planned_actions) ? c.planned_actions.length : 0;
+      const card = pranix.h("div", { class: "card", style: "margin-bottom:10px;" }, [
+        pranix.h("div", { style: "display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;" }, [
+          pranix.h("div", { style: "flex:1;min-width:0;" }, [
+            pranix.h("div", { style: "font-size:14px;color:var(--ink-2);" }, pranix.shorten(c.founder_command_text, 200)),
+            pranix.h("div", { class: "finding-meta", style: "margin-top:6px;" }, [
+              pranix.h("span", { class: "pill " + (STATUS_PILL[c.status] || "pill-paused") }, c.status),
+              pranix.h("span", null, "·"),
+              pranix.h("span", null, "intent: " + intent),
+              pranix.h("span", null, "·"),
+              pranix.h("span", null, planLen + " action(s)"),
+              pranix.h("span", null, "·"),
+              pranix.h("span", null, pranix.fmtAge(c.created_at)),
+            ]),
+          ]),
+        ]),
+      ]);
+      histWrap.appendChild(card);
+    });
+  }
+})();
+</script>
+</body>
+</html>

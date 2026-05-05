@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Overview — Founder</title>
+<meta name="robots" content="noindex,nofollow"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,800;1,700;1,800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/founder/styles.css"/>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.js"></script>
+<script src="/founder/app.js"></script>
+<script>
+(async function () {
+  const { sb } = await pranix.bootstrap();
+  const root = document.getElementById("root");
+
+  // ---- Ecosystem catalogue (truth-of-record for the founder narrative) ----
+  // status drives the pill; project_name maps to project_registry rows when one exists.
+  const ECOSYSTEM = [
+    { name: "Cart2Save",                     project: "cart2save",     status: "active", layer: "Commerce infrastructure layer" },
+    { name: "QuickScanZ",                    project: "quickscanz",    status: "active", layer: "Warranty intelligence platform" },
+    { name: "QuietKeep",                     project: "quietkeep",     status: "active", layer: "Memory infrastructure platform" },
+    { name: "School OS",                     project: "schoolos",      status: "active", layer: "Education operating system" },
+    { name: "VidyaGrid",                     project: "vidyagrid",     status: "active", layer: "Education infrastructure layer" },
+    { name: "InsureUPI",                     project: null,            status: "validation", layer: "Validation stage" },
+    { name: "Pranix Agent Engine",           project: "pranix_agents", status: "live",   layer: "Autonomous orchestration runtime" },
+    { name: "Pranix Protocol Infrastructure",project: null,            status: "infra",  layer: "Active core layer" },
+  ];
+  const PILL_BY_STATUS = {
+    live: "pill-live", active: "pill-active", validation: "pill-validation",
+    infra: "pill-infra", experimental: "pill-experimental", paused: "pill-paused",
+  };
+
+  // ---- Page shell ----
+  const page = pranix.h("div", { class: "page" });
+  root.appendChild(page);
+
+  // Hero with intent narrative
+  const flow = ["Intent","Discovery","Edge AI","Intelligence","Memory","Output","Repeat"];
+  const flowChips = [];
+  flow.forEach((s, i) => {
+    flowChips.push(pranix.h("span", { class: "flow-chip" }, s));
+    if (i < flow.length - 1) flowChips.push(pranix.h("span", { class: "flow-arrow" }, "→"));
+  });
+  const hero = pranix.h("section", { class: "hero" }, [
+    pranix.h("div", { class: "hero-mark" }, "Indian Household Infrastructure · Founder Console"),
+    pranix.h("h1", { class: "hero-title" }, "Operate the entire Pranix stack from one screen."),
+    pranix.h("p",  { class: "hero-sub" },
+      "Eight products. Two accounts. One autonomous engine watching every layer. " +
+      "Live from this dashboard: fan-out audits, queue health, finding triage, command-and-control."
+    ),
+    pranix.h("div", { class: "flow" }, flowChips),
+  ]);
+  page.appendChild(hero);
+
+  // ---- Stats grid ----
+  const stats = pranix.h("div", { class: "grid grid-4" });
+  page.appendChild(stats);
+  const statCards = {
+    pending:    pranix.h("div", { class: "card" }, [pranix.h("div", { class: "card-title" }, "Pending tasks"),    pranix.h("div", { class: "card-value skel", style: "height:36px;width:80px" }), pranix.h("div", { class: "card-sub" }, "queue depth")]),
+    processing: pranix.h("div", { class: "card" }, [pranix.h("div", { class: "card-title" }, "Processing now"),   pranix.h("div", { class: "card-value skel", style: "height:36px;width:80px" }), pranix.h("div", { class: "card-sub" }, "in-flight")]),
+    last_run:   pranix.h("div", { class: "card" }, [pranix.h("div", { class: "card-title" }, "Last worker run"),  pranix.h("div", { class: "card-value skel", style: "height:36px;width:140px" }), pranix.h("div", { class: "card-sub" }, "cron tick age")]),
+    dlq:        pranix.h("div", { class: "card" }, [pranix.h("div", { class: "card-title" }, "DLQ open"),         pranix.h("div", { class: "card-value skel", style: "height:36px;width:80px" }), pranix.h("div", { class: "card-sub" }, "retries exhausted")]),
+  };
+  Object.values(statCards).forEach(c => stats.appendChild(c));
+
+  // ---- Severity grid ----
+  page.appendChild(pranix.h("h2", { style: "margin-top:36px;margin-bottom:14px;font-size:1.4rem;" }, "Open findings"));
+  const sevGrid = pranix.h("div", { class: "grid grid-4" });
+  page.appendChild(sevGrid);
+  const sevCards = {};
+  ["critical","error","warn","info"].forEach(s => {
+    sevCards[s] = pranix.h("div", { class: "card" }, [
+      pranix.h("div", { class: "card-title " + pranix.sevClass(s) }, s),
+      pranix.h("div", { class: "card-value skel", style: "height:36px;width:60px" }),
+      pranix.h("div", { class: "card-sub" }, "open"),
+    ]);
+    sevGrid.appendChild(sevCards[s]);
+  });
+
+  // ---- Ecosystem ----
+  page.appendChild(pranix.h("h2", { style: "margin-top:40px;margin-bottom:6px;font-size:1.4rem;" }, "Ecosystem"));
+  page.appendChild(pranix.h("p", { class: "page-sub", style: "margin-bottom:18px;" },
+    "All Pranix layers — connected infrastructure, not independent startups."));
+  const eco = pranix.h("div", { class: "grid grid-3" });
+  page.appendChild(eco);
+
+  // ---- Two-column section: alerts + recent audits ----
+  page.appendChild(pranix.h("h2", { style: "margin-top:40px;margin-bottom:14px;font-size:1.4rem;" }, "Activity"));
+  const cols = pranix.h("div", { class: "grid grid-2" });
+  page.appendChild(cols);
+  const alertsCard = pranix.h("div", { class: "card" }, [
+    pranix.h("div", { class: "card-title", style: "margin-bottom:14px" }, "Recent founder alerts"),
+    pranix.h("div", { id: "alerts-body", class: "skel", style: "height:120px" }),
+  ]);
+  const auditsCard = pranix.h("div", { class: "card" }, [
+    pranix.h("div", { class: "card-title", style: "margin-bottom:14px" }, "Recent audits"),
+    pranix.h("div", { id: "audits-body", class: "skel", style: "height:120px" }),
+  ]);
+  cols.appendChild(alertsCard); cols.appendChild(auditsCard);
+
+  page.appendChild(pranix.h("div", { class: "footer" }, [
+    "Engine: ", pranix.h("code", null, pranix.ENGINE_URL),
+    " · Backend Supabase: ", pranix.h("code", null, "pranix-agents"),
+  ]));
+
+  // =========================================================================
+  // DATA LOAD
+  // =========================================================================
+  const [tasksRes, findingsRes, runsRes, alertsRes, auditsRes, latestPerProductRes] = await Promise.all([
+    sb.from("tasks").select("state").limit(2000),
+    sb.from("audit_findings").select("severity").eq("status","open").limit(2000),
+    sb.from("worker_runs").select("started_at, completed_at, status").order("started_at",{ascending:false}).limit(1).maybeSingle(),
+    sb.from("founder_alerts").select("id,level,source,title,created_at").order("created_at",{ascending:false}).limit(8),
+    sb.from("audit_runs").select("id,agent,product_name,status,summary,started_at").order("started_at",{ascending:false}).limit(8),
+    sb.from("audit_runs").select("product_name,started_at,summary").order("started_at",{ascending:false}).limit(200),
+  ]);
+
+  // ---- Stat cards ----
+  const taskBucket = bucketRows(tasksRes.data, "state");
+  setCardValue(statCards.pending,    taskBucket.pending    || 0, "queue depth");
+  setCardValue(statCards.processing, taskBucket.processing || 0, "in-flight");
+  setCardValue(statCards.last_run,   pranix.fmtAge(runsRes.data?.started_at), runsRes.data?.status || "—");
+
+  // DLQ count uses founder_read RLS-permitted SELECT
+  const dlqRes = await sb.from("dead_letter_queue").select("id").eq("resolved", false).limit(2000);
+  const dlqCount = (dlqRes.data || []).length;
+  const dlqEl = setCardValue(statCards.dlq, dlqCount, dlqCount > 0 ? "needs attention" : "all clear");
+  if (dlqCount > 0) dlqEl.classList.add("sev-error");
+
+  // ---- Severity cards ----
+  const sevBucket = bucketRows(findingsRes.data, "severity");
+  ["critical","error","warn","info"].forEach(s => {
+    const v = sevBucket[s] || 0;
+    const valEl = setCardValue(sevCards[s], v, "open " + s);
+    if (v > 0) valEl.classList.add(pranix.sevClass(s));
+  });
+
+  // ---- Ecosystem tiles ----
+  // Latest audit summary per product (from project_registry-mapped products only)
+  const latestByProduct = {};
+  for (const r of latestPerProductRes.data || []) {
+    if (!r.product_name) continue;
+    if (!latestByProduct[r.product_name]) latestByProduct[r.product_name] = r;
+  }
+  ECOSYSTEM.forEach(p => {
+    const last = p.project ? latestByProduct[p.project] : null;
+    const f = last?.summary?.findings || {};
+    const tile = pranix.h("div", { class: "eco-tile" }, [
+      pranix.h("div", { class: "eco-tile-head" }, [
+        pranix.h("div", { class: "eco-tile-name" }, p.name),
+        pranix.h("span", { class: "pill " + (PILL_BY_STATUS[p.status] || "pill-active") }, p.status),
+      ]),
+      pranix.h("div", { class: "eco-tile-tag" }, p.layer),
+      pranix.h("div", { class: "eco-tile-stat" }, [
+        last
+          ? pranix.h("span", null, "Audit " + pranix.fmtAge(last.started_at))
+          : pranix.h("span", null, "No audits yet"),
+        f.total ? pranix.h("span", null, [
+            f.critical ? pranix.h("span", { class: "sev-critical" }, f.critical + "c ") : null,
+            f.error    ? pranix.h("span", { class: "sev-error" },    f.error + "e ")    : null,
+            f.warn     ? pranix.h("span", { class: "sev-warn" },     f.warn + "w ")     : null,
+            f.info     ? pranix.h("span", { class: "sev-info" },     f.info + "i")      : null,
+          ]) : null,
+      ]),
+    ]);
+    if (p.project) tile.style.cursor = "pointer";
+    if (p.project) tile.addEventListener("click", () => location.href = "/founder/products/" + p.project);
+    eco.appendChild(tile);
+  });
+
+  // ---- Alerts list ----
+  const alertsBody = document.getElementById("alerts-body");
+  alertsBody.classList.remove("skel"); alertsBody.style.height = "auto";
+  if (!alertsRes.data?.length) {
+    alertsBody.appendChild(pranix.h("div", { class: "tbl-muted", style: "font-size:13px;" }, "No alerts."));
+  } else {
+    alertsRes.data.forEach(a => {
+      alertsBody.appendChild(pranix.h("div", { style: "padding:10px 0;border-bottom:1px solid var(--border);" }, [
+        pranix.h("div", { class: "finding-meta" }, [
+          pranix.h("span", { class: pranix.sevClass(a.level) }, "[" + (a.level || "info") + "]"),
+          pranix.h("span", null, a.source || ""),
+          pranix.h("span", null, "·"),
+          pranix.h("span", null, pranix.fmtAge(a.created_at)),
+        ]),
+        pranix.h("div", { style: "font-size:13px;color:var(--ink-2);margin-top:4px;" }, pranix.shorten(a.title, 140)),
+      ]));
+    });
+  }
+
+  // ---- Audits list ----
+  const auditsBody = document.getElementById("audits-body");
+  auditsBody.classList.remove("skel"); auditsBody.style.height = "auto";
+  if (!auditsRes.data?.length) {
+    auditsBody.appendChild(pranix.h("div", { class: "tbl-muted", style: "font-size:13px;" }, "No audits yet."));
+  } else {
+    auditsRes.data.forEach(a => {
+      const f = a.summary?.findings || {};
+      auditsBody.appendChild(pranix.h("div", { style: "padding:10px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;gap:12px;font-size:13px;" }, [
+        pranix.h("div", null, [
+          pranix.h("span", { style: "font-weight:600;" }, a.product_name || "platform"),
+          pranix.h("span", { class: "tbl-muted" }, " · " + a.agent),
+          pranix.h("div", { class: "tbl-muted", style: "font-size:11px;margin-top:2px;" }, pranix.fmtAge(a.started_at)),
+        ]),
+        pranix.h("div", { style: "font-family:var(--font-mono);font-size:11px;text-align:right;" }, [
+          f.critical ? pranix.h("span", { class: "sev-critical" }, f.critical + "c ") : null,
+          f.error    ? pranix.h("span", { class: "sev-error" },    f.error + "e ")    : null,
+          f.warn     ? pranix.h("span", { class: "sev-warn" },     f.warn + "w ")     : null,
+          f.info     ? pranix.h("span", { class: "sev-info" },     f.info + "i")      : null,
+          (!f.total ? pranix.h("span", { class: "tbl-muted" }, "·") : null),
+        ]),
+      ]));
+    });
+  }
+
+  // =========================================================================
+  // HELPERS
+  // =========================================================================
+  function bucketRows(rows, key) {
+    const o = {}; for (const r of rows || []) o[r[key]] = (o[r[key]] || 0) + 1; return o;
+  }
+  function setCardValue(card, value, sub) {
+    const valEl = card.querySelector(".card-value");
+    valEl.classList.remove("skel"); valEl.style.height = ""; valEl.style.width = "";
+    valEl.textContent = String(value);
+    const subEl = card.querySelector(".card-sub");
+    if (subEl) subEl.textContent = sub || "";
+    return valEl;
+  }
+})();
+</script>
+</body>
+</html>

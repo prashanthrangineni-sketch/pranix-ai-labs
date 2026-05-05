@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>DLQ — Founder</title>
+<meta name="robots" content="noindex,nofollow"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,800;1,700;1,800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/founder/styles.css"/>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.js"></script>
+<script src="/founder/app.js"></script>
+<script>
+(async function () {
+  const { sb } = await pranix.bootstrap();
+  const root = document.getElementById("root");
+  const page = pranix.h("div", { class: "page" });
+  root.appendChild(page);
+
+  page.appendChild(pranix.h("div", { class: "page-head" }, [
+    pranix.h("div", null, [
+      pranix.h("h1", { class: "page-title" }, "Dead Letter Queue"),
+      pranix.h("p", { class: "page-sub" }, "Tasks that exhausted retries. Requeue to try again or resolve to acknowledge manual intervention."),
+    ]),
+  ]));
+
+  const wrap = pranix.h("div", { id: "list" });
+  page.appendChild(wrap);
+
+  await reload();
+
+  async function reload() {
+    wrap.innerHTML = "";
+    wrap.appendChild(pranix.h("div", { class: "skel", style: "height:100px;border-radius:14px;margin-bottom:10px;" }));
+    const { data, error } = await sb.from("dead_letter_queue")
+      .select("*").eq("resolved", false).order("failed_at",{ascending:false}).limit(100);
+    wrap.innerHTML = "";
+
+    if (error) {
+      wrap.appendChild(pranix.h("div", { class: "empty" }, [
+        pranix.h("div", { class: "empty-mark" }, "!"),
+        pranix.h("div", null, error.message),
+      ]));
+      return;
+    }
+    if (!data?.length) {
+      wrap.appendChild(pranix.h("div", { class: "empty" }, [
+        pranix.h("div", { class: "empty-mark" }, "✓"),
+        pranix.h("div", null, "No open DLQ entries. Engine is healthy."),
+      ]));
+      return;
+    }
+
+    data.forEach(d => wrap.appendChild(renderEntry(d)));
+  }
+
+  function renderEntry(d) {
+    const requeueBtn = pranix.h("button", { class: "btn btn-primary btn-sm" }, "Requeue");
+    const resolveBtn = pranix.h("button", { class: "btn btn-secondary btn-sm" }, "Resolve");
+    const msg = pranix.h("div", { class: "tbl-muted", style: "font-size:11px;margin-top:6px;" });
+
+    requeueBtn.addEventListener("click", async () => {
+      requeueBtn.disabled = true; requeueBtn.textContent = "…";
+      const { data, error } = await sb.rpc("requeue_dlq_entry", { p_dlq_id: d.id });
+      if (error) { requeueBtn.classList.add("btn-danger"); requeueBtn.textContent = "✗"; msg.textContent = error.message; return; }
+      msg.textContent = "Requeued as task " + String(data).slice(0, 8); setTimeout(reload, 1200);
+    });
+    resolveBtn.addEventListener("click", async () => {
+      resolveBtn.disabled = true; resolveBtn.textContent = "…";
+      const { data, error } = await sb.rpc("resolve_dlq_entry", { p_dlq_id: d.id, p_note: "resolved from dashboard" });
+      if (error) { resolveBtn.classList.add("btn-danger"); resolveBtn.textContent = "✗"; msg.textContent = error.message; return; }
+      msg.textContent = "Resolved."; setTimeout(reload, 800);
+    });
+
+    return pranix.h("div", { class: "card", style: "margin-bottom:12px;" }, [
+      pranix.h("div", { style: "display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap;" }, [
+        pranix.h("div", { style: "flex:1;min-width:0;" }, [
+          pranix.h("div", { class: "finding-meta" }, [
+            pranix.h("span", { class: "tbl-mono" }, (d.original_task_id || "").slice(0, 8)),
+            pranix.h("span", null, "·"),
+            pranix.h("span", null, "retries: " + d.retry_count),
+            pranix.h("span", null, "·"),
+            pranix.h("span", null, pranix.fmtAge(d.failed_at)),
+          ]),
+          pranix.h("div", { class: "sev-error", style: "font-size:13px;margin-top:6px;font-family:var(--font-mono);" }, pranix.shorten(d.error, 320)),
+          d.input ? pranix.h("pre", { style: "margin-top:8px;padding:10px;background:var(--bg-deep);border-radius:8px;font-family:var(--font-mono);font-size:11px;color:var(--mid);overflow-x:auto;max-height:120px;" }, JSON.stringify(d.input, null, 2)) : null,
+          msg,
+        ]),
+        pranix.h("div", { style: "display:flex;flex-direction:column;gap:6px;" }, [requeueBtn, resolveBtn]),
+      ]),
+    ]);
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Founder — Pranix AI Labs</title>
+<meta name="robots" content="noindex,nofollow"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,800;1,700;1,800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/founder/styles.css"/>
+</head>
+<body>
+
+<div class="gate">
+  <div class="gate-card">
+    <div class="gate-mark">P</div>
+    <h1 class="gate-title">Founder Console</h1>
+    <p class="gate-sub">
+      Enter your founder email. We'll send a one-time magic link.
+      Only addresses on the Pranix dashboard allowlist can sign in.
+    </p>
+
+    <label for="email">Email</label>
+    <input id="email" class="input" type="email" autocomplete="email" placeholder="founder@pranixailabs.com" required/>
+
+    <div style="height:14px"></div>
+
+    <button id="send" class="btn btn-primary" style="width:100%; justify-content:center;">
+      Send magic link
+    </button>
+
+    <div id="msg" class="gate-msg"></div>
+
+    <div class="gate-foot">
+      Pranix Founder Console · Indian Household Infrastructure
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.js"></script>
+<script src="/founder/app.js"></script>
+<script>
+(async function () {
+  const { sb } = await pranix.bootstrap({ isSignInPage: true });
+
+  // If already signed in AND a founder, jump straight to overview.
+  const { data: { user } } = await sb.auth.getUser();
+  if (user) {
+    const { data: ok } = await sb.rpc("is_dashboard_founder");
+    if (ok === true) { window.location.replace("/founder/overview"); return; }
+  }
+
+  const $email = pranix.$("#email");
+  const $send  = pranix.$("#send");
+  const $msg   = pranix.$("#msg");
+
+  async function go() {
+    const email = $email.value.trim().toLowerCase();
+    if (!email || !email.includes("@")) {
+      $msg.className = "gate-msg error"; $msg.textContent = "Enter a valid email.";
+      return;
+    }
+    $send.disabled = true; $send.textContent = "Sending…";
+    $msg.className = "gate-msg"; $msg.textContent = "";
+
+    const redirectTo = window.location.origin + "/founder/overview";
+    const { error } = await sb.auth.signInWithOtp({
+      email, options: { emailRedirectTo: redirectTo, shouldCreateUser: true },
+    });
+    if (error) {
+      $msg.className = "gate-msg error"; $msg.textContent = "Could not send: " + error.message;
+      $send.disabled = false; $send.textContent = "Send magic link";
+      return;
+    }
+    $msg.className = "gate-msg success";
+    $msg.textContent = "Magic link sent. Check your inbox and click the link to continue.";
+    $send.textContent = "Sent";
+  }
+
+  $send.addEventListener("click", go);
+  $email.addEventListener("keydown", e => { if (e.key === "Enter") go(); });
+  $email.focus();
+})();
+</script>
+</body>
+</html>

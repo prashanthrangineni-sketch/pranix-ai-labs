@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Product — Founder</title>
+<meta name="robots" content="noindex,nofollow"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,800;1,700;1,800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/founder/styles.css"/>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.js"></script>
+<script src="/founder/app.js"></script>
+<script>
+(async function () {
+  const { sb } = await pranix.bootstrap();
+  const root = document.getElementById("root");
+  const page = pranix.h("div", { class: "page" });
+  root.appendChild(page);
+
+  // Resolve product name from URL.
+  // Supports clean URL (/founder/products/cart2save) via vercel.json rewrite OR ?p=
+  let product = new URLSearchParams(location.search).get("p");
+  if (!product) {
+    const m = location.pathname.match(/\/founder\/products\/([^/?]+)/);
+    if (m) product = decodeURIComponent(m[1]);
+  }
+  if (!product) {
+    page.appendChild(pranix.h("div", { class: "empty" }, [
+      pranix.h("div", { class: "empty-mark" }, "?"),
+      pranix.h("div", null, "No product specified."),
+    ]));
+    return;
+  }
+
+  // ---- Header skeleton ----
+  page.appendChild(pranix.h("div", { class: "page-head" }, [
+    pranix.h("div", null, [
+      pranix.h("a", { href: "/founder/products", style: "font-size:12px;font-weight:600;color:var(--mid);" }, "← All products"),
+      pranix.h("h1", { class: "page-title", id: "title", style: "margin-top:6px;" }, product),
+      pranix.h("p", { class: "page-sub tbl-mono", id: "sub" }, "Loading registry…"),
+    ]),
+    pranix.h("button", { class: "btn btn-primary", id: "run-btn" }, "Run full audit"),
+  ]));
+
+  const audSection  = pranix.h("section", { style: "margin-top:24px;" }, [
+    pranix.h("h2", { style: "margin-bottom:14px;font-size:1.2rem;" }, "Recent audits"),
+    pranix.h("div", { class: "card" }, pranix.h("div", { id: "audits", class: "skel", style: "height:160px" })),
+  ]);
+  const findSection = pranix.h("section", { style: "margin-top:28px;" }, [
+    pranix.h("h2", { style: "margin-bottom:14px;font-size:1.2rem;" }, [
+      "Open findings ",
+      pranix.h("span", { id: "find-count", class: "tbl-muted", style: "font-size:14px;font-weight:400;" }, ""),
+    ]),
+    pranix.h("div", { id: "findings-list" }),
+  ]);
+  const colSection  = pranix.h("section", { style: "margin-top:28px;" }, [
+    pranix.h("div", { class: "grid grid-2" }, [
+      pranix.h("div", { class: "card" }, [
+        pranix.h("div", { class: "card-title", style: "margin-bottom:14px" }, "Recent deployments"),
+        pranix.h("div", { id: "deploys", class: "skel", style: "height:120px" }),
+      ]),
+      pranix.h("div", { class: "card" }, [
+        pranix.h("div", { class: "card-title", style: "margin-bottom:14px" }, "Recent GitHub runs"),
+        pranix.h("div", { id: "ghruns", class: "skel", style: "height:120px" }),
+      ]),
+    ]),
+  ]);
+  page.appendChild(audSection); page.appendChild(findSection); page.appendChild(colSection);
+
+  // ---- Load registry first ----
+  const reg = await sb.from("project_registry").select("*").eq("project_name", product).maybeSingle();
+  if (reg.error || !reg.data) {
+    pranix.$("#sub").textContent = "Product not in project_registry.";
+    return;
+  }
+  const r = reg.data;
+  pranix.$("#sub").textContent =
+    `tier=${r.account_tier || "—"} · github=${r.github_repo || "—"} · vercel=${r.vercel_project_id || "—"} · ` +
+    `tokens: gh=${r.github_token_env || "—"}, vc=${r.vercel_token_env || "—"}, sb=${r.supabase_key_env || "—"}`;
+
+  // Wire run button
+  pranix.$("#run-btn").addEventListener("click", async (e) => {
+    const btn = e.currentTarget; btn.disabled = true; btn.textContent = "Submitting…";
+    const { data, error } = await sb.rpc("enqueue_audit_full_product", { p_product: product });
+    if (error) { btn.classList.remove("btn-primary"); btn.classList.add("btn-danger"); btn.textContent = "✗ " + error.message.slice(0, 40); return; }
+    btn.textContent = "✓ queued · " + (data || "").slice(0, 6);
+  });
+
+  // ---- Parallel queries ----
+  const [audits, findings, deps, ghruns] = await Promise.all([
+    sb.from("audit_runs").select("id,agent,status,summary,started_at").eq("product_name", product).order("started_at",{ascending:false}).limit(15),
+    sb.from("audit_findings").select("*").eq("product_name", product).order("created_at",{ascending:false}).limit(50),
+    sb.from("deployments").select("*").eq("project_name", product).order("created_at",{ascending:false}).limit(10),
+    r.github_repo
+      ? sb.from("github_runs").select("*").eq("repo", r.github_repo).order("created_at",{ascending:false}).limit(10)
+      : Promise.resolve({ data: [] }),
+  ]);
+
+  // ---- Recent audits table ----
+  const audEl = pranix.$("#audits"); audEl.classList.remove("skel"); audEl.style.height = "auto"; audEl.innerHTML = "";
+  if (!audits.data?.length) {
+    audEl.appendChild(pranix.h("div", { class: "tbl-muted", style: "font-size:13px" }, "No audits yet. Click 'Run full audit' above."));
+  } else {
+    const t = pranix.h("table", { class: "tbl" }, [
+      pranix.h("thead", null, pranix.h("tr", null, [
+        pranix.h("th", null, "Agent"), pranix.h("th", null, "Status"),
+        pranix.h("th", null, "Started"), pranix.h("th", { style: "text-align:right" }, "Findings"),
+      ])),
+      pranix.h("tbody", null, audits.data.map(a => {
+        const f = a.summary?.findings || {};
+        return pranix.h("tr", null, [
+          pranix.h("td", { class: "tbl-mono" }, a.agent),
+          pranix.h("td", null, a.status),
+          pranix.h("td", { class: "tbl-muted" }, pranix.fmtAge(a.started_at)),
+          pranix.h("td", { style: "text-align:right;font-family:var(--font-mono);font-size:11px;" }, [
+            f.critical ? pranix.h("span", { class: "sev-critical" }, f.critical + "c ") : null,
+            f.error    ? pranix.h("span", { class: "sev-error" },    f.error + "e ")    : null,
+            f.warn     ? pranix.h("span", { class: "sev-warn" },     f.warn + "w ")     : null,
+            f.info     ? pranix.h("span", { class: "sev-info" },     f.info + "i")      : null,
+            (!f.total ? pranix.h("span", { class: "tbl-muted" }, "—") : null),
+          ]),
+        ]);
+      })),
+    ]);
+    audEl.appendChild(t);
+  }
+
+  // ---- Open findings ----
+  const open = (findings.data || []).filter(f => f.status === "open");
+  pranix.$("#find-count").textContent = "(" + open.length + ")";
+  const flist = pranix.$("#findings-list");
+  if (!open.length) {
+    flist.appendChild(pranix.h("div", { class: "empty" }, [
+      pranix.h("div", { class: "empty-mark" }, "✓"),
+      pranix.h("div", null, "No open findings."),
+    ]));
+  } else {
+    open.forEach(f => flist.appendChild(renderFinding(f)));
+  }
+
+  // ---- Deploys ----
+  const dEl = pranix.$("#deploys"); dEl.classList.remove("skel"); dEl.style.height = "auto"; dEl.innerHTML = "";
+  if (!deps.data?.length) {
+    dEl.appendChild(pranix.h("div", { class: "tbl-muted", style: "font-size:13px" }, "None."));
+  } else {
+    deps.data.forEach(d => {
+      dEl.appendChild(pranix.h("div", { style: "display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-family:var(--font-mono);font-size:12px;" }, [
+        pranix.h("span", null, d.status || "—"),
+        pranix.h("span", { class: "tbl-muted" }, pranix.fmtAge(d.created_at)),
+      ]));
+    });
+  }
+
+  // ---- GitHub runs ----
+  const gEl = pranix.$("#ghruns"); gEl.classList.remove("skel"); gEl.style.height = "auto"; gEl.innerHTML = "";
+  if (!ghruns.data?.length) {
+    gEl.appendChild(pranix.h("div", { class: "tbl-muted", style: "font-size:13px" }, "None."));
+  } else {
+    ghruns.data.forEach(g => {
+      gEl.appendChild(pranix.h("div", { style: "display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-family:var(--font-mono);font-size:12px;" }, [
+        pranix.h("span", null, g.status + (g.conclusion ? " (" + g.conclusion + ")" : "")),
+        pranix.h("span", { class: "tbl-muted" }, pranix.fmtAge(g.created_at)),
+      ]));
+    });
+  }
+
+  // -------- helpers --------
+  function renderFinding(f) {
+    const meta = pranix.h("div", { class: "finding-meta" }, [
+      pranix.h("span", { class: pranix.sevClass(f.severity) }, "[" + f.severity + "]"),
+      pranix.h("span", null, f.category),
+      pranix.h("span", null, "·"), pranix.h("span", null, pranix.fmtAge(f.created_at)),
+    ]);
+    return pranix.h("div", { class: "finding" }, [
+      pranix.h("div", { class: "finding-head" }, [
+        pranix.h("div", { style: "flex:1;min-width:0;" }, [
+          meta,
+          pranix.h("div", { class: "finding-title" }, f.title),
+          f.body ? pranix.h("div", { class: "finding-body" }, pranix.shorten(f.body, 240)) : null,
+          f.resource ? pranix.h("div", { class: "finding-resource" }, f.resource) : null,
+        ]),
+      ]),
+    ]);
+  }
+})();
+</script>
+</body>
+</html>

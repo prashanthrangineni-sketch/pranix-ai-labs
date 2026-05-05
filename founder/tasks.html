@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Tasks — Founder</title>
+<meta name="robots" content="noindex,nofollow"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,800;1,700;1,800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/founder/styles.css"/>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.js"></script>
+<script src="/founder/app.js"></script>
+<script>
+(async function () {
+  const { sb } = await pranix.bootstrap();
+  const root = document.getElementById("root");
+  const page = pranix.h("div", { class: "page" });
+  root.appendChild(page);
+
+  page.appendChild(pranix.h("div", { class: "page-head" }, [
+    pranix.h("div", null, [
+      pranix.h("h1", { class: "page-title" }, "Tasks"),
+      pranix.h("p", { class: "page-sub" }, "Engine health: live worker ticks and the most recent 100 task transitions."),
+    ]),
+    pranix.h("button", { class: "btn btn-secondary btn-sm", onclick: () => location.reload() }, "↻ Refresh"),
+  ]));
+
+  // ---- Worker runs strip ----
+  page.appendChild(pranix.h("h2", { style: "font-size:1.2rem;margin-bottom:14px;" }, "Worker activity (last 20 ticks)"));
+  const runsWrap = pranix.h("div", { class: "grid grid-4", id: "runs-wrap" });
+  page.appendChild(runsWrap);
+  for (let i = 0; i < 8; i++) runsWrap.appendChild(pranix.h("div", { class: "card skel", style: "height:80px" }));
+
+  // ---- Tasks table ----
+  page.appendChild(pranix.h("h2", { style: "font-size:1.2rem;margin-bottom:14px;margin-top:32px;" }, "Recent tasks"));
+  const tasksCard = pranix.h("div", { class: "card" }, pranix.h("div", { id: "tasks-tbl", class: "skel", style: "height:300px" }));
+  page.appendChild(tasksCard);
+
+  const [runsRes, tasksRes] = await Promise.all([
+    sb.from("worker_runs").select("id,status,started_at,completed_at,tasks_processed,tasks_failed,error").order("started_at",{ascending:false}).limit(20),
+    sb.from("tasks").select("id,action,state,attempts,max_attempts,last_error,created_at,completed_at,input").order("created_at",{ascending:false}).limit(100),
+  ]);
+
+  // ---- Render runs ----
+  runsWrap.innerHTML = "";
+  (runsRes.data || []).forEach(r => {
+    const ok = r.status === "completed" && (r.tasks_failed || 0) === 0;
+    runsWrap.appendChild(pranix.h("div", { class: "card", style: "padding:16px;" }, [
+      pranix.h("div", { style: "display:flex;justify-content:space-between;align-items:center;" }, [
+        pranix.h("span", { class: "pill " + (ok ? "pill-live" : (r.status === "running" ? "pill-active" : "pill-validation")) }, r.status),
+        pranix.h("span", { class: "tbl-muted", style: "font-size:11px;" }, pranix.fmtAge(r.started_at)),
+      ]),
+      pranix.h("div", { style: "margin-top:10px;font-family:var(--font-mono);font-size:12px;color:var(--mid);" },
+        "processed: " + (r.tasks_processed ?? 0) + " · failed: " + (r.tasks_failed ?? 0)),
+      r.error ? pranix.h("div", { class: "sev-error", style: "margin-top:6px;font-size:11px;font-family:var(--font-mono);" }, pranix.shorten(r.error, 80)) : null,
+    ]));
+  });
+
+  // ---- Render tasks table ----
+  const tWrap = pranix.$("#tasks-tbl");
+  tWrap.classList.remove("skel"); tWrap.style.height = "auto"; tWrap.innerHTML = "";
+
+  if (!tasksRes.data?.length) {
+    tWrap.appendChild(pranix.h("div", { class: "empty" }, [
+      pranix.h("div", { class: "empty-mark" }, "—"),
+      pranix.h("div", null, "No tasks."),
+    ]));
+    return;
+  }
+
+  const STATE_PILL = {
+    pending: "pill-paused", processing: "pill-active",
+    completed: "pill-live", failed: "pill-experimental", dead: "pill-experimental",
+  };
+
+  const tbl = pranix.h("table", { class: "tbl" }, [
+    pranix.h("thead", null, pranix.h("tr", null, [
+      pranix.h("th", null, "Action"), pranix.h("th", null, "Product"),
+      pranix.h("th", null, "State"), pranix.h("th", null, "Attempts"),
+      pranix.h("th", null, "Created"), pranix.h("th", null, "Last error"),
+    ])),
+    pranix.h("tbody", null, tasksRes.data.map(t => pranix.h("tr", null, [
+      pranix.h("td", { class: "tbl-mono" }, t.action),
+      pranix.h("td", { class: "tbl-muted" }, t.input?.product_name || "—"),
+      pranix.h("td", null, pranix.h("span", { class: "pill " + (STATE_PILL[t.state] || "pill-paused") }, t.state)),
+      pranix.h("td", { class: "tbl-muted" }, t.attempts + "/" + t.max_attempts),
+      pranix.h("td", { class: "tbl-muted" }, pranix.fmtAge(t.created_at)),
+      pranix.h("td", { class: "sev-error", style: "font-size:11px;font-family:var(--font-mono);" }, t.last_error ? pranix.shorten(t.last_error, 60) : "—"),
+    ]))),
+  ]);
+  tWrap.appendChild(tbl);
+})();
+</script>
+</body>
+</html>
