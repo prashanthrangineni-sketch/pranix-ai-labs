@@ -2,32 +2,85 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
-    { "source": "/founder",                    "destination": "/founder/index.html" },
-    { "source": "/founder/overview",           "destination": "/founder/overview.html" },
-    { "source": "/founder/products",           "destination": "/founder/products.html" },
-    { "source": "/founder/products/:name",     "destination": "/founder/product-detail.html?p=:name" },
-    { "source": "/founder/findings",           "destination": "/founder/findings.html" },
-    { "source": "/founder/commands",           "destination": "/founder/commands.html" },
-    { "source": "/founder/tasks",              "destination": "/founder/tasks.html" },
-    { "source": "/founder/dlq",                "destination": "/founder/dlq.html" }
+    {
+      "source": "/founder",
+      "destination": "/founder/index.html"
+    },
+    {
+      "source": "/founder/overview",
+      "destination": "/founder/overview.html"
+    },
+    {
+      "source": "/founder/products",
+      "destination": "/founder/products.html"
+    },
+    {
+      "source": "/founder/products/:name",
+      "destination": "/founder/product-detail.html?p=:name"
+    },
+    {
+      "source": "/founder/findings",
+      "destination": "/founder/findings.html"
+    },
+    {
+      "source": "/founder/commands",
+      "destination": "/founder/commands.html"
+    },
+    {
+      "source": "/founder/tasks",
+      "destination": "/founder/tasks.html"
+    },
+    {
+      "source": "/founder/dlq",
+      "destination": "/founder/dlq.html"
+    }
   ],
   "headers": [
     {
       "source": "/founder/(.*)",
       "headers": [
-        { "key": "X-Robots-Tag",        "value": "noindex, nofollow" },
-        { "key": "Referrer-Policy",     "value": "strict-origin-when-cross-origin" },
-        { "key": "X-Frame-Options",     "value": "DENY" },
-        { "key": "X-Content-Type-Options","value": "nosniff" }
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        }
       ]
     },
     {
       "source": "/founder/styles.css",
-      "headers": [{ "key": "Cache-Control", "value": "public, max-age=300" }]
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=300"
+        }
+      ]
     },
     {
       "source": "/founder/app.js",
-      "headers": [{ "key": "Cache-Control", "value": "public, max-age=300" }]
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=300"
+        }
+      ]
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/dashboard.html",
+      "destination": "/founder",
+      "permanent": true
     }
   ]
 }
