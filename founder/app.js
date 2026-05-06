@@ -3,13 +3,13 @@
    email, exposes pranix.* helpers used by per-page scripts. */
 
 (function (global) {
-  // ============= CONFIG (replace before deploy) =============
-  // Public anon key — safe to ship to browser; RLS gates every read/write.
-  const SUPABASE_URL  = "https://mvdjyjccvioxircxuzgz.supabase.co";
-  const SUPABASE_ANON = "__YOUR_SUPABASE_ANON_KEY__";  // <- paste anon key in this file before deploy
-
-  // Vercel deployment of the engine (Phase D + audit pipeline)
-  const ENGINE_URL    = "https://pranix-agent-engine.vercel.app";
+  // ============= CONFIG =============
+  // Read from /founder/config.js which sets window.__PRANIX_CFG__
+  // The anon key is public-safe (RLS gates everything). Update only config.js.
+  const CFG = (typeof window !== "undefined" && window.__PRANIX_CFG__) || {};
+  const SUPABASE_URL  = CFG.SUPABASE_URL  || "https://mvdjyjccvioxircxuzgz.supabase.co";
+  const SUPABASE_ANON = CFG.SUPABASE_ANON || "PASTE_ANON_KEY_HERE";
+  const ENGINE_URL    = CFG.ENGINE_URL    || "https://pranix-agent-engine.vercel.app";
 
   // ============= DOM HELPERS =============
   const h = (tag, attrs, kids) => {
@@ -98,7 +98,7 @@
     if (!global.supabase || !global.supabase.createClient) {
       throw new Error("Supabase JS not loaded — include the CDN script before app.js");
     }
-    if (SUPABASE_ANON === "__YOUR_SUPABASE_ANON_KEY__") {
+    if (SUPABASE_ANON === "PASTE_ANON_KEY_HERE" || !SUPABASE_ANON) {
       // Render a friendly setup-needed screen instead of cryptic JS errors.
       renderSetupNeeded();
       return new Promise(() => {});
@@ -135,7 +135,7 @@
     const card = h("div", { class: "gate-card" }, [
       h("div", { class: "gate-mark" }, "⚙"),
       h("h1", { class: "gate-title" }, "Setup needed"),
-      h("p", { class: "gate-sub" }, "Replace __YOUR_SUPABASE_ANON_KEY__ in /founder/app.js with the anon key from Supabase → Settings → API."),
+      h("p", { class: "gate-sub" }, "Edit /founder/config.js — replace PASTE_ANON_KEY_HERE with the anon key from Supabase → Settings → API → anon public."),
     ]);
     document.body.appendChild(h("div", { class: "gate" }, card));
   }
