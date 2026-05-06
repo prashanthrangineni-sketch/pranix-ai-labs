@@ -17,141 +17,185 @@
 <script src="/founder/app.js"></script>
 <script>
 (async function () {
-  const { sb } = await pranix.bootstrap();
   const root = document.getElementById("root");
-  const page = pranix.h("div", { class: "page" });
-  root.appendChild(page);
-
-  const params = new URLSearchParams(location.search);
-  let filterStatus   = params.get("status")   || "open";
-  let filterSeverity = params.get("severity") || "";
-  let filterProduct  = params.get("product")  || "";
-
-  page.appendChild(pranix.h("div", { class: "page-head" }, [
-    pranix.h("div", null, [
-      pranix.h("h1", { class: "page-title" }, "Findings"),
-      pranix.h("p", { class: "page-sub" }, "Triage real product issues. Acknowledge, mark as fixing, resolve, or won't-fix."),
-    ]),
-  ]));
-
-  // ---- Filter bar ----
-  const filters = pranix.h("div", { class: "card", style: "margin-bottom:18px;display:flex;gap:18px;flex-wrap:wrap;align-items:center;" });
-  page.appendChild(filters);
-
-  filters.appendChild(filterPills("status",   filterStatus,   ["open","acknowledged","fixing","resolved","wontfix","all"], v => { filterStatus = v; reload(); }));
-  filters.appendChild(filterPills("severity", filterSeverity, ["", "critical","error","warn","info"],                       v => { filterSeverity = v; reload(); }));
-
-  const productSel = pranix.h("select", { class: "input", style: "max-width:200px" });
-  filters.appendChild(pranix.h("div", null, [
-    pranix.h("label", null, "product"), productSel,
-  ]));
-  productSel.addEventListener("change", () => { filterProduct = productSel.value; reload(); });
-
-  // List container
-  const list = pranix.h("div", { id: "list" });
-  page.appendChild(list);
-
-  // Load product list for filter
-  const products = await sb.from("project_registry").select("project_name").order("project_name");
-  productSel.appendChild(pranix.h("option", { value: "" }, "all products"));
-  (products.data || []).forEach(p => productSel.appendChild(pranix.h("option", { value: p.project_name }, p.project_name)));
-  productSel.value = filterProduct;
-
-  await reload();
-
-  function filterPills(name, current, options, onChange) {
-    const wrap = pranix.h("div", null, [pranix.h("label", null, name)]);
-    const row = pranix.h("div", { style: "display:flex;gap:6px;flex-wrap:wrap;" });
-    options.forEach(opt => {
-      const label = opt === "" ? "any" : opt;
-      const btn = pranix.h("button", {
-        class: "btn btn-sm " + (opt === current ? "btn-primary" : "btn-secondary"),
-        onclick: () => onChange(opt),
-      }, label);
-      row.appendChild(btn);
-    });
-    wrap.appendChild(row);
-    return wrap;
-  }
-
-  async function reload() {
-    list.innerHTML = "";
-    list.appendChild(pranix.h("div", { class: "skel", style: "height:80px;border-radius:14px;margin-bottom:12px;" }));
-    list.appendChild(pranix.h("div", { class: "skel", style: "height:80px;border-radius:14px;margin-bottom:12px;" }));
-
-    let q = sb.from("audit_findings").select("*").order("created_at",{ascending:false}).limit(200);
-    if (filterStatus !== "all") q = q.eq("status", filterStatus);
-    if (filterSeverity)         q = q.eq("severity", filterSeverity);
-    if (filterProduct)          q = q.eq("product_name", filterProduct);
-
-    const { data, error } = await q;
-    list.innerHTML = "";
-
-    if (error) {
-      list.appendChild(pranix.h("div", { class: "empty" }, [
-        pranix.h("div", { class: "empty-mark" }, "!"),
-        pranix.h("div", null, "Error: " + error.message),
-      ]));
-      return;
-    }
-    if (!data?.length) {
-      list.appendChild(pranix.h("div", { class: "empty" }, [
-        pranix.h("div", { class: "empty-mark" }, "✓"),
-        pranix.h("div", null, "No findings match these filters."),
-      ]));
-      return;
-    }
-    data.forEach(f => list.appendChild(renderFinding(f)));
-  }
-
-  const NEXT_STATUS = {
-    open:         [["acknowledged","Ack"], ["fixing","Fixing"], ["wontfix","Won't fix"]],
-    acknowledged: [["fixing","Fixing"],    ["resolved","Resolved"]],
-    fixing:       [["resolved","Resolved"]],
-    resolved:     [["open","Reopen"]],
-    wontfix:      [["open","Reopen"]],
+  const showFatal = (msg) => {
+    root.innerHTML = "";
+    const err = pranix && pranix.h ? pranix.h("div", { class: "empty" }, [
+      pranix.h("div", { class: "empty-mark" }, "!"),
+      pranix.h("div", null, "Findings page failed to load: " + msg),
+    ]) : (() => { const d = document.createElement("div"); d.textContent = "Findings page failed: " + msg; d.style.padding = "40px"; return d; })();
+    root.appendChild(err);
   };
 
-  function renderFinding(f) {
-    const actions = pranix.h("div", { class: "finding-actions" });
-    (NEXT_STATUS[f.status] || []).forEach(([next, label]) => {
-      const b = pranix.h("button", { class: "btn btn-secondary btn-sm" }, label);
-      b.addEventListener("click", async () => {
-        b.disabled = true; b.textContent = "…";
-        const { data: r, error } = await sb.rpc("mark_finding_status", { p_finding_id: f.id, p_status: next });
-        if (error || (typeof r === "string" && r !== "ok")) {
-          b.classList.add("btn-danger"); b.textContent = "✗";
-          return;
-        }
-        f.status = next;
-        const fresh = renderFinding(f);
-        card.replaceWith(fresh);
-      });
-      actions.appendChild(b);
-    });
+  let sb;
+  try {
+    const ctx = await pranix.bootstrap();
+    sb = ctx.sb;
+  } catch (e) {
+    showFatal("auth bootstrap failed: " + (e?.message || e));
+    return;
+  }
 
-    const meta = pranix.h("div", { class: "finding-meta" }, [
-      pranix.h("span", { class: pranix.sevClass(f.severity) }, "[" + f.severity + "]"),
-      pranix.h("span", { style: "font-weight:700;color:var(--ink-2);" }, f.product_name || "—"),
-      pranix.h("span", null, "·"),
-      pranix.h("span", null, f.category),
-      pranix.h("span", null, "·"),
-      pranix.h("span", null, pranix.fmtAge(f.created_at)),
-      pranix.h("span", null, "·"),
-      pranix.h("span", { class: "pill " + (f.status === "open" ? "pill-validation" : f.status === "resolved" ? "pill-live" : "pill-active") }, f.status),
-    ]);
-    const card = pranix.h("div", { class: "finding" }, [
-      pranix.h("div", { class: "finding-head" }, [
+  try {
+    const page = pranix.h("div", { class: "page" });
+    root.appendChild(page);
+
+    const params = new URLSearchParams(location.search);
+    let filterStatus   = params.get("status")   || "open";
+    let filterSeverity = params.get("severity") || "";
+    let filterProduct  = params.get("product")  || "";
+
+    page.appendChild(pranix.h("div", { class: "page-head" }, [
+      pranix.h("div", null, [
+        pranix.h("h1", { class: "page-title" }, "Findings"),
+        pranix.h("p", { class: "page-sub" }, "Triage real product issues. Acknowledge, mark as fixing, resolve, or won't-fix."),
+      ]),
+    ]));
+
+    const filters = pranix.h("div", { class: "card", style: "margin-bottom:18px;display:flex;gap:18px;flex-wrap:wrap;align-items:center;" });
+    page.appendChild(filters);
+
+    filters.appendChild(filterPills("status",   filterStatus,   ["open","acknowledged","fixing","resolved","wontfix","all"], v => { filterStatus = v; reload(); }));
+    filters.appendChild(filterPills("severity", filterSeverity, ["", "critical","error","warn","info"],                       v => { filterSeverity = v; reload(); }));
+
+    const productSel = pranix.h("select", { class: "input", style: "max-width:200px" });
+    filters.appendChild(pranix.h("div", null, [
+      pranix.h("label", null, "product"), productSel,
+    ]));
+    productSel.addEventListener("change", () => { filterProduct = productSel.value; reload(); });
+
+    const list = pranix.h("div", { id: "list" });
+    page.appendChild(list);
+    list.appendChild(pranix.h("div", { class: "skel", style: "height:80px;border-radius:14px;margin-bottom:12px;" }));
+    list.appendChild(pranix.h("div", { class: "skel", style: "height:80px;border-radius:14px;margin-bottom:12px;" }));
+
+    productSel.appendChild(pranix.h("option", { value: "" }, "all products"));
+    try {
+      const products = await sb.from("project_registry").select("project_name").order("project_name");
+      (products?.data || []).forEach(p => productSel.appendChild(pranix.h("option", { value: p.project_name }, p.project_name)));
+    } catch (e) { console.error("product list load failed:", e); }
+    productSel.value = filterProduct;
+
+    await reload();
+
+    function filterPills(name, current, options, onChange) {
+      const wrap = pranix.h("div", null, [pranix.h("label", null, name)]);
+      const row = pranix.h("div", { style: "display:flex;gap:6px;flex-wrap:wrap;" });
+      options.forEach(opt => {
+        const label = opt === "" ? "any" : opt;
+        const btn = pranix.h("button", {
+          class: "btn btn-sm " + (opt === current ? "btn-primary" : "btn-secondary"),
+          onclick: () => onChange(opt),
+        }, label);
+        row.appendChild(btn);
+      });
+      wrap.appendChild(row);
+      return wrap;
+    }
+
+    async function reload() {
+      list.innerHTML = "";
+      list.appendChild(pranix.h("div", { class: "skel", style: "height:80px;border-radius:14px;margin-bottom:12px;" }));
+      list.appendChild(pranix.h("div", { class: "skel", style: "height:80px;border-radius:14px;margin-bottom:12px;" }));
+
+      let resp;
+      try {
+        let q = sb.from("audit_findings").select("*").order("created_at",{ascending:false}).limit(200);
+        if (filterStatus !== "all") q = q.eq("status", filterStatus);
+        if (filterSeverity)         q = q.eq("severity", filterSeverity);
+        if (filterProduct)          q = q.eq("product_name", filterProduct);
+        resp = await q;
+      } catch (e) {
+        list.innerHTML = "";
+        list.appendChild(pranix.h("div", { class: "empty" }, [
+          pranix.h("div", { class: "empty-mark" }, "!"),
+          pranix.h("div", null, "Query threw: " + (e?.message || e)),
+        ]));
+        return;
+      }
+
+      list.innerHTML = "";
+      const { data, error } = resp || {};
+
+      if (error) {
+        list.appendChild(pranix.h("div", { class: "empty" }, [
+          pranix.h("div", { class: "empty-mark" }, "!"),
+          pranix.h("div", null, "Error: " + error.message),
+        ]));
+        return;
+      }
+      if (!data || !data.length) {
+        list.appendChild(pranix.h("div", { class: "empty" }, [
+          pranix.h("div", { class: "empty-mark" }, "✓"),
+          pranix.h("div", null, "No findings match these filters."),
+        ]));
+        return;
+      }
+      data.forEach(f => {
+        try { list.appendChild(renderFinding(f)); }
+        catch (e) {
+          list.appendChild(pranix.h("div", { class: "empty" }, "Render error on finding " + (f.id||"?") + ": " + (e?.message||e)));
+        }
+      });
+    }
+
+    const NEXT_STATUS = {
+      open:         [["acknowledged","Ack"], ["fixing","Fixing"], ["wontfix","Won't fix"]],
+      acknowledged: [["fixing","Fixing"],    ["resolved","Resolved"]],
+      fixing:       [["resolved","Resolved"]],
+      resolved:     [["open","Reopen"]],
+      wontfix:      [["open","Reopen"]],
+    };
+
+    function renderFinding(f) {
+      const actions = pranix.h("div", { class: "finding-actions" });
+      const card = pranix.h("div", { class: "finding" });
+      (NEXT_STATUS[f.status] || []).forEach(([next, label]) => {
+        const b = pranix.h("button", { class: "btn btn-secondary btn-sm" }, label);
+        b.addEventListener("click", async () => {
+          b.disabled = true; b.textContent = "…";
+          try {
+            const { data: r, error } = await sb.rpc("mark_finding_status", { p_finding_id: f.id, p_status: next });
+            if (error || (typeof r === "string" && r !== "ok")) {
+              b.classList.add("btn-danger"); b.textContent = "✗";
+              return;
+            }
+            f.status = next;
+            const fresh = renderFinding(f);
+            card.replaceWith(fresh);
+          } catch (e) {
+            b.classList.add("btn-danger"); b.textContent = "✗";
+          }
+        });
+        actions.appendChild(b);
+      });
+
+      const meta = pranix.h("div", { class: "finding-meta" }, [
+        pranix.h("span", { class: pranix.sevClass(f.severity) }, "[" + (f.severity || "?") + "]"),
+        pranix.h("span", { style: "font-weight:700;color:var(--ink-2);" }, f.product_name || "—"),
+        pranix.h("span", null, "·"),
+        pranix.h("span", null, f.category || "—"),
+        pranix.h("span", null, "·"),
+        pranix.h("span", null, pranix.fmtAge(f.created_at)),
+        pranix.h("span", null, "·"),
+        pranix.h("span", { class: "pill " + (f.status === "open" ? "pill-validation" : f.status === "resolved" ? "pill-live" : "pill-active") }, f.status || "?"),
+      ]);
+
+      const head = pranix.h("div", { class: "finding-head" }, [
         pranix.h("div", { style: "flex:1;min-width:0;" }, [
           meta,
-          pranix.h("div", { class: "finding-title" }, f.title),
+          pranix.h("div", { class: "finding-title" }, f.title || "(untitled)"),
           f.body ? pranix.h("div", { class: "finding-body" }, pranix.shorten(f.body, 280)) : null,
           f.resource ? pranix.h("div", { class: "finding-resource" }, f.resource) : null,
         ]),
         actions,
-      ]),
-    ]);
-    return card;
+      ]);
+      card.appendChild(head);
+      return card;
+    }
+  } catch (e) {
+    console.error("findings page failed:", e);
+    showFatal(e?.message || String(e));
   }
 })();
 </script>
