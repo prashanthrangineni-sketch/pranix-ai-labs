@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Surface tokens — dark mode default */
+    --bg-canvas: 220 14% 6%;
+    --bg-surface: 220 13% 9%;
+    --bg-elevated: 220 13% 12%;
+    --bg-overlay: 220 13% 4% / 0.72;
+
+    /* Border tokens */
+    --border-subtle: 220 12% 16%;
+    --border-strong: 220 12% 22%;
+    --border-focus: 217 90% 60%;
+
+    /* Foreground tokens */
+    --fg-primary: 220 14% 92%;
+    --fg-secondary: 220 9% 70%;
+    --fg-muted: 220 7% 52%;
+    --fg-disabled: 220 6% 38%;
+
+    /* Accent — cool blue, desaturated edge */
+    --accent-default: 212 60% 56%;
+    --accent-hover: 212 60% 62%;
+    --accent-active: 212 60% 48%;
+    --accent-subtle: 212 60% 56% / 0.12;
+
+    /* Severity palette */
+    --severity-critical: 358 55% 56%;
+    --severity-error: 14 70% 56%;
+    --severity-warn: 38 75% 56%;
+    --severity-info: 212 60% 56%;
+    --severity-success: 145 45% 52%;
+    --severity-dead: 0 0% 40%;
+  }
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border-subtle));
+  }
+
+  body {
+    background-color: hsl(var(--bg-canvas));
+    color: hsl(var(--fg-primary));
+    font-feature-settings: 'rlig' 1, 'calt' 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  [data-numeric] {
+    font-variant-numeric: tabular-nums;
+  }
+
+  :focus-visible {
+    outline: 2px solid hsl(var(--border-focus));
+    outline-offset: 2px;
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
