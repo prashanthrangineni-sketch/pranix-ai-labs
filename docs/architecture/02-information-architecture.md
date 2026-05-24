@@ -1,0 +1,1 @@
+$(cat /mnt/user-data/outputs/pranix-stage-3/02-information-architecture.md)
