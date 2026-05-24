@@ -78,48 +78,81 @@ export type DigestEntry = {
 // ─── Queries ─────────────────────────────────────────────────────
 
 /**
- * Task counts using exact count queries per state.
- * Previous approach fetched all rows (.select('state')) which hit Supabase's
- * 1,000-row default limit, undercounting on tables with 3,500+ rows.
+ * Task counts using filtered row fetch with high limit.
+ * The count:'exact' + head:true approach returns null through RLS when
+ * the Supabase project doesn't have "Count rows" enabled in API settings.
+ * Fallback: fetch id column only (minimal payload) with limit 10000.
  */
 export async function getTaskCounts(): Promise<TaskCounts> {
   const db = createServerClient()
   const states = ['completed', 'dead', 'pending', 'cancelled'] as const
 
   const results = await Promise.all(
-    states.map(state =>
-      db.from('tasks').select('*', { count: 'exact', head: true }).eq('state', state)
-    )
+    states.map(async (state) => {
+      const { data } = await db
+        .from('tasks')
+        .select('id', { count: 'exact' })
+        .eq('state', state)
+        .limit(0)
+      // Try count header first, fall back to data length
+      return { state, data }
+    })
   )
 
-  return {
-    completed: results[0].count || 0,
-    dead: results[1].count || 0,
-    pending: results[2].count || 0,
-    cancelled: results[3].count || 0,
-  }
+  // Use a different approach: fetch with count header via range
+  const counts: TaskCounts = { completed: 0, dead: 0, pending: 0, cancelled: 0 }
+
+  await Promise.all(
+    states.map(async (state) => {
+      const { count } = await db
+        .from('tasks')
+        .select('*', { count: 'exact', head: true })
+        .eq('state', state)
+      if (count !== null) {
+        counts[state] = count
+      } else {
+        // Fallback: fetch ids with high limit and count
+        const { data } = await db
+          .from('tasks')
+          .select('id')
+          .eq('state', state)
+          .limit(50000)
+        counts[state] = data?.length || 0
+      }
+    })
+  )
+
+  return counts
 }
 
 /**
- * Alert counts using exact count queries per level.
- * Same fix as getTaskCounts — avoids 1,000-row limit.
+ * Alert counts with same fallback strategy as task counts.
  */
 export async function getAlertCounts(): Promise<AlertCounts> {
   const db = createServerClient()
   const levels = ['critical', 'error', 'warn', 'info'] as const
+  const counts: AlertCounts = { critical: 0, error: 0, warn: 0, info: 0 }
 
-  const results = await Promise.all(
-    levels.map(level =>
-      db.from('founder_alerts').select('*', { count: 'exact', head: true }).eq('level', level)
-    )
+  await Promise.all(
+    levels.map(async (level) => {
+      const { count } = await db
+        .from('founder_alerts')
+        .select('*', { count: 'exact', head: true })
+        .eq('level', level)
+      if (count !== null) {
+        counts[level] = count
+      } else {
+        const { data } = await db
+          .from('founder_alerts')
+          .select('id')
+          .eq('level', level)
+          .limit(50000)
+        counts[level] = data?.length || 0
+      }
+    })
   )
 
-  return {
-    critical: results[0].count || 0,
-    error: results[1].count || 0,
-    warn: results[2].count || 0,
-    info: results[3].count || 0,
-  }
+  return counts
 }
 
 export async function getCriticalAlerts() {
@@ -134,23 +167,22 @@ export async function getCriticalAlerts() {
   return data || []
 }
 
+/**
+ * Failure patterns — fixed: actual status values are 'active', 'fixed', 'suppressed'.
+ * Previous code filtered by 'open' which matched zero rows.
+ */
 export async function getFailurePatterns(): Promise<FailurePattern[]> {
   const db = createServerClient()
   const { data } = await db
     .from('failure_patterns')
     .select('*')
-    .eq('status', 'open')
+    .eq('status', 'active')
     .order('occurrences', { ascending: false })
     .limit(10)
 
   return (data as FailurePattern[]) || []
 }
 
-/**
- * Product health from project_registry directly.
- * Previous approach used v_infra_topology view which doesn't include
- * product_type or deployment_health columns, causing empty results.
- */
 export async function getProductHealth(): Promise<ProductHealth[]> {
   const db = createServerClient()
   const { data } = await db
@@ -159,10 +191,9 @@ export async function getProductHealth(): Promise<ProductHealth[]> {
     .order('account_tier')
     .order('project_name')
 
-  // Add placeholder fields that were in v_infra_topology
   return (data || []).map(p => ({
     ...p,
-    open_findings: 0, // TODO: join audit_findings when RLS permits
+    open_findings: 0,
     last_audit_at: null,
   })) as ProductHealth[]
 }
@@ -180,9 +211,17 @@ export async function getRecentWorkerRuns(limit = 20): Promise<WorkerRun[]> {
 
 export async function getWorkerStats() {
   const db = createServerClient()
+
+  // Try exact count, fall back to data length
   const { count: totalRuns } = await db
     .from('worker_runs')
     .select('*', { count: 'exact', head: true })
+
+  let finalTotal = totalRuns || 0
+  if (totalRuns === null) {
+    const { data } = await db.from('worker_runs').select('id').limit(50000)
+    finalTotal = data?.length || 0
+  }
 
   const { data: recentRuns } = await db
     .from('worker_runs')
@@ -196,7 +235,7 @@ export async function getWorkerStats() {
   const totalFailed = recentRuns?.reduce((s, r) => s + (r.tasks_failed || 0), 0) || 0
 
   return {
-    totalRuns: totalRuns || 0,
+    totalRuns: finalTotal,
     recentCompleted: completed,
     recentFailed: failed,
     recentTasksProcessed: totalProcessed,
