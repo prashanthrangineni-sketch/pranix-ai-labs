@@ -105,6 +105,19 @@ export type TaskRow = {
   artifacts: any
 }
 
+/** Full task row — all columns. Used by the detail page. */
+export type TaskDetail = TaskRow & {
+  agent_id: string | null
+  input: any
+  result: any
+  logs: string[] | null
+  locked_by: string | null
+  locked_at: string | null
+  available_at: string | null
+  idempotency_key: string | null
+  depends_on: string[] | null
+}
+
 export type TaskPage = {
   rows: TaskRow[]
   page: number
@@ -116,9 +129,6 @@ export type TaskPage = {
 
 /**
  * Task counts using filtered row fetch with high limit.
- * The count:'exact' + head:true approach returns null through RLS when
- * the Supabase project doesn't have "Count rows" enabled in API settings.
- * Fallback: fetch id column only (minimal payload) with limit 50000.
  */
 export async function getTaskCounts(): Promise<TaskCounts> {
   const db = createServerClient()
@@ -147,12 +157,6 @@ export async function getTaskCounts(): Promise<TaskCounts> {
   return counts
 }
 
-/**
- * Alert counts with same fallback strategy as task counts.
- * If the count header is null AND the fallback still returns 0 despite
- * rows existing, enable Settings → API → "Row count" in Supabase or expose
- * a Postgres RPC that returns counts directly.
- */
 export async function getAlertCounts(): Promise<AlertCounts> {
   const db = createServerClient()
   const levels = ['critical', 'error', 'warn', 'info'] as const
@@ -192,10 +196,6 @@ export async function getCriticalAlerts() {
   return data || []
 }
 
-/**
- * Failure patterns — actual status values are 'active', 'fixed', 'suppressed'.
- * Previous code filtered by 'open' which matched zero rows.
- */
 export async function getFailurePatterns(): Promise<FailurePattern[]> {
   const db = createServerClient()
   const { data } = await db
@@ -279,11 +279,6 @@ export async function getMemoryEntries(): Promise<MemoryEntry[]> {
   return (data as MemoryEntry[]) || []
 }
 
-/**
- * Pending grants — granted_at IS NULL, not revoked, not yet expired.
- * mcp_access_grants has no created_at column; sort by expires_at ascending
- * (most-urgent-to-decide first).
- */
 export async function getPendingGrants(): Promise<PendingGrant[]> {
   const db = createServerClient()
   const { data } = await db
@@ -297,14 +292,8 @@ export async function getPendingGrants(): Promise<PendingGrant[]> {
   return (data as PendingGrant[]) || []
 }
 
-/**
- * All grants — used by the approvals page. Returns enough to bucket into
- * pending / active / expired in the UI without re-querying.
- */
 export async function getAllGrants(limit = 200): Promise<GrantRow[]> {
   const db = createServerClient()
-  // ORDER: granted_at DESC NULLS FIRST so pending bubbles to the top.
-  // PostgREST doesn't expose NULLS FIRST directly, so do a 2-pass approach.
   const [pendingRes, decidedRes] = await Promise.all([
     db
       .from('mcp_access_grants')
@@ -357,11 +346,6 @@ export async function getSystemPulse() {
   }
 }
 
-/**
- * Paginated task list — server-side cursor via Supabase .range().
- * Filters by state. 'all' returns the union of completed/dead/cancelled.
- * Sorted most-recent-first by created_at.
- */
 export async function getTasksPage(opts: {
   state?: TaskState | 'all'
   page?: number
@@ -371,7 +355,6 @@ export async function getTasksPage(opts: {
   const page = Math.max(0, opts.page ?? 0)
   const pageSize = Math.min(200, Math.max(10, opts.pageSize ?? 50))
   const from = page * pageSize
-  // .range() is inclusive on both ends; fetch pageSize+1 to detect hasMore cheaply.
   const to = from + pageSize
 
   let query = db
@@ -399,4 +382,23 @@ export async function getTasksPage(opts: {
     pageSize,
     hasMore,
   }
+}
+
+/**
+ * Full task detail — all columns.
+ * Returns null if not found or ID is invalid UUID.
+ */
+export async function getTaskById(id: string): Promise<TaskDetail | null> {
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  if (!UUID_RE.test(id)) return null
+
+  const db = createServerClient()
+  const { data, error } = await db
+    .from('tasks')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle()
+
+  if (error || !data) return null
+  return data as TaskDetail
 }
