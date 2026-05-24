@@ -18,7 +18,8 @@
     "clsx": "^2.1.1",
     "tailwind-merge": "^2.5.2",
     "lucide-react": "^0.383.0",
-    "framer-motion": "^11.5.0"
+    "framer-motion": "^11.5.0",
+    "server-only": "^0.0.1"
   },
   "devDependencies": {
     "typescript": "^5.5.0",

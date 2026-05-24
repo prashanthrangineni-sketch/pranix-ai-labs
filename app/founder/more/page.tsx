@@ -1,10 +1,11 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { Database, Cpu, FileText, LogOut, ChevronRight } from 'lucide-react'
+import { Activity, Database, Cpu, FileText, LogOut, ChevronRight } from 'lucide-react'
 
 export const metadata: Metadata = { title: 'More' }
 
 const LINKS = [
+  { label: 'Workers', href: '/founder/workers', icon: Activity, description: 'Worker topology, recent runs, heartbeat' },
   { label: 'Execution Memory', href: '/founder/memory', icon: Database, description: 'Persisted checkpoints and state across projects' },
   { label: 'Inference', href: '/founder/inference', icon: Cpu, description: 'Cost summary and tier health (Phase 2)' },
   { label: 'Architecture Docs', href: 'https://github.com/prashanthrangineni-sketch/pranix-ai-labs/tree/main/docs/architecture', icon: FileText, description: 'System architecture and design decisions', external: true },
