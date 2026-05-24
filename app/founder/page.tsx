@@ -108,16 +108,7 @@ export default async function FounderOverviewPage() {
 
       <Section icon={FileText} title="Recent Digest">
         {digest ? (
-          <div className="text-xs text-fg-secondary">
-            <div className="font-mono text-fg-muted">
-              {new Date(digest.digest_date).toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' })}
-            </div>
-            <div className="mt-1 line-clamp-3">
-              {typeof digest.digest_content === 'string'
-                ? digest.digest_content
-                : JSON.stringify(digest.digest_content).slice(0, 200)}
-            </div>
-          </div>
+          <DigestContent digest={digest} />
         ) : (
           <p className="text-xs text-fg-muted">No recent digest.</p>
         )}
@@ -127,6 +118,54 @@ export default async function FounderOverviewPage() {
         <Clock className="h-3 w-3" />
         <span>Refreshed {new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
       </div>
+    </div>
+  )
+}
+
+// ─── Sub-components ──────────────────────────────────────────────
+
+function DigestContent({ digest }: { digest: { digest_date: string; digest_content: any } }) {
+  const content = digest.digest_content
+  if (!content || typeof content !== 'object') {
+    return <p className="text-xs text-fg-muted">Empty digest.</p>
+  }
+
+  const actions: string[] = content.top_actions || []
+  const prs = content.pending_prs || { count: 0 }
+  const crons: any[] = content.failed_crons || []
+
+  return (
+    <div className="text-xs space-y-2">
+      <div className="font-mono text-fg-muted">
+        {new Date(digest.digest_date).toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' })}
+      </div>
+
+      {actions.length > 0 && (
+        <div>
+          <div className="text-fg-muted mb-1">Top actions</div>
+          <div className="space-y-1">
+            {actions.slice(0, 3).map((action, i) => (
+              <div key={i} className="text-fg-secondary">{action}</div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {prs.count > 0 && (
+        <div className="text-fg-secondary">
+          {prs.count} pending PR{prs.count !== 1 ? 's' : ''}
+        </div>
+      )}
+
+      {crons.length > 0 && (
+        <div>
+          <div className="text-severity-warn">{crons.length} failed cron{crons.length !== 1 ? 's' : ''}</div>
+        </div>
+      )}
+
+      {actions.length === 0 && prs.count === 0 && crons.length === 0 && (
+        <div className="text-fg-muted">No notable items.</div>
+      )}
     </div>
   )
 }
