@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import {
   LayoutDashboard,
-  ListTodo,
-  Sparkles,
+  Package,
+  Activity,
   Bell,
   MoreHorizontal,
 } from 'lucide-react'
@@ -11,15 +11,15 @@ import {
 export const metadata: Metadata = {
   title: {
     default: 'Founder',
-    template: '%s — Founder — Pranix',
+    template: '%s \u2014 Founder \u2014 Pranix',
   },
   robots: { index: false, follow: false },
 }
 
 const BOTTOM_NAV = [
   { label: 'Overview', href: '/founder', icon: LayoutDashboard },
-  { label: 'Tasks', href: '/founder/tasks', icon: ListTodo },
-  { label: 'Orchestrate', href: '/founder/orchestrate', icon: Sparkles },
+  { label: 'Products', href: '/founder/products', icon: Package },
+  { label: 'Workers', href: '/founder/workers', icon: Activity },
   { label: 'Alerts', href: '/founder/alerts', icon: Bell },
   { label: 'More', href: '/founder/more', icon: MoreHorizontal },
 ] as const
