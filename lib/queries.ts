@@ -77,36 +77,49 @@ export type DigestEntry = {
 
 // ─── Queries ─────────────────────────────────────────────────────
 
+/**
+ * Task counts using exact count queries per state.
+ * Previous approach fetched all rows (.select('state')) which hit Supabase's
+ * 1,000-row default limit, undercounting on tables with 3,500+ rows.
+ */
 export async function getTaskCounts(): Promise<TaskCounts> {
   const db = createServerClient()
-  const { data: rows } = await db
-    .from('tasks')
-    .select('state')
+  const states = ['completed', 'dead', 'pending', 'cancelled'] as const
 
-  const counts: TaskCounts = { completed: 0, dead: 0, pending: 0, cancelled: 0 }
-  if (rows) {
-    for (const row of rows) {
-      const s = row.state as keyof TaskCounts
-      if (s in counts) counts[s]++
-    }
+  const results = await Promise.all(
+    states.map(state =>
+      db.from('tasks').select('*', { count: 'exact', head: true }).eq('state', state)
+    )
+  )
+
+  return {
+    completed: results[0].count || 0,
+    dead: results[1].count || 0,
+    pending: results[2].count || 0,
+    cancelled: results[3].count || 0,
   }
-  return counts
 }
 
+/**
+ * Alert counts using exact count queries per level.
+ * Same fix as getTaskCounts — avoids 1,000-row limit.
+ */
 export async function getAlertCounts(): Promise<AlertCounts> {
   const db = createServerClient()
-  const { data: rows } = await db
-    .from('founder_alerts')
-    .select('level')
+  const levels = ['critical', 'error', 'warn', 'info'] as const
 
-  const counts: AlertCounts = { critical: 0, error: 0, warn: 0, info: 0 }
-  if (rows) {
-    for (const row of rows) {
-      const l = row.level as keyof AlertCounts
-      if (l in counts) counts[l]++
-    }
+  const results = await Promise.all(
+    levels.map(level =>
+      db.from('founder_alerts').select('*', { count: 'exact', head: true }).eq('level', level)
+    )
+  )
+
+  return {
+    critical: results[0].count || 0,
+    error: results[1].count || 0,
+    warn: results[2].count || 0,
+    info: results[3].count || 0,
   }
-  return counts
 }
 
 export async function getCriticalAlerts() {
@@ -133,15 +146,25 @@ export async function getFailurePatterns(): Promise<FailurePattern[]> {
   return (data as FailurePattern[]) || []
 }
 
+/**
+ * Product health from project_registry directly.
+ * Previous approach used v_infra_topology view which doesn't include
+ * product_type or deployment_health columns, causing empty results.
+ */
 export async function getProductHealth(): Promise<ProductHealth[]> {
   const db = createServerClient()
   const { data } = await db
-    .from('v_infra_topology')
-    .select('project_name, url, account_tier, open_findings, last_audit_at, product_type, github_repo, vercel_project_id, supabase_project_id, deployment_health')
+    .from('project_registry')
+    .select('project_name, url, account_tier, product_type, github_repo, vercel_project_id, supabase_project_id, deployment_health')
     .order('account_tier')
     .order('project_name')
 
-  return (data as ProductHealth[]) || []
+  // Add placeholder fields that were in v_infra_topology
+  return (data || []).map(p => ({
+    ...p,
+    open_findings: 0, // TODO: join audit_findings when RLS permits
+    last_audit_at: null,
+  })) as ProductHealth[]
 }
 
 export async function getRecentWorkerRuns(limit = 20): Promise<WorkerRun[]> {
