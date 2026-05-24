@@ -1,5 +1,6 @@
 'use client'
 
+import { Suspense } from 'react'
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase-browser'
@@ -7,13 +8,20 @@ import { Mail, ArrowLeft, Loader2, CheckCircle, AlertCircle } from 'lucide-react
 import Link from 'next/link'
 
 export default function FounderLoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
+  )
+}
+
+function LoginForm() {
   const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Surface errors bounced back from /founder/auth/confirm.
   useEffect(() => {
     const errParam = searchParams.get('error')
     if (errParam) setError(decodeURIComponent(errParam))
@@ -26,8 +34,6 @@ export default function FounderLoginPage() {
 
     try {
       const supabase = createBrowserClient()
-      // Preserve ?next= from middleware redirect so the magic link
-      // bounces the user back to where they originally tried to go.
       const nextParam = searchParams.get('next')
       const callbackBase = `${window.location.origin}/founder/auth/confirm`
       const callbackUrl = nextParam
@@ -36,9 +42,7 @@ export default function FounderLoginPage() {
 
       const { error: authError } = await supabase.auth.signInWithOtp({
         email,
-        options: {
-          emailRedirectTo: callbackUrl,
-        },
+        options: { emailRedirectTo: callbackUrl },
       })
 
       if (authError) {
