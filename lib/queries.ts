@@ -63,9 +63,21 @@ export type PendingGrant = {
   id: string
   scope: string
   resource_pattern: string
-  requested_task: string
+  requested_task: string | null
   expires_at: string
-  created_at: string
+  // mcp_access_grants has no created_at column; sort by expires_at instead.
+}
+
+export type GrantRow = {
+  id: string
+  scope: string
+  resource_pattern: string
+  requested_task: string | null
+  granted_at: string | null
+  expires_at: string
+  revoked_at: string | null
+  grant_type: string | null
+  session_id: string | null
 }
 
 export type DigestEntry = {
@@ -75,31 +87,42 @@ export type DigestEntry = {
   created_at: string
 }
 
+export type TaskState = 'completed' | 'dead' | 'cancelled' | 'pending'
+
+export type TaskRow = {
+  id: string
+  action: string
+  state: TaskState
+  tier: number | null
+  priority: number | null
+  attempts: number
+  max_attempts: number | null
+  last_error: string | null
+  created_at: string
+  started_at: string | null
+  completed_at: string | null
+  parent_job_id: string | null
+  artifacts: any
+}
+
+export type TaskPage = {
+  rows: TaskRow[]
+  page: number
+  pageSize: number
+  hasMore: boolean
+}
+
 // ─── Queries ─────────────────────────────────────────────────────
 
 /**
  * Task counts using filtered row fetch with high limit.
  * The count:'exact' + head:true approach returns null through RLS when
  * the Supabase project doesn't have "Count rows" enabled in API settings.
- * Fallback: fetch id column only (minimal payload) with limit 10000.
+ * Fallback: fetch id column only (minimal payload) with limit 50000.
  */
 export async function getTaskCounts(): Promise<TaskCounts> {
   const db = createServerClient()
-  const states = ['completed', 'dead', 'pending', 'cancelled'] as const
-
-  const results = await Promise.all(
-    states.map(async (state) => {
-      const { data } = await db
-        .from('tasks')
-        .select('id', { count: 'exact' })
-        .eq('state', state)
-        .limit(0)
-      // Try count header first, fall back to data length
-      return { state, data }
-    })
-  )
-
-  // Use a different approach: fetch with count header via range
+  const states: TaskState[] = ['completed', 'dead', 'pending', 'cancelled']
   const counts: TaskCounts = { completed: 0, dead: 0, pending: 0, cancelled: 0 }
 
   await Promise.all(
@@ -111,7 +134,6 @@ export async function getTaskCounts(): Promise<TaskCounts> {
       if (count !== null) {
         counts[state] = count
       } else {
-        // Fallback: fetch ids with high limit and count
         const { data } = await db
           .from('tasks')
           .select('id')
@@ -127,6 +149,9 @@ export async function getTaskCounts(): Promise<TaskCounts> {
 
 /**
  * Alert counts with same fallback strategy as task counts.
+ * If the count header is null AND the fallback still returns 0 despite
+ * rows existing, enable Settings → API → "Row count" in Supabase or expose
+ * a Postgres RPC that returns counts directly.
  */
 export async function getAlertCounts(): Promise<AlertCounts> {
   const db = createServerClient()
@@ -168,7 +193,7 @@ export async function getCriticalAlerts() {
 }
 
 /**
- * Failure patterns — fixed: actual status values are 'active', 'fixed', 'suppressed'.
+ * Failure patterns — actual status values are 'active', 'fixed', 'suppressed'.
  * Previous code filtered by 'open' which matched zero rows.
  */
 export async function getFailurePatterns(): Promise<FailurePattern[]> {
@@ -212,7 +237,6 @@ export async function getRecentWorkerRuns(limit = 20): Promise<WorkerRun[]> {
 export async function getWorkerStats() {
   const db = createServerClient()
 
-  // Try exact count, fall back to data length
   const { count: totalRuns } = await db
     .from('worker_runs')
     .select('*', { count: 'exact', head: true })
@@ -255,17 +279,52 @@ export async function getMemoryEntries(): Promise<MemoryEntry[]> {
   return (data as MemoryEntry[]) || []
 }
 
+/**
+ * Pending grants — granted_at IS NULL, not revoked, not yet expired.
+ * mcp_access_grants has no created_at column; sort by expires_at ascending
+ * (most-urgent-to-decide first).
+ */
 export async function getPendingGrants(): Promise<PendingGrant[]> {
   const db = createServerClient()
   const { data } = await db
     .from('mcp_access_grants')
-    .select('id, scope, resource_pattern, requested_task, expires_at, created_at')
+    .select('id, scope, resource_pattern, requested_task, expires_at')
     .is('granted_at', null)
     .is('revoked_at', null)
     .gt('expires_at', new Date().toISOString())
-    .order('created_at', { ascending: false })
+    .order('expires_at', { ascending: true })
 
   return (data as PendingGrant[]) || []
+}
+
+/**
+ * All grants — used by the approvals page. Returns enough to bucket into
+ * pending / active / expired in the UI without re-querying.
+ */
+export async function getAllGrants(limit = 200): Promise<GrantRow[]> {
+  const db = createServerClient()
+  // ORDER: granted_at DESC NULLS FIRST so pending bubbles to the top.
+  // PostgREST doesn't expose NULLS FIRST directly, so do a 2-pass approach.
+  const [pendingRes, decidedRes] = await Promise.all([
+    db
+      .from('mcp_access_grants')
+      .select('id, scope, resource_pattern, requested_task, granted_at, expires_at, revoked_at, grant_type, session_id')
+      .is('granted_at', null)
+      .is('revoked_at', null)
+      .gt('expires_at', new Date().toISOString())
+      .order('expires_at', { ascending: true })
+      .limit(50),
+    db
+      .from('mcp_access_grants')
+      .select('id, scope, resource_pattern, requested_task, granted_at, expires_at, revoked_at, grant_type, session_id')
+      .not('granted_at', 'is', null)
+      .order('granted_at', { ascending: false })
+      .limit(limit),
+  ])
+
+  const pending = (pendingRes.data as GrantRow[]) || []
+  const decided = (decidedRes.data as GrantRow[]) || []
+  return [...pending, ...decided]
 }
 
 export async function getLatestDigest(): Promise<DigestEntry | null> {
@@ -295,5 +354,49 @@ export async function getSystemPulse() {
     taskCounts,
     alertCounts,
     pendingGrants: pendingGrants.length,
+  }
+}
+
+/**
+ * Paginated task list — server-side cursor via Supabase .range().
+ * Filters by state. 'all' returns the union of completed/dead/cancelled.
+ * Sorted most-recent-first by created_at.
+ */
+export async function getTasksPage(opts: {
+  state?: TaskState | 'all'
+  page?: number
+  pageSize?: number
+}): Promise<TaskPage> {
+  const db = createServerClient()
+  const page = Math.max(0, opts.page ?? 0)
+  const pageSize = Math.min(200, Math.max(10, opts.pageSize ?? 50))
+  const from = page * pageSize
+  // .range() is inclusive on both ends; fetch pageSize+1 to detect hasMore cheaply.
+  const to = from + pageSize
+
+  let query = db
+    .from('tasks')
+    .select(
+      'id, action, state, tier, priority, attempts, max_attempts, last_error, created_at, started_at, completed_at, parent_job_id, artifacts'
+    )
+    .order('created_at', { ascending: false })
+    .range(from, to)
+
+  if (opts.state && opts.state !== 'all') {
+    query = query.eq('state', opts.state)
+  }
+
+  const { data, error } = await query
+  if (error) {
+    return { rows: [], page, pageSize, hasMore: false }
+  }
+
+  const rows = (data || []) as TaskRow[]
+  const hasMore = rows.length > pageSize
+  return {
+    rows: hasMore ? rows.slice(0, pageSize) : rows,
+    page,
+    pageSize,
+    hasMore,
   }
 }
