@@ -1,15 +1,31 @@
 'use client'
 
-import { useState } from 'react'
-import { createBrowserClient } from '@/lib/supabase'
-import { Mail, ArrowLeft, Loader2, CheckCircle } from 'lucide-react'
+import { Suspense } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { createBrowserClient } from '@/lib/supabase-browser'
+import { Mail, ArrowLeft, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 
 export default function FounderLoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
+  )
+}
+
+function LoginForm() {
+  const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const errParam = searchParams.get('error')
+    if (errParam) setError(decodeURIComponent(errParam))
+  }, [searchParams])
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -18,11 +34,15 @@ export default function FounderLoginPage() {
 
     try {
       const supabase = createBrowserClient()
+      const nextParam = searchParams.get('next')
+      const callbackBase = `${window.location.origin}/founder/auth/confirm`
+      const callbackUrl = nextParam
+        ? `${callbackBase}?next=${encodeURIComponent(nextParam)}`
+        : callbackBase
+
       const { error: authError } = await supabase.auth.signInWithOtp({
         email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/founder/auth/callback`,
-        },
+        options: { emailRedirectTo: callbackUrl },
       })
 
       if (authError) {
@@ -87,7 +107,10 @@ export default function FounderLoginPage() {
             </div>
 
             {error && (
-              <p className="text-xs text-severity-error">{error}</p>
+              <div className="flex items-start gap-1.5 rounded-md border border-severity-error/30 bg-severity-error/5 px-3 py-2">
+                <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-severity-error" />
+                <p className="text-xs text-severity-error">{error}</p>
+              </div>
             )}
 
             <button
