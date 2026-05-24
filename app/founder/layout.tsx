@@ -3,8 +3,9 @@ import Link from 'next/link'
 import {
   LayoutDashboard,
   Package,
-  Activity,
+  ListChecks,
   Bell,
+  Shield,
   MoreHorizontal,
 } from 'lucide-react'
 
@@ -19,8 +20,9 @@ export const metadata: Metadata = {
 const BOTTOM_NAV = [
   { label: 'Overview', href: '/founder', icon: LayoutDashboard },
   { label: 'Products', href: '/founder/products', icon: Package },
-  { label: 'Workers', href: '/founder/workers', icon: Activity },
+  { label: 'Tasks', href: '/founder/tasks', icon: ListChecks },
   { label: 'Alerts', href: '/founder/alerts', icon: Bell },
+  { label: 'Approvals', href: '/founder/approvals', icon: Shield },
   { label: 'More', href: '/founder/more', icon: MoreHorizontal },
 ] as const
 
@@ -47,7 +49,7 @@ export default function FounderLayout({
           <Link
             key={item.href}
             href={item.href}
-            className="flex flex-col items-center gap-0.5 px-3 py-1 text-fg-muted transition-colors duration-fast hover:text-fg-primary"
+            className="flex flex-col items-center gap-0.5 px-2 py-1 text-fg-muted transition-colors duration-fast hover:text-fg-primary"
           >
             <item.icon className="h-5 w-5" />
             <span className="text-[10px]">{item.label}</span>
