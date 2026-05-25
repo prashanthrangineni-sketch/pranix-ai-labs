@@ -4,44 +4,57 @@ import { createServerClient } from '@/lib/supabase'
 /**
  * Magic-link callback handler.
  *
- * Supabase redirects the user here after they click the magic link.
- * The URL carries a short-lived `code` query parameter that must be
- * exchanged for a session — server-side, so the resulting session
- * cookie is HTTP-only and readable by middleware + server components.
+ * Supports two Supabase auth flows:
+ * 1. OTP/magic-link: URL has token_hash + type params
+ * 2. PKCE: URL has code param
  *
- * The previous client-side page at /founder/auth/callback could not
- * do this because @supabase/supabase-js wrote sessions to localStorage,
- * which is invisible to the server. That callback is now dead code;
- * the login form points here instead.
- *
- * On success: redirect to ?next= if provided and safe, else /founder.
- * On failure: redirect to /founder/login?error=<reason>.
+ * The login form uses signInWithOtp() which sends flow #1.
+ * We handle both for robustness.
  */
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
+  const tokenHash = searchParams.get('token_hash')
+  const type = searchParams.get('type') as 'magiclink' | 'email' | null
   const nextParam = searchParams.get('next')
 
-  if (!code) {
-    return NextResponse.redirect(
-      `${origin}/founder/login?error=missing_code`
-    )
-  }
-
   const supabase = createServerClient()
-  const { error } = await supabase.auth.exchangeCodeForSession(code)
 
-  if (error) {
-    return NextResponse.redirect(
-      `${origin}/founder/login?error=${encodeURIComponent(error.message)}`
-    )
+  // Flow 1: OTP/magic-link verification (token_hash + type)
+  if (tokenHash && type) {
+    const { error } = await supabase.auth.verifyOtp({
+      token_hash: tokenHash,
+      type: type === 'email' ? 'email' : 'magiclink',
+    })
+    if (error) {
+      return NextResponse.redirect(
+        `${origin}/founder/login?error=${encodeURIComponent(error.message)}`
+      )
+    }
+    const safeNext =
+      nextParam && nextParam.startsWith('/founder') && !nextParam.startsWith('//')
+        ? nextParam
+        : '/founder'
+    return NextResponse.redirect(`${origin}${safeNext}`)
   }
 
-  // Only honor relative `next` paths under /founder to prevent open-redirect.
-  const safeNext =
-    nextParam && nextParam.startsWith('/founder') && !nextParam.startsWith('//')
-      ? nextParam
-      : '/founder'
+  // Flow 2: PKCE code exchange (fallback)
+  if (code) {
+    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    if (error) {
+      return NextResponse.redirect(
+        `${origin}/founder/login?error=${encodeURIComponent(error.message)}`
+      )
+    }
+    const safeNext =
+      nextParam && nextParam.startsWith('/founder') && !nextParam.startsWith('//')
+        ? nextParam
+        : '/founder'
+    return NextResponse.redirect(`${origin}${safeNext}`)
+  }
 
-  return NextResponse.redirect(`${origin}${safeNext}`)
+  // Neither flow — missing params
+  return NextResponse.redirect(
+    `${origin}/founder/login?error=missing_auth_params`
+  )
 }
