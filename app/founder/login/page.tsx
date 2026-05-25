@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { createBrowserClient } from '@/lib/supabase'
+import { createBrowserClient } from '@/lib/supabase-browser'
 import { Shield, ArrowRight, Loader2 } from 'lucide-react'
 
 export default function FounderLoginPage() {
@@ -13,7 +13,6 @@ export default function FounderLoginPage() {
   const [status, setStatus] = useState<'idle' | 'loading' | 'sent' | 'error'>('idle')
   const [error, setError] = useState<string | null>(errorParam)
 
-  // Clear error when user starts typing
   useEffect(() => {
     if (email.length > 0 && error) setError(null)
   }, [email, error])
@@ -55,7 +54,7 @@ export default function FounderLoginPage() {
             Founder Access
           </h1>
           <p className="mt-1 text-sm text-slate-500">
-            Pranix AI Labs — Operational Command Center
+            Pranix AI Labs \u2014 Operational Command Center
           </p>
         </div>
 
