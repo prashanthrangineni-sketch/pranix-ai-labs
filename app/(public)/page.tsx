@@ -1,173 +1,111 @@
 import Link from 'next/link'
-import { ArrowRight, Shield, Cpu, GitBranch } from 'lucide-react'
+import Image from 'next/image'
+import { ArrowRight, Shield, Cpu, Database, Eye, GitBranch, Layers } from 'lucide-react'
+
+const PRODUCTS = [
+  { name: 'Cart2Save', desc: 'AI-powered commerce with ONDC integration', url: 'https://www.cart2save.com', phase: 'Advanced MVP' },
+  { name: 'EdProSys', desc: 'Comprehensive school operations platform', url: 'https://www.edprosys.com', phase: 'Phase 2 — RBAC' },
+  { name: 'VidyaGrid', desc: 'Adaptive learning for Class 9-10 Mathematics', url: null, phase: 'Intelligence Layer' },
+  { name: 'QuietKeep', desc: 'Voice-first personal and business OS', url: 'https://www.quietkeep.com', phase: 'Voice Pipeline' },
+  { name: 'QuickScanZ', desc: 'Warranty lifecycle and product tracking', url: 'https://www.quickscanz.com', phase: 'Post-MVP' },
+] as const
+
+const PRINCIPLES = [
+  { icon: Shield, title: 'Deterministic First', desc: '60% of operations use rules, SQL, and state machines — no LLM needed. Reliable, auditable, zero-cost.' },
+  { icon: Cpu, title: 'Sovereign Infrastructure', desc: 'Postgres is the single source of truth. Every token, task, and event lives in databases we own.' },
+  { icon: Eye, title: 'Supervised Autonomy', desc: 'Agents handle 90% of work. Humans review the 10% that touches production. No uncontrolled execution.' },
+  { icon: Database, title: 'Provider Neutral', desc: 'Inference routes through NVIDIA, Anthropic, OpenAI, or local models. No vendor lock-in.' },
+  { icon: GitBranch, title: 'Event Sourced', desc: 'Every task lifecycle transition is recorded. Fully replayable. Crash-recoverable.' },
+  { icon: Layers, title: 'Multi-Product', desc: 'One control plane orchestrates all products. Shared workers, shared memory, shared audit trail.' },
+] as const
 
 export default function HomePage() {
   return (
-    <>
-      <section className="mx-auto max-w-6xl px-4 pb-16 pt-20 md:pt-28">
-        <h1 className="max-w-3xl text-3xl font-semibold leading-tight tracking-tight md:text-[2.75rem] md:leading-[1.15]">
-          Protocol-grade operational infrastructure
-          for AI-assisted execution.
-        </h1>
-        <p className="mt-4 max-w-xl text-base text-fg-secondary md:text-lg">
-          Deterministic-first orchestration. Evidence-led systems.
-          Supervised autonomy with full auditability.
-        </p>
-        <div className="mt-8 flex flex-wrap gap-3">
-          <Link
-            href="/products"
-            className="flex items-center gap-2 rounded-md bg-accent px-4 py-2.5 text-sm font-medium text-white transition-colors duration-fast hover:bg-accent-hover"
-          >
-            View products
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-          <Link
-            href="/infrastructure"
-            className="flex items-center gap-2 rounded-md border border-border-strong px-4 py-2.5 text-sm font-medium text-fg-primary transition-colors duration-fast hover:bg-surface"
-          >
-            Infrastructure
-          </Link>
-        </div>
-      </section>
-
-      <section className="border-t border-border-subtle">
-        <div className="mx-auto max-w-6xl px-4 py-16 md:py-20">
-          <h2 className="text-lg font-semibold text-fg-primary md:text-xl">
-            Operational philosophy
-          </h2>
-          <div className="mt-8 grid gap-8 md:grid-cols-3">
-            <div className="space-y-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent-subtle">
-                <Shield className="h-5 w-5 text-accent" />
-              </div>
-              <h3 className="text-base font-medium text-fg-primary">
-                Deterministic-first
-              </h3>
-              <p className="text-sm leading-relaxed text-fg-secondary">
-                Every operation is auditable, replayable, and
-                evidence-grounded. AI assists execution — it does
-                not replace oversight.
-              </p>
-            </div>
-            <div className="space-y-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent-subtle">
-                <Cpu className="h-5 w-5 text-accent" />
-              </div>
-              <h3 className="text-base font-medium text-fg-primary">
-                Provider-neutral
-              </h3>
-              <p className="text-sm leading-relaxed text-fg-secondary">
-                Orchestration infrastructure that routes work to
-                the best available provider — no single-vendor
-                dependency.
-              </p>
-            </div>
-            <div className="space-y-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent-subtle">
-                <GitBranch className="h-5 w-5 text-accent" />
-              </div>
-              <h3 className="text-base font-medium text-fg-primary">
-                Supervised autonomy
-              </h3>
-              <p className="text-sm leading-relaxed text-fg-secondary">
-                Agents operate within protocol boundaries.
-                Every mutation requires founder approval.
-                Every decision leaves an audit trail.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="border-t border-border-subtle">
-        <div className="mx-auto max-w-6xl px-4 py-16 md:py-20">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-fg-primary md:text-xl">
-              Products
-            </h2>
-            <Link
-              href="/products"
-              className="flex items-center gap-1 text-sm text-accent transition-colors duration-fast hover:text-accent-hover"
-            >
-              View all
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {PRODUCTS.map((product) => (
-              <Link
-                key={product.slug}
-                href={`/products/${product.slug}`}
-                className="group rounded-lg border border-border-subtle bg-surface p-4 transition-colors duration-fast hover:border-border-strong"
-              >
-                <h3 className="text-base font-medium text-fg-primary">
-                  {product.name}
-                </h3>
-                <p className="mt-1 text-sm text-fg-secondary">
-                  {product.description}
-                </p>
-                <span className="mt-3 inline-block rounded-sm bg-accent-subtle px-2 py-0.5 text-xs font-medium text-accent">
-                  {product.type}
-                </span>
+    <div>
+      {/* Hero */}
+      <section className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-[hsl(217,72%,48%,0.04)] to-transparent" />
+        <div className="mx-auto max-w-6xl px-4 py-20 md:py-32">
+          <div className="flex flex-col items-center text-center">
+            <Image src="/logo.png" alt="Pranix AI Labs" width={80} height={80} className="rounded-2xl shadow-lg" priority />
+            <h1 className="mt-8 text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl">
+              Innovate. Build. Ascend.
+            </h1>
+            <p className="mt-4 max-w-2xl text-lg text-[hsl(var(--fg-secondary))]">
+              Protocol-grade operational infrastructure for AI-assisted execution.
+              Deterministic-first orchestration with supervised autonomy.
+            </p>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+              <Link href="/products" className="flex items-center gap-2 rounded-lg bg-[hsl(var(--accent-default))] px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-[hsl(var(--accent-hover))]">
+                Explore Products <ArrowRight className="h-4 w-4" />
               </Link>
+              <Link href="/infrastructure" className="flex items-center gap-2 rounded-lg border border-[hsl(var(--border-strong))] px-6 py-3 text-sm font-medium transition-colors hover:bg-[hsl(var(--bg-elevated))]">
+                View Infrastructure
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Principles */}
+      <section className="border-t border-[hsl(var(--border-subtle))] bg-[hsl(var(--bg-surface))]">
+        <div className="mx-auto max-w-6xl px-4 py-16 md:py-24">
+          <h2 className="text-center text-2xl font-semibold md:text-3xl">How We Build</h2>
+          <p className="mx-auto mt-3 max-w-xl text-center text-sm text-[hsl(var(--fg-secondary))]">
+            Every system is built on operational principles, not marketing narratives.
+          </p>
+          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {PRINCIPLES.map((p) => (
+              <div key={p.title} className="rounded-xl border border-[hsl(var(--border-subtle))] bg-white p-6 transition-shadow hover:shadow-md">
+                <p.icon className="h-6 w-6 text-[hsl(var(--accent-default))]" />
+                <h3 className="mt-4 text-sm font-semibold">{p.title}</h3>
+                <p className="mt-2 text-xs leading-relaxed text-[hsl(var(--fg-secondary))]">{p.desc}</p>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="border-t border-border-subtle">
-        <div className="mx-auto max-w-6xl px-4 py-16 md:py-20">
-          <h2 className="text-lg font-semibold text-fg-primary md:text-xl">
-            Infrastructure
-          </h2>
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-fg-secondary">
-            The Pranix Agent Engine is a sovereign control plane for
-            multi-product AI orchestration. DAG-based task execution,
-            tiered worker topology, hybrid inference routing, and
-            protocol-governed code changes — all under founder oversight.
-          </p>
-          <Link
-            href="/infrastructure"
-            className="mt-4 inline-flex items-center gap-1 text-sm text-accent transition-colors duration-fast hover:text-accent-hover"
-          >
-            Explore the architecture
-            <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
+      {/* Products */}
+      <section className="border-t border-[hsl(var(--border-subtle))]">
+        <div className="mx-auto max-w-6xl px-4 py-16 md:py-24">
+          <h2 className="text-center text-2xl font-semibold md:text-3xl">Product Ecosystem</h2>
+          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {PRODUCTS.map((p) => (
+              <div key={p.name} className="group rounded-xl border border-[hsl(var(--border-subtle))] p-5 transition-shadow hover:shadow-md">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold">{p.name}</h3>
+                  <span className="rounded-full bg-[hsl(var(--accent-subtle))] px-2.5 py-0.5 text-xs font-medium text-[hsl(var(--accent-default))]">{p.phase}</span>
+                </div>
+                <p className="mt-2 text-xs text-[hsl(var(--fg-secondary))]">{p.desc}</p>
+                {p.url && (
+                  <a href={p.url} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-[hsl(var(--accent-default))] hover:underline">
+                    Visit <ArrowRight className="h-3 w-3" />
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       </section>
-    </>
+
+      {/* CTA */}
+      <section className="border-t border-[hsl(var(--border-subtle))] bg-[hsl(var(--bg-surface))]">
+        <div className="mx-auto max-w-6xl px-4 py-16 text-center">
+          <h2 className="text-xl font-semibold md:text-2xl">Operational Infrastructure You Can Trust</h2>
+          <p className="mx-auto mt-3 max-w-lg text-sm text-[hsl(var(--fg-secondary))]">
+            Built in Hyderabad. Protocol-grade. Deterministic-first. Provider-neutral.
+          </p>
+          <div className="mt-6 flex justify-center gap-4">
+            <Link href="/status" className="rounded-lg border border-[hsl(var(--border-strong))] px-5 py-2.5 text-sm font-medium hover:bg-[hsl(var(--bg-elevated))]">
+              Live Status
+            </Link>
+            <a href="mailto:founder@pranixailabs.com" className="rounded-lg bg-[hsl(var(--accent-default))] px-5 py-2.5 text-sm font-medium text-white hover:bg-[hsl(var(--accent-hover))]">
+              Contact
+            </a>
+          </div>
+        </div>
+      </section>
+    </div>
   )
 }
-
-const PRODUCTS = [
-  {
-    slug: 'cart2save',
-    name: 'Cart2Save',
-    description: 'Commerce platform with ONDC buyer NP integration and affiliate infrastructure.',
-    type: 'Commerce',
-  },
-  {
-    slug: 'schoolos',
-    name: 'School OS',
-    description: 'Education infrastructure for institutional operations, attendance, and academic management.',
-    type: 'Education',
-  },
-  {
-    slug: 'vidyagrid',
-    name: 'VidyaGrid',
-    description: 'Adaptive learning platform for Class 9-10 Mathematics, SCERT AP curriculum.',
-    type: 'Education',
-  },
-  {
-    slug: 'quietkeep',
-    name: 'QuietKeep',
-    description: 'Personal and business intelligence layer with voice-first architecture.',
-    type: 'Intelligence',
-  },
-  {
-    slug: 'quickscanz',
-    name: 'QuickScanZ',
-    description: 'Warranty lifecycle management with QR-based product registration.',
-    type: 'Warranty',
-  },
-] as const
