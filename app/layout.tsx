@@ -31,7 +31,6 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
-  // PWA metadata — wires manifest and Apple standalone mode
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
@@ -44,7 +43,6 @@ export const viewport: Viewport = {
   themeColor: '#0e1014',
   width: 'device-width',
   initialScale: 1,
-  // maximumScale kept at 5 (not 1) — locking zoom breaks accessibility
   maximumScale: 5,
   viewportFit: 'cover',
 }
@@ -57,10 +55,10 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${jetbrainsMono.variable} dark`}
+      className={`${inter.variable} ${jetbrainsMono.variable}`}
       suppressHydrationWarning
     >
-      <body className="font-sans min-h-screen bg-canvas text-fg-primary antialiased">
+      <body className="font-sans min-h-screen antialiased">
         {children}
       </body>
     </html>

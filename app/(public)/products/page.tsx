@@ -1,67 +1,108 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
+import { ArrowUpRight } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: 'Products',
-  description: 'Customer-facing products from Pranix AI Labs.',
+  description: 'Pranix AI Labs product ecosystem — commerce, education, voice intelligence, warranty lifecycle.',
 }
+
+const ACTIVE_PRODUCTS = [
+  {
+    name: 'Cart2Save',
+    tagline: 'AI-powered commerce with ONDC integration',
+    url: 'https://www.cart2save.com',
+    category: 'Commerce',
+    phase: 'Advanced MVP',
+    features: ['ONDC Buyer NP', 'Deal detection', 'Affiliate engine', 'Cashback intelligence'],
+  },
+  {
+    name: 'EdProSys',
+    tagline: 'Comprehensive school operations platform',
+    url: 'https://www.edprosys.com',
+    category: 'Education',
+    phase: 'Phase 2 — RBAC',
+    features: ['Institution hierarchy', 'Onboarding polymorphism', 'Multi-stakeholder access', 'Fee management'],
+  },
+  {
+    name: 'VidyaGrid',
+    tagline: 'Adaptive learning for Class 9-10 Mathematics (SCERT AP, Telugu medium)',
+    url: null,
+    category: 'Education',
+    phase: 'Intelligence Layer',
+    features: ['Concept mastery tracking', 'Adaptive question routing', 'Confidence measurement', 'Teacher dashboards'],
+  },
+  {
+    name: 'QuietKeep',
+    tagline: 'Voice-first dual-app personal and business OS',
+    url: 'https://www.quietkeep.com',
+    category: 'Intelligence',
+    phase: 'Voice Pipeline',
+    features: ['Wake word engine', 'Multi-language STT', 'Intent routing', 'Business ledger voice entry'],
+  },
+  {
+    name: 'QuickScanZ',
+    tagline: 'Warranty lifecycle and product tracking',
+    url: 'https://www.quickscanz.com',
+    category: 'Warranty',
+    phase: 'Post-MVP',
+    features: ['QR-based registration', 'Warranty expiry alerts', 'Service history', 'Push notifications'],
+  },
+] as const
+
+const FUTURE_SYSTEMS = [
+  { name: 'InsureUPI', desc: 'Micro-insurance distribution via UPI payment flows' },
+  { name: 'PMIL', desc: 'Mobility intelligence layer for automotive dealer networks' },
+  { name: 'IELTS Platform', desc: 'Test preparation and consultancy marketplace' },
+] as const
 
 export default function ProductsPage() {
   return (
-    <div className="mx-auto max-w-6xl px-4 py-16 md:py-20">
-      <h1 className="text-xl font-semibold md:text-2xl">Products</h1>
-      <p className="mt-2 max-w-xl text-sm text-fg-secondary">
-        Each product serves a distinct vertical while feeding into the
-        Pranix operational substrate.
+    <div className="mx-auto max-w-6xl px-4 py-16">
+      <h1 className="text-3xl font-bold md:text-4xl">Products</h1>
+      <p className="mt-3 max-w-2xl text-[hsl(var(--fg-secondary))]">
+        Each product is a standalone system feeding into a unified operational graph.
+        One control plane. Shared workers. Shared intelligence.
       </p>
 
-      <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-12 grid gap-6 lg:grid-cols-2">
         {ACTIVE_PRODUCTS.map((p) => (
-          <Link
-            key={p.slug}
-            href={`/products/${p.slug}`}
-            className="group flex flex-col rounded-lg border border-border-subtle bg-surface p-5 transition-colors duration-fast hover:border-border-strong"
-          >
-            <span className="inline-block w-fit rounded-sm bg-accent-subtle px-2 py-0.5 text-xs font-medium text-accent">
-              {p.type}
-            </span>
-            <h2 className="mt-3 text-base font-medium text-fg-primary">
-              {p.name}
-            </h2>
-            <p className="mt-1 flex-1 text-sm text-fg-secondary">
-              {p.description}
-            </p>
-            {p.url && (
-              <span className="mt-3 text-xs font-mono text-fg-muted">
-                {p.url}
+          <div key={p.name} className="rounded-xl border border-[hsl(var(--border-subtle))] p-6 transition-shadow hover:shadow-md">
+            <div className="flex items-start justify-between">
+              <div>
+                <span className="text-xs font-medium uppercase tracking-wider text-[hsl(var(--fg-muted))]">{p.category}</span>
+                <h2 className="mt-1 text-xl font-semibold">{p.name}</h2>
+              </div>
+              <span className="shrink-0 rounded-full bg-[hsl(var(--accent-subtle))] px-3 py-1 text-xs font-medium text-[hsl(var(--accent-default))]">
+                {p.phase}
               </span>
+            </div>
+            <p className="mt-2 text-sm text-[hsl(var(--fg-secondary))]">{p.tagline}</p>
+            <ul className="mt-4 flex flex-wrap gap-2">
+              {p.features.map((f) => (
+                <li key={f} className="rounded-md bg-[hsl(var(--bg-elevated))] px-2.5 py-1 text-xs text-[hsl(var(--fg-secondary))]">
+                  {f}
+                </li>
+              ))}
+            </ul>
+            {p.url && (
+              <a href={p.url} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-[hsl(var(--accent-default))] hover:underline">
+                Visit {p.name} <ArrowUpRight className="h-3.5 w-3.5" />
+              </a>
             )}
-          </Link>
+          </div>
         ))}
       </div>
 
       <div className="mt-16">
-        <h2 className="text-lg font-semibold text-fg-primary">
-          Research &amp; Future Systems
-        </h2>
-        <p className="mt-2 text-sm text-fg-secondary">
-          Early-stage initiatives under exploration. Not yet in active development.
+        <h2 className="text-xl font-semibold">Research & Future Systems</h2>
+        <p className="mt-2 text-sm text-[hsl(var(--fg-secondary))]">
+          Planned products in the Pranix ecosystem. Architecture designed, implementation pending.
         </p>
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {FUTURE_SYSTEMS.map((p) => (
-            <div
-              key={p.name}
-              className="rounded-lg border border-border-subtle bg-surface/50 p-5"
-            >
-              <span className="inline-block w-fit rounded-sm border border-border-subtle px-2 py-0.5 text-xs text-fg-muted">
-                {p.type}
-              </span>
-              <h3 className="mt-3 text-base font-medium text-fg-secondary">
-                {p.name}
-              </h3>
-              <p className="mt-1 text-sm text-fg-muted">
-                {p.description}
-              </p>
+        <div className="mt-6 grid gap-4 sm:grid-cols-3">
+          {FUTURE_SYSTEMS.map((s) => (
+            <div key={s.name} className="rounded-lg border border-dashed border-[hsl(var(--border-subtle))] p-4">
+              <h3 className="text-sm font-semibold">{s.name}</h3>
+              <p className="mt-1 text-xs text-[hsl(var(--fg-muted))]">{s.desc}</p>
             </div>
           ))}
         </div>
@@ -69,17 +110,3 @@ export default function ProductsPage() {
     </div>
   )
 }
-
-const ACTIVE_PRODUCTS = [
-  { slug: 'cart2save', name: 'Cart2Save', description: 'Commerce platform with ONDC buyer NP integration and affiliate infrastructure.', type: 'Commerce', url: 'cart2save.com' },
-  { slug: 'schoolos', name: 'School OS', description: 'Education infrastructure for institutional operations, attendance, and academic management.', type: 'Education', url: 'schoolos.in' },
-  { slug: 'vidyagrid', name: 'VidyaGrid', description: 'Adaptive learning platform for Class 9-10 Mathematics, SCERT AP curriculum.', type: 'Education', url: null },
-  { slug: 'quietkeep', name: 'QuietKeep', description: 'Personal and business intelligence layer with voice-first architecture.', type: 'Intelligence', url: 'quietkeep.com' },
-  { slug: 'quickscanz', name: 'QuickScanZ', description: 'Warranty lifecycle management with QR-based product registration.', type: 'Warranty', url: 'quickscanz.com' },
-] as const
-
-const FUTURE_SYSTEMS = [
-  { name: 'PMIL', description: 'Mobility intelligence layer for authorized dealer network validation.', type: 'Research' },
-  { name: 'IELTS Platform', description: 'Test preparation and consultancy marketplace ecosystem.', type: 'Future' },
-  { name: 'InsureUPI', description: 'Insurance integration via payment infrastructure.', type: 'Future' },
-] as const
