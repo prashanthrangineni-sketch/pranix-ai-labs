@@ -125,6 +125,19 @@ export type TaskPage = {
   hasMore: boolean
 }
 
+/** Visual regression artifact awaiting review or marked as failing. */
+export type ReviewArtifact = {
+  id: string
+  project_name: string
+  check_name: string
+  viewport: string
+  status: string        // 'review' | 'fail'
+  diff_score: number | null
+  storage_path: string
+  signed_url: string | null   // 1-hour signed URL for inline display
+  created_at: string
+}
+
 // ─── Queries ─────────────────────────────────────────────────────
 
 /**
@@ -401,4 +414,30 @@ export async function getTaskById(id: string): Promise<TaskDetail | null> {
 
   if (error || !data) return null
   return data as TaskDetail
+}
+
+/**
+ * Browser artifacts with status 'review' or 'fail', with 1h signed URLs.
+ * Used by /founder/baselines to surface visual regression findings.
+ */
+export async function getReviewArtifacts(): Promise<ReviewArtifact[]> {
+  const db = createServerClient()
+  const { data, error } = await db
+    .from('browser_artifacts')
+    .select('id, project_name, check_name, viewport, status, diff_score, storage_path, created_at')
+    .in('status', ['review', 'fail'])
+    .order('created_at', { ascending: false })
+    .limit(50)
+
+  if (error || !data) return []
+
+  const withUrls = await Promise.all(
+    data.map(async (a) => {
+      const { data: signed } = await db.storage
+        .from('artifacts')
+        .createSignedUrl(a.storage_path, 3600)
+      return { ...a, signed_url: signed?.signedUrl || null }
+    })
+  )
+  return withUrls as ReviewArtifact[]
 }
