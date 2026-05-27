@@ -1,31 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.CONTROL_PLANE_SUPABASE_URL!,
-  process.env.CONTROL_PLANE_SERVICE_ROLE_KEY!
-);
+import { getControlPlane } from "@/app/lib/control-plane";
 
 const BUCKET = "company-documents";
 
 export async function GET() {
-  const { data, error } = await supabase
-    .from("company_documents")
-    .select("id,title,category,file_name,file_size_bytes,mime_type,storage_path,tags,version,ai_summary,created_at,is_archived")
-    .eq("is_archived", false)
-    .order("created_at", { ascending: false });
+  try {
+    const supabase = getControlPlane();
+    const { data, error } = await supabase
+      .from("company_documents")
+      .select("id,title,category,file_name,file_size_bytes,mime_type,storage_path,tags,version,ai_summary,created_at,is_archived")
+      .eq("is_archived", false)
+      .order("created_at", { ascending: false });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ documents: data ?? [] });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ documents: data ?? [] });
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {
   try {
+    const supabase = getControlPlane();
     const formData = await req.formData();
-    const file = formData.get("file") as File;
-    const title = formData.get("title") as string;
-    const category = formData.get("category") as string;
-    const tagsRaw = formData.get("tags") as string;
+    const file = formData.get("file") as File | null;
+    const title = formData.get("title") as string | null;
+    const category = formData.get("category") as string | null;
+    const tagsRaw = formData.get("tags") as string | null;
 
     if (!file || !title || !category) {
       return NextResponse.json({ error: "file, title, and category required" }, { status: 400 });
