@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { nanoid } from "nanoid";
 
 const supabase = createClient(
   process.env.CONTROL_PLANE_SUPABASE_URL!,
@@ -32,7 +31,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "file, title, and category required" }, { status: 400 });
     }
 
-    const id = nanoid();
+    const id = crypto.randomUUID();
     const ext = file.name.split(".").pop() ?? "bin";
     const storagePath = `${category}/${id}.${ext}`;
 
@@ -46,7 +45,7 @@ export async function POST(req: NextRequest) {
 
     if (uploadErr) return NextResponse.json({ error: uploadErr.message }, { status: 500 });
 
-    const tags = tagsRaw ? tagsRaw.split(",").map(t => t.trim()).filter(Boolean) : null;
+    const tags = tagsRaw ? tagsRaw.split(",").map((t: string) => t.trim()).filter(Boolean) : null;
 
     const { error: dbErr } = await supabase.from("company_documents").insert({
       id,
