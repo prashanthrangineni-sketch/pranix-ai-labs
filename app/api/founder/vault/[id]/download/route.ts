@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getControlPlane } from "@/app/lib/control-plane";
+import { getControlPlane } from "../../../lib/control-plane";
 
 export async function GET(
   _req: Request,
