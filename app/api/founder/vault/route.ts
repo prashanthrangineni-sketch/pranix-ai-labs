@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getControlPlane } from "@/app/lib/control-plane";
+import { NextResponse } from "next/server";
+import { getControlPlane } from "../../lib/control-plane";
 
 const BUCKET = "company-documents";
 
@@ -19,7 +19,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
     const supabase = getControlPlane();
     const formData = await req.formData();
