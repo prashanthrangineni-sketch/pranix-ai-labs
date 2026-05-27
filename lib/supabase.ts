@@ -1,39 +1,20 @@
-import 'server-only'
-
-import {
-  createServerClient as createSsrServerClient,
-  type CookieOptions,
-} from '@supabase/ssr'
+import { createServerClient as createSsrServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
-const SUPABASE_URL =
-  process.env.NEXT_PUBLIC_SUPABASE_URL ||
-  'https://mvdjyjccvioxircxuzgz.supabase.co'
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+// Hard-coded fallback URL — project is public, URL is safe to expose in source.
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? 'https://mvdjyjccvioxircxuzgz.supabase.co'
 
-/**
- * Server-side Supabase client for use in Server Components, Route
- * Handlers, and Server Actions.
- *
- * Reads auth from HTTP-only cookies via @supabase/ssr so that
- * `supabase.auth.getUser()` can resolve the founder's session
- * server-side — the previous @supabase/supabase-js client read from
- * localStorage, which is browser-only.
- *
- * Reads from the pranix_agents control plane (mvdjyjccvioxircxuzgz).
- * All data reads still go through RLS using the anon key. Writes go
- * through MCP tools (lib/pranix-mcp.ts), never this client.
- *
- * SERVER-ONLY: this module imports 'server-only' and uses
- * next/headers' cookies(). Importing it from a Client Component will
- * fail the build with a clear error. Client code that needs Supabase
- * (the login page) imports lib/supabase-browser.ts instead.
- *
- * NOTE: this function stays synchronous to preserve every existing
- * call site in lib/queries.ts. Next 14's cookies() is synchronous;
- * if/when this repo upgrades to Next 15, cookies() becomes async and
- * this function must be awaited at every call site.
- */
+// NEXT_PUBLIC_SUPABASE_ANON_KEY must be set in Vercel environment variables.
+// See: Supabase Dashboard → project mvdjyjccvioxircxuzgz → Project Settings → API → anon/public key.
+// This env var MUST be added in: Vercel personal account → pranix-ai-labs project → Settings → Environment Variables.
+// Without it the middleware and all Server Components will fail to auth.
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
+
+if (!SUPABASE_ANON_KEY && process.env.NODE_ENV === 'production') {
+  // Log clearly — this is the #1 deployment failure cause.
+  console.error('[pranix-ai-labs] MISSING ENV VAR: NEXT_PUBLIC_SUPABASE_ANON_KEY — founder auth will fail. Add this to Vercel env vars: Supabase > mvdjyjccvioxircxuzgz > Settings > API > anon public key.')
+}
+
 export function createServerClient() {
   const cookieStore = cookies()
 
@@ -48,9 +29,7 @@ export function createServerClient() {
             cookieStore.set(name, value, options)
           )
         } catch {
-          // setAll was called from a Server Component, which cannot
-          // mutate cookies. The middleware refresh loop handles token
-          // rotation, so swallowing this is safe.
+          // Server Component context — middleware handles token rotation
         }
       },
     },
