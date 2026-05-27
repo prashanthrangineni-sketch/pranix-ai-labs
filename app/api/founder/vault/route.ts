@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getControlPlane } from "../../lib/control-plane";
+import { getControlPlane } from "../../../lib/control-plane";
 
 const BUCKET = "company-documents";
 
