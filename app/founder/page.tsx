@@ -1,5 +1,10 @@
 import type { Metadata } from 'next'
-import { AlertTriangle, Shield, Package, FileText, Activity, Clock } from 'lucide-react'
+import Link from 'next/link'
+import {
+  HeartPulse, Cpu, Database, ListOrdered, ShieldAlert,
+  Circle, Activity, ChevronRight, CheckCircle2, AlertCircle,
+  Clock, Zap, RefreshCw,
+} from 'lucide-react'
 import {
   getSystemPulse,
   getCriticalAlerts,
@@ -7,194 +12,385 @@ import {
   getProductHealth,
   getPendingGrants,
   getLatestDigest,
+  getWorkerNodes,
+  getOrchestrationProviders,
+  getRecentActivity,
+  getLatestForensic,
+  getAlertTierCounts,
+  getMemoryCount,
 } from '@/lib/queries'
 
 export const metadata: Metadata = { title: 'Overview' }
 export const revalidate = 60
 
+// ── helpers ──────────────────────────────────────────────────────
+
+function relTime(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime()
+  const m = Math.floor(diff / 60000)
+  if (m < 1) return 'just now'
+  if (m < 60) return `${m}m ago`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `${h}h ago`
+  return `${Math.floor(h / 24)}d ago`
+}
+
+const PROVIDER_META: Record<string, { label: string; color: string }> = {
+  deterministic: { label: 'Pranix Native',        color: '#3b82f6' },
+  groq:          { label: 'Groq / Qwen3-32b',     color: '#f59e0b' },
+  openrouter:    { label: 'OpenRouter (free)',     color: '#a855f7' },
+  gemini:        { label: 'Gemini',                color: '#22c55e' },
+  jina:          { label: 'Jina Embeddings',       color: '#6b7280' },
+  ollama:        { label: 'Ollama Local',          color: '#ef4444' },
+  nvidia:        { label: 'NVIDIA',                color: '#6b7280' },
+  kimi:          { label: 'Kimi',                  color: '#6b7280' },
+  anthropic:     { label: 'Anthropic / Claude',    color: '#f97316' },
+}
+
+function providerDot(status: string) {
+  if (status === 'ok') return 'bg-severity-success'
+  if (status === 'offline' || status === 'disabled_billing_required') return 'bg-severity-critical'
+  if (status === 'free_models_only' || status === 'configured') return 'bg-severity-warn'
+  return 'bg-fg-disabled'
+}
+function providerLabel(status: string) {
+  const map: Record<string, string> = {
+    ok: 'Active',
+    offline: 'Offline',
+    free_models_only: 'Free only',
+    configured: 'Configured',
+    disabled_billing_required: 'Needs billing',
+    disabled_free_only_policy: 'Disabled',
+    disabled_paid_model_only: 'Disabled',
+  }
+  return map[status] ?? status
+}
+
+// ── sub-components ────────────────────────────────────────────────
+
+function Panel({ title, link, linkHref, children, className = '' }: {
+  title: string; link?: string; linkHref?: string; children: React.ReactNode; className?: string
+}) {
+  return (
+    <div className={`rounded-xl border border-border-subtle bg-surface flex flex-col ${className}`}>
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle">
+        <span className="text-[12px] font-semibold text-fg-primary uppercase tracking-wide">{title}</span>
+        {link && linkHref && (
+          <Link href={linkHref}
+                className="flex items-center gap-0.5 text-[11px] text-accent hover:text-accent/80 transition-colors">
+            {link} <ChevronRight className="h-3 w-3" />
+          </Link>
+        )}
+      </div>
+      <div className="flex-1 p-4">{children}</div>
+    </div>
+  )
+}
+
+function StatCard({ icon: Icon, iconColor, label, value, sub, valueClass = '' }: {
+  icon: React.ElementType; iconColor: string; label: string; value: string | number; sub: string; valueClass?: string
+}) {
+  return (
+    <div className="rounded-xl border border-border-subtle bg-surface p-4 flex items-center gap-3">
+      <div className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0"
+           style={{ background: iconColor + '22' }}>
+        <Icon className="h-4.5 w-4.5" style={{ color: iconColor }} />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[11px] text-fg-muted mb-0.5">{label}</p>
+        <p className={`text-xl font-bold leading-none tabular-nums ${valueClass}`}>{value}</p>
+        <p className="text-[11px] text-fg-disabled mt-0.5">{sub}</p>
+      </div>
+    </div>
+  )
+}
+
+// Donut chart rendered as SVG
+function AlertDonut({ p1, p2, p3, p4 }: { p1: number; p2: number; p3: number; p4: number }) {
+  const total = p1 + p2 + p3 + p4
+  if (total === 0) return <div className="text-fg-disabled text-xs">No alerts</div>
+
+  const segs = [
+    { val: p1, color: '#ef4444', label: 'P1 Critical' },
+    { val: p2, color: '#f97316', label: 'P2 Error' },
+    { val: p3, color: '#f59e0b', label: 'P3 Warn' },
+    { val: p4, color: '#3b82f6', label: 'P4 Info' },
+  ]
+
+  const cx = 56, cy = 56, r = 44, inner = 28
+  let angle = -Math.PI / 2
+  const paths = segs.map(s => {
+    if (s.val === 0) return null
+    const sweep = (s.val / total) * 2 * Math.PI
+    const x1 = cx + r * Math.cos(angle), y1 = cy + r * Math.sin(angle)
+    angle += sweep
+    const x2 = cx + r * Math.cos(angle), y2 = cy + r * Math.sin(angle)
+    const ix1 = cx + inner * Math.cos(angle - sweep), iy1 = cy + inner * Math.sin(angle - sweep)
+    const ix2 = cx + inner * Math.cos(angle), iy2 = cy + inner * Math.sin(angle)
+    const large = sweep > Math.PI ? 1 : 0
+    return <path key={s.label} d={`M${x1},${y1}A${r},${r} 0 ${large},1 ${x2},${y2}L${ix2},${iy2}A${inner},${inner} 0 ${large},0 ${ix1},${iy1}Z`} fill={s.color} />
+  })
+
+  return (
+    <div className="flex items-center gap-5">
+      <div className="relative shrink-0">
+        <svg width={112} height={112} viewBox="0 0 112 112">
+          {paths}
+          <text x={56} y={52} textAnchor="middle" fill="hsl(220 14% 92%)" fontSize={16} fontWeight={700}>{total.toLocaleString()}</text>
+          <text x={56} y={66} textAnchor="middle" fill="hsl(220 7% 52%)" fontSize={9}>Total</text>
+        </svg>
+      </div>
+      <div className="space-y-1.5">
+        {segs.map(s => (
+          <div key={s.label} className="flex items-center gap-2 text-[11px]">
+            <span className="h-2 w-2 rounded-sm shrink-0" style={{ background: s.color }} />
+            <span className="text-fg-secondary flex-1">{s.label}</span>
+            <span className="font-medium text-fg-primary tabular-nums ml-2">{s.val.toLocaleString()}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── page ─────────────────────────────────────────────────────────
+
 export default async function FounderOverviewPage() {
-  const [pulse, criticalAlerts, patterns, products, grants, digest] = await Promise.all([
+  const [
+    pulse, criticalAlerts, patterns, products, grants, digest,
+    workers, providers, activity, forensic, tierCounts, memCount,
+  ] = await Promise.all([
     getSystemPulse(),
-    getCriticalAlerts(),
+    getCriticalAlerts(20),
     getFailurePatterns(),
     getProductHealth(),
     getPendingGrants(),
     getLatestDigest(),
+    getWorkerNodes(),
+    getOrchestrationProviders(),
+    getRecentActivity(6),
+    getLatestForensic(),
+    getAlertTierCounts(),
+    getMemoryCount(),
   ])
 
-  const activeProducts = products.filter(
-    p => p.account_tier === 'primary' || p.account_tier === 'secondary'
-  )
+  const nextDigest = new Date()
+  nextDigest.setUTCHours(3, 30, 0, 0) // 05:00 IST = 03:30 UTC
+  if (nextDigest <= new Date()) nextDigest.setDate(nextDigest.getDate() + 1)
+  const diffMs = nextDigest.getTime() - Date.now()
+  const diffH = Math.floor(diffMs / 3600000)
+  const diffM = Math.floor((diffMs % 3600000) / 60000)
 
   return (
-    <div className="px-4 py-6 space-y-6">
-      <div className="flex items-center gap-2">
-        <span className={`h-2 w-2 rounded-full ${pulse.isOperational ? 'bg-severity-success' : 'bg-severity-warn'}`} />
-        <span className="text-sm font-medium text-fg-primary">
-          {pulse.isOperational
-            ? 'Pranix is operational.'
-            : `${pulse.needsAttention} signal${pulse.needsAttention !== 1 ? 's' : ''} need attention.`}
-        </span>
+    <div className="p-4 lg:p-6 space-y-5">
+
+      {/* ── Stat bar ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <StatCard icon={HeartPulse}  iconColor="#22c55e" label="System Health"  value={pulse.isOperational ? 'Healthy' : 'Degraded'} sub={`${pulse.needsAttention} signals need attention`}  valueClass="text-severity-success" />
+        <StatCard icon={Cpu}         iconColor="#3b82f6" label="Workers"        value={pulse.workerStats.totalRuns.toLocaleString()} sub="Total runs" valueClass="text-fg-primary" />
+        <StatCard icon={Database}    iconColor="#a855f7" label="Memory"         value={memCount.toLocaleString()}                   sub="Total memories" valueClass="text-fg-primary" />
+        <StatCard icon={ListOrdered} iconColor="#f59e0b" label="Task Queue"     value={pulse.taskCounts.pending}                    sub="Pending tasks" valueClass="text-fg-primary" />
+        <StatCard icon={ShieldAlert} iconColor="#ef4444" label="Critical Alerts" value={pulse.alertCounts.critical}                 sub="Requires attention" valueClass="text-severity-critical" />
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
-        <MetricCard label="Completed" value={pulse.taskCounts.completed} />
-        <MetricCard label="Dead" value={pulse.taskCounts.dead} variant={pulse.taskCounts.dead > 0 ? 'warn' : 'default'} />
-        <MetricCard label="Critical" value={pulse.alertCounts.critical} variant={pulse.alertCounts.critical > 0 ? 'critical' : 'default'} />
-      </div>
+      {/* ── Row 1: Worker Topology | Alert Summary | Product Health | Account Settings ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
 
-      {criticalAlerts.length > 0 && (
-        <Section icon={AlertTriangle} title={`Critical Signals (${criticalAlerts.length})`}>
-          <div className="space-y-2">
-            {criticalAlerts.map((alert: any) => (
-              <div key={alert.id} className="flex items-start gap-2 text-xs">
-                <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-severity-critical" />
-                <div className="min-w-0 flex-1">
-                  <span className="font-mono text-fg-secondary">{alert.source}</span>
-                  <span className="ml-2 text-fg-muted">
-                    {new Date(alert.created_at).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
+        {/* Worker Topology */}
+        <Panel title="Worker Topology" link="View all" linkHref="/founder/workers">
+          <div className="space-y-3">
+            {workers.length > 0 ? workers.map((w) => (
+              <div key={w.tier} className="flex items-start gap-3">
+                <span className={`mt-1 h-2 w-2 rounded-full shrink-0 ${w.online ? 'bg-severity-success' : 'bg-fg-disabled'}`} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[12px] font-medium text-fg-primary leading-tight">{w.label}</p>
+                  <p className="text-[11px] text-fg-muted">{w.description}</p>
+                </div>
+                <span className={`shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded text-nowrap ${
+                  w.online ? 'bg-severity-success/15 text-severity-success' : 'bg-elevated text-fg-disabled'
+                }`}>{w.online ? 'Online' : 'Offline'}</span>
+              </div>
+            )) : (
+              ['Tier 0 — Vercel Cron','Tier 1 — Supabase Edge Function','Tier 2 — Fly.io Browser Worker'].map((t, i) => (
+                <div key={t} className="flex items-start gap-3">
+                  <span className={`mt-1 h-2 w-2 rounded-full shrink-0 ${i < 2 ? 'bg-severity-success' : 'bg-fg-disabled'}`} />
+                  <div className="flex-1">
+                    <p className="text-[12px] font-medium text-fg-primary">{t}</p>
+                    <p className="text-[11px] text-fg-muted">{['60s tick, lightweight task claiming','2min tick, heavy task processing','Playwright automation, not yet deployed'][i]}</p>
+                  </div>
+                  <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${i < 2 ? 'bg-severity-success/15 text-severity-success' : 'bg-elevated text-fg-disabled'}`}>
+                    {i < 2 ? 'Online' : 'Offline'}
                   </span>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
-        </Section>
-      )}
+        </Panel>
 
-      {grants.length > 0 && (
-        <Section icon={Shield} title={`Pending Approvals (${grants.length})`}>
-          <div className="space-y-2">
-            {grants.map((grant) => (
-              <div key={grant.id} className="text-xs">
-                <div className="font-mono text-fg-secondary truncate">{grant.resource_pattern}</div>
-                <div className="text-fg-muted mt-0.5">
-                  {grant.scope} · expires {new Date(grant.expires_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+        {/* Alert Summary */}
+        <Panel title="Alert Summary (24h)" link="View all" linkHref="/founder/alerts">
+          <AlertDonut p1={tierCounts.p1} p2={tierCounts.p2} p3={tierCounts.p3} p4={tierCounts.p4} />
+          {patterns.length > 0 && (
+            <div className="mt-4 pt-3 border-t border-border-subtle">
+              <p className="text-[11px] font-semibold text-fg-muted mb-2">Top Failure Patterns</p>
+              {patterns.slice(0, 3).map(p => (
+                <div key={p.id} className="flex justify-between items-center text-[11px] py-1">
+                  <span className="text-fg-secondary font-mono truncate max-w-[75%]">{p.fingerprint}</span>
+                  <span className="text-severity-error font-semibold ml-2">{p.occurrences}x</span>
                 </div>
+              ))}
+            </div>
+          )}
+        </Panel>
+
+        {/* Product Health */}
+        <Panel title="Product Health" link="View all" linkHref="/founder/products">
+          <div className="space-y-2.5">
+            {products.slice(0, 8).map(p => (
+              <div key={p.project_name} className="flex items-center gap-2.5">
+                {p.deployment_health === 'healthy'
+                  ? <CheckCircle2 className="h-4 w-4 text-severity-success shrink-0" />
+                  : p.deployment_health
+                  ? <AlertCircle className="h-4 w-4 text-severity-warn shrink-0" />
+                  : <Circle className="h-4 w-4 text-border-strong shrink-0" />
+                }
+                <span className="flex-1 text-[12px] text-fg-secondary capitalize">{p.project_name}</span>
+                <span className={`text-[11px] px-1.5 py-0.5 rounded font-medium ${
+                  p.deployment_health === 'healthy' ? 'text-severity-success bg-severity-success/12 border border-severity-success/20'
+                  : p.deployment_health ? 'text-severity-warn bg-severity-warn/12'
+                  : 'text-fg-disabled'
+                }`}>
+                  {p.deployment_health ?? 'No findings'}
+                </span>
               </div>
             ))}
           </div>
-        </Section>
-      )}
+        </Panel>
 
-      {patterns.length > 0 && (
-        <Section icon={Activity} title="Failure Patterns">
-          <div className="space-y-2">
-            {patterns.slice(0, 5).map((p) => (
-              <div key={p.id} className="flex items-center justify-between text-xs">
-                <span className="text-fg-secondary truncate max-w-[70%]">{p.fingerprint}</span>
-                <span className="font-mono text-fg-muted" data-numeric>{p.occurrences}x</span>
+        {/* Account / Settings panel */}
+        <Panel title="Account Settings">
+          <div className="space-y-1 mb-4">
+            {[
+              { label: 'Profile',          icon: '👤', active: false },
+              { label: 'Password',         icon: '🔒', active: true  },
+              { label: 'Two-Factor Auth',  icon: '🛡️', active: false, soon: true },
+            ].map(item => (
+              <div key={item.label} className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[12px] ${item.active ? 'bg-accent-subtle text-accent' : 'text-fg-muted'}`}>
+                <span>{item.icon}</span>
+                <span className="flex-1">{item.label}</span>
+                {item.soon && <span className="text-[9px] bg-elevated text-fg-disabled px-1.5 py-0.5 rounded">Soon</span>}
               </div>
             ))}
           </div>
-        </Section>
-      )}
-
-      <Section icon={Package} title="Product Health">
-        <div className="grid grid-cols-2 gap-2">
-          {activeProducts.map((p) => (
-            <div key={p.project_name} className="rounded-md border border-border-subtle bg-canvas p-3">
-              <div className="text-xs font-medium text-fg-primary">{p.project_name}</div>
-              <div className="mt-1 flex items-center gap-2 text-xs text-fg-muted">
-                <span>{p.open_findings} finding{p.open_findings !== 1 ? 's' : ''}</span>
-                {p.last_audit_at && (
-                  <span>· {new Date(p.last_audit_at).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}</span>
-                )}
-              </div>
-              {p.deployment_health && <StatusPill status={p.deployment_health} />}
+          <p className="text-[11px] font-semibold text-fg-muted mb-2.5">Other Settings</p>
+          {[
+            { label: 'WhatsApp Alerts',    value: 'Enabled',       color: 'text-severity-success' },
+            { label: 'Timezone',           value: 'Asia/Kolkata',  color: 'text-fg-secondary' },
+            { label: 'Next Digest',        value: `in ${diffH}h ${diffM}m`, color: 'text-accent' },
+          ].map(row => (
+            <div key={row.label} className="flex justify-between items-center py-1 text-[11px]">
+              <span className="text-fg-muted">{row.label}</span>
+              <span className={row.color}>{row.value}</span>
             </div>
           ))}
-        </div>
-      </Section>
-
-      <Section icon={FileText} title="Recent Digest">
-        {digest ? (
-          <DigestContent digest={digest} />
-        ) : (
-          <p className="text-xs text-fg-muted">No recent digest.</p>
-        )}
-      </Section>
-
-      <div className="flex items-center gap-1 text-xs text-fg-disabled">
-        <Clock className="h-3 w-3" />
-        <span>Refreshed {new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
-      </div>
-    </div>
-  )
-}
-
-// ─── Sub-components ──────────────────────────────────────────────
-
-function DigestContent({ digest }: { digest: { digest_date: string; digest_content: any } }) {
-  const content = digest.digest_content
-  if (!content || typeof content !== 'object') {
-    return <p className="text-xs text-fg-muted">Empty digest.</p>
-  }
-
-  const actions: string[] = content.top_actions || []
-  const prs = content.pending_prs || { count: 0 }
-  const crons: any[] = content.failed_crons || []
-
-  return (
-    <div className="text-xs space-y-2">
-      <div className="font-mono text-fg-muted">
-        {new Date(digest.digest_date).toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' })}
+          <Link href="/founder/more"
+                className="mt-4 w-full flex items-center justify-center gap-1.5 rounded-lg border border-severity-critical/30 py-1.5 text-[12px] font-medium text-severity-critical hover:bg-severity-critical/10 transition-colors">
+            Sign Out
+          </Link>
+        </Panel>
       </div>
 
-      {actions.length > 0 && (
-        <div>
-          <div className="text-fg-muted mb-1">Top actions</div>
-          <div className="space-y-1">
-            {actions.slice(0, 3).map((action, i) => (
-              <div key={i} className="text-fg-secondary">{action}</div>
-            ))}
+      {/* ── Row 2: Recent Activity | Execution Forensics | Orchestration ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+        {/* Recent Activity */}
+        <Panel title="Recent Activity" link="View all activity" linkHref="/founder/tasks">
+          <div className="space-y-3">
+            {activity.length > 0 ? activity.map(a => {
+              const dot = a.severity === 'error' || a.severity === 'critical' ? 'bg-severity-critical'
+                        : a.severity === 'success' ? 'bg-severity-success'
+                        : a.severity === 'warn' ? 'bg-severity-warn'
+                        : 'bg-accent-default'
+              return (
+                <div key={a.id} className="flex gap-3">
+                  <div className={`mt-1.5 h-1.5 w-1.5 rounded-full shrink-0 ${dot}`} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[12px] font-medium text-fg-primary leading-tight capitalize">{a.label}</p>
+                    <p className="text-[11px] text-fg-muted truncate">{a.sub}</p>
+                  </div>
+                  <span className="text-[10px] text-fg-disabled shrink-0">{relTime(a.created_at)}</span>
+                </div>
+              )
+            }) : (
+              <p className="text-[12px] text-fg-muted">No recent activity</p>
+            )}
           </div>
-        </div>
-      )}
+        </Panel>
 
-      {prs.count > 0 && (
-        <div className="text-fg-secondary">
-          {prs.count} pending PR{prs.count !== 1 ? 's' : ''}
-        </div>
-      )}
+        {/* Execution Forensics */}
+        <Panel title="Execution Forensics (Latest)" link="View all" linkHref="/founder/memory">
+          {forensic ? (
+            <div>
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-[11px] text-fg-muted font-mono">Key: {forensic.key?.slice(0, 30)}</span>
+                <span className="text-[10px] px-2 py-0.5 rounded font-medium bg-severity-success/15 text-severity-success">Complete</span>
+              </div>
+              {[
+                ['Project', forensic.project],
+                ['Created', relTime(forensic.created_at)],
+                ['Value type', Array.isArray(forensic.value) ? 'array' : typeof forensic.value],
+              ].map(([k, v]) => (
+                <div key={k} className="flex justify-between border-b border-border-subtle py-1.5 text-[11px]">
+                  <span className="text-fg-muted">{k}</span>
+                  <span className="text-fg-secondary font-mono">{v}</span>
+                </div>
+              ))}
+              {typeof forensic.value === 'object' && forensic.value !== null && (
+                <div className="mt-3">
+                  <p className="text-[10px] text-fg-muted mb-1.5">Value keys</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {Object.keys(forensic.value).slice(0, 6).map(k => (
+                      <span key={k} className="text-[10px] px-2 py-0.5 rounded bg-accent-subtle text-accent font-mono">{k}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <p className="text-[12px] text-fg-muted">No execution memory entries.</p>
+          )}
+        </Panel>
 
-      {crons.length > 0 && (
-        <div>
-          <div className="text-severity-warn">{crons.length} failed cron{crons.length !== 1 ? 's' : ''}</div>
-        </div>
-      )}
-
-      {actions.length === 0 && prs.count === 0 && crons.length === 0 && (
-        <div className="text-fg-muted">No notable items.</div>
-      )}
-    </div>
-  )
-}
-
-function Section({ icon: Icon, title, children }: { icon: React.ElementType; title: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-lg border border-border-subtle bg-surface p-4">
-      <div className="flex items-center gap-2 mb-3">
-        <Icon className="h-4 w-4 text-fg-muted" />
-        <h2 className="text-sm font-medium text-fg-primary">{title}</h2>
+        {/* Orchestration Status */}
+        <Panel title="Orchestration Status" link="Configure" linkHref="/founder/orchestrate">
+          <div className="space-y-2.5">
+            {providers.slice(0, 8).map(p => {
+              const meta = PROVIDER_META[p.provider_name] ?? { label: p.provider_name, color: '#6b7280' }
+              return (
+                <div key={p.provider_name} className="flex items-center gap-2.5">
+                  <div className="h-6 w-6 rounded flex items-center justify-center shrink-0"
+                       style={{ background: meta.color + '22' }}>
+                    <Zap className="h-3 w-3" style={{ color: meta.color }} />
+                  </div>
+                  <span className="flex-1 text-[12px] text-fg-secondary">{meta.label}</span>
+                  <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${providerDot(p.health_status)}`} />
+                  <span className={`text-[11px] min-w-[72px] text-right ${
+                    p.health_status === 'ok' ? 'text-severity-success'
+                    : p.health_status === 'offline' || p.health_status === 'disabled_billing_required' ? 'text-severity-critical'
+                    : 'text-fg-muted'
+                  }`}>{providerLabel(p.health_status)}</span>
+                </div>
+              )
+            })}
+          </div>
+        </Panel>
       </div>
-      {children}
+
+      {/* Refresh note */}
+      <div className="flex items-center gap-1.5 text-[11px] text-fg-disabled">
+        <RefreshCw className="h-3 w-3" />
+        <span>Data refreshes every 60s · {new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' })} IST</span>
+      </div>
     </div>
   )
-}
-
-function MetricCard({ label, value, variant = 'default' }: { label: string; value: number; variant?: 'default' | 'warn' | 'critical' }) {
-  const valueColor = variant === 'critical' ? 'text-severity-critical' : variant === 'warn' ? 'text-severity-warn' : 'text-fg-primary'
-  return (
-    <div className="rounded-md border border-border-subtle bg-surface p-3">
-      <div className={`text-lg font-semibold ${valueColor}`} data-numeric>{value.toLocaleString()}</div>
-      <div className="text-xs text-fg-muted">{label}</div>
-    </div>
-  )
-}
-
-function StatusPill({ status }: { status: string }) {
-  const color = status === 'healthy' ? 'bg-severity-success/12 text-severity-success border-severity-success/20'
-    : status === 'degraded' ? 'bg-severity-warn/12 text-severity-warn border-severity-warn/20'
-    : 'bg-fg-disabled/12 text-fg-disabled border-fg-disabled/20'
-  return <span className={`mt-1.5 inline-block rounded-sm border px-1.5 py-0.5 text-[10px] font-medium ${color}`}>{status}</span>
 }
