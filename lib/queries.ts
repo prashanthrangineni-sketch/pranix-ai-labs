@@ -7,6 +7,7 @@ export type TaskCounts = {
   dead: number
   pending: number
   cancelled: number
+  archived: number
 }
 
 export type AlertCounts = {
@@ -14,6 +15,13 @@ export type AlertCounts = {
   error: number
   warn: number
   info: number
+}
+
+export type AlertTierCounts = {
+  p1: number
+  p2: number
+  p3: number
+  p4: number
 }
 
 export type FailurePattern = {
@@ -65,7 +73,6 @@ export type PendingGrant = {
   resource_pattern: string
   requested_task: string | null
   expires_at: string
-  // mcp_access_grants has no created_at column; sort by expires_at instead.
 }
 
 export type GrantRow = {
@@ -87,7 +94,7 @@ export type DigestEntry = {
   created_at: string
 }
 
-export type TaskState = 'completed' | 'dead' | 'cancelled' | 'pending'
+export type TaskState = 'completed' | 'dead' | 'cancelled' | 'pending' | 'archived'
 
 export type TaskRow = {
   id: string
@@ -105,7 +112,6 @@ export type TaskRow = {
   artifacts: any
 }
 
-/** Full task row — all columns. Used by the detail page. */
 export type TaskDetail = TaskRow & {
   agent_id: string | null
   input: any
@@ -125,48 +131,77 @@ export type TaskPage = {
   hasMore: boolean
 }
 
-/** Visual regression artifact awaiting review or marked as failing. */
 export type ReviewArtifact = {
   id: string
   project_name: string
   check_name: string
   viewport: string
-  status: string        // 'review' | 'fail'
+  status: string
   diff_score: number | null
   storage_path: string
-  signed_url: string | null   // 1-hour signed URL for inline display
+  signed_url: string | null
   created_at: string
+}
+
+export type WorkerNode = {
+  tier: number
+  label: string
+  description: string
+  online: boolean
+  last_seen: string | null
+  total_runs: number
+}
+
+export type OrchestrationProvider = {
+  provider_name: string
+  tier: number
+  enabled: boolean
+  health_status: string
+  health_checked_at: string | null
+}
+
+export type RecentActivity = {
+  id: string
+  kind: 'task' | 'agent' | 'alert' | 'worker' | 'deploy'
+  label: string
+  sub: string
+  created_at: string
+  severity?: string
+}
+
+export type ExecutionForensic = {
+  id: string
+  project: string
+  key: string
+  value: any
+  created_at: string
+}
+
+export type CronHealth = {
+  jobname: string
+  schedule: string
+  active: boolean
+  total_runs: number
+  failed_runs: number
+  last_run: string | null
+  last_status: string | null
 }
 
 // ─── Queries ─────────────────────────────────────────────────────
 
-/**
- * Task counts using filtered row fetch with high limit.
- */
 export async function getTaskCounts(): Promise<TaskCounts> {
   const db = createServerClient()
-  const states: TaskState[] = ['completed', 'dead', 'pending', 'cancelled']
-  const counts: TaskCounts = { completed: 0, dead: 0, pending: 0, cancelled: 0 }
-
+  const states: TaskState[] = ['completed', 'dead', 'pending', 'cancelled', 'archived']
+  const counts: TaskCounts = { completed: 0, dead: 0, pending: 0, cancelled: 0, archived: 0 }
   await Promise.all(
     states.map(async (state) => {
       const { count } = await db
         .from('tasks')
         .select('*', { count: 'exact', head: true })
         .eq('state', state)
-      if (count !== null) {
-        counts[state] = count
-      } else {
-        const { data } = await db
-          .from('tasks')
-          .select('id')
-          .eq('state', state)
-          .limit(50000)
-        counts[state] = data?.length || 0
-      }
+      counts[state] = count ?? 0
     })
   )
-
   return counts
 }
 
@@ -174,38 +209,43 @@ export async function getAlertCounts(): Promise<AlertCounts> {
   const db = createServerClient()
   const levels = ['critical', 'error', 'warn', 'info'] as const
   const counts: AlertCounts = { critical: 0, error: 0, warn: 0, info: 0 }
-
   await Promise.all(
     levels.map(async (level) => {
       const { count } = await db
         .from('founder_alerts')
         .select('*', { count: 'exact', head: true })
         .eq('level', level)
-      if (count !== null) {
-        counts[level] = count
-      } else {
-        const { data } = await db
-          .from('founder_alerts')
-          .select('id')
-          .eq('level', level)
-          .limit(50000)
-        counts[level] = data?.length || 0
-      }
+      counts[level] = count ?? 0
     })
   )
-
   return counts
 }
 
-export async function getCriticalAlerts() {
+export async function getAlertTierCounts(): Promise<AlertTierCounts> {
+  const db = createServerClient()
+  const tiers = ['P1', 'P2', 'P3', 'P4'] as const
+  const counts: AlertTierCounts = { p1: 0, p2: 0, p3: 0, p4: 0 }
+  await Promise.all(
+    tiers.map(async (tier) => {
+      const { count } = await db
+        .from('founder_alerts')
+        .select('*', { count: 'exact', head: true })
+        .eq('severity_tier', tier)
+      const key = tier.toLowerCase() as keyof AlertTierCounts
+      counts[key] = count ?? 0
+    })
+  )
+  return counts
+}
+
+export async function getCriticalAlerts(limit = 20) {
   const db = createServerClient()
   const { data } = await db
     .from('founder_alerts')
-    .select('id, level, source, context, created_at, delivered')
+    .select('id, level, source, title, body, context, created_at, delivered, severity_tier, auto_whatsapp')
     .eq('level', 'critical')
     .order('created_at', { ascending: false })
-    .limit(20)
-
+    .limit(limit)
   return data || []
 }
 
@@ -217,7 +257,6 @@ export async function getFailurePatterns(): Promise<FailurePattern[]> {
     .eq('status', 'active')
     .order('occurrences', { ascending: false })
     .limit(10)
-
   return (data as FailurePattern[]) || []
 }
 
@@ -228,12 +267,49 @@ export async function getProductHealth(): Promise<ProductHealth[]> {
     .select('project_name, url, account_tier, product_type, github_repo, vercel_project_id, supabase_project_id, deployment_health')
     .order('account_tier')
     .order('project_name')
+  return (data || []).map(p => ({ ...p, open_findings: 0, last_audit_at: null })) as ProductHealth[]
+}
 
-  return (data || []).map(p => ({
-    ...p,
-    open_findings: 0,
-    last_audit_at: null,
-  })) as ProductHealth[]
+export async function getWorkerNodes(): Promise<WorkerNode[]> {
+  const db = createServerClient()
+  const { data } = await db
+    .from('worker_nodes')
+    .select('*')
+    .order('tier')
+  if (data && data.length > 0) return data as WorkerNode[]
+  // Fallback: synthesise from worker_runs last seen
+  const { data: runs } = await db
+    .from('worker_runs')
+    .select('locked_by, started_at, status')
+    .order('started_at', { ascending: false })
+    .limit(200)
+  const nodes: WorkerNode[] = [
+    {
+      tier: 0,
+      label: 'Tier 0 — Vercel Cron',
+      description: '60s tick, lightweight task claiming',
+      online: true,
+      last_seen: runs?.[0]?.started_at ?? null,
+      total_runs: runs?.filter(r => r.locked_by?.includes('vercel') || r.locked_by?.includes('cron')).length ?? 0,
+    },
+    {
+      tier: 1,
+      label: 'Tier 1 — Supabase Edge Function',
+      description: '2min tick, heavy task processing',
+      online: true,
+      last_seen: runs?.[0]?.started_at ?? null,
+      total_runs: runs?.filter(r => r.locked_by?.includes('edge') || r.locked_by?.includes('supabase')).length ?? 0,
+    },
+    {
+      tier: 2,
+      label: 'Tier 2 — Fly.io Browser Worker',
+      description: 'Playwright automation, not yet deployed',
+      online: false,
+      last_seen: null,
+      total_runs: 0,
+    },
+  ]
+  return nodes
 }
 
 export async function getRecentWorkerRuns(limit = 20): Promise<WorkerRun[]> {
@@ -243,42 +319,98 @@ export async function getRecentWorkerRuns(limit = 20): Promise<WorkerRun[]> {
     .select('id, started_at, completed_at, tasks_processed, tasks_failed, status, locked_by')
     .order('started_at', { ascending: false })
     .limit(limit)
-
   return (data as WorkerRun[]) || []
 }
 
 export async function getWorkerStats() {
   const db = createServerClient()
-
-  const { count: totalRuns } = await db
-    .from('worker_runs')
-    .select('*', { count: 'exact', head: true })
-
-  let finalTotal = totalRuns || 0
-  if (totalRuns === null) {
-    const { data } = await db.from('worker_runs').select('id').limit(50000)
-    finalTotal = data?.length || 0
-  }
-
+  const { count: totalRuns } = await db.from('worker_runs').select('*', { count: 'exact', head: true })
   const { data: recentRuns } = await db
     .from('worker_runs')
     .select('started_at, completed_at, tasks_processed, tasks_failed, status')
     .order('started_at', { ascending: false })
     .limit(100)
-
   const completed = recentRuns?.filter(r => r.status === 'completed').length || 0
   const failed = recentRuns?.filter(r => r.status === 'failed').length || 0
   const totalProcessed = recentRuns?.reduce((s, r) => s + (r.tasks_processed || 0), 0) || 0
   const totalFailed = recentRuns?.reduce((s, r) => s + (r.tasks_failed || 0), 0) || 0
-
   return {
-    totalRuns: finalTotal,
+    totalRuns: totalRuns ?? 0,
     recentCompleted: completed,
     recentFailed: failed,
     recentTasksProcessed: totalProcessed,
     recentTasksFailed: totalFailed,
     lastRun: recentRuns?.[0] || null,
   }
+}
+
+export async function getOrchestrationProviders(): Promise<OrchestrationProvider[]> {
+  const db = createServerClient()
+  const { data } = await db
+    .from('provider_registry')
+    .select('provider_name, tier, enabled, health_status, health_checked_at')
+    .order('tier')
+    .order('provider_name')
+  return (data as OrchestrationProvider[]) || []
+}
+
+export async function getRecentActivity(limit = 8): Promise<RecentActivity[]> {
+  const db = createServerClient()
+  // Pull from tasks + alerts combined, most recent first
+  const [tasksRes, alertsRes] = await Promise.all([
+    db.from('tasks')
+      .select('id, action, state, created_at, last_error')
+      .order('created_at', { ascending: false })
+      .limit(limit),
+    db.from('founder_alerts')
+      .select('id, source, title, level, created_at, severity_tier')
+      .order('created_at', { ascending: false })
+      .limit(5),
+  ])
+
+  const taskItems: RecentActivity[] = (tasksRes.data || []).map(t => ({
+    id: t.id,
+    kind: 'task' as const,
+    label: t.action.replace(/_/g, ' '),
+    sub: t.state === 'dead' ? (t.last_error?.slice(0, 60) ?? 'failed') : t.state,
+    created_at: t.created_at,
+    severity: t.state === 'dead' ? 'error' : t.state === 'completed' ? 'success' : 'info',
+  }))
+
+  const alertItems: RecentActivity[] = (alertsRes.data || []).map(a => ({
+    id: a.id,
+    kind: 'alert' as const,
+    label: a.title ?? a.source,
+    sub: a.source,
+    created_at: a.created_at,
+    severity: a.level,
+  }))
+
+  const all = [...taskItems, ...alertItems]
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, limit)
+
+  return all
+}
+
+export async function getLatestForensic(): Promise<ExecutionForensic | null> {
+  const db = createServerClient()
+  const { data } = await db
+    .from('execution_memory')
+    .select('id, project, key, value, created_at')
+    .order('created_at', { ascending: false })
+    .limit(1)
+  return data?.[0] as ExecutionForensic ?? null
+}
+
+export async function getCronHealth(): Promise<CronHealth[]> {
+  const db = createServerClient()
+  const { data } = await db
+    .from('v_cron_health')
+    .select('jobname, schedule, active, total_runs, failed_runs, last_run, last_status')
+    .order('failed_runs', { ascending: false })
+    .order('last_run', { ascending: false })
+  return (data as CronHealth[]) || []
 }
 
 export async function getMemoryEntries(): Promise<MemoryEntry[]> {
@@ -288,7 +420,6 @@ export async function getMemoryEntries(): Promise<MemoryEntry[]> {
     .select('id, project, key, value, created_at, expires_at')
     .order('project')
     .order('key')
-
   return (data as MemoryEntry[]) || []
 }
 
@@ -301,32 +432,26 @@ export async function getPendingGrants(): Promise<PendingGrant[]> {
     .is('revoked_at', null)
     .gt('expires_at', new Date().toISOString())
     .order('expires_at', { ascending: true })
-
   return (data as PendingGrant[]) || []
 }
 
 export async function getAllGrants(limit = 200): Promise<GrantRow[]> {
   const db = createServerClient()
   const [pendingRes, decidedRes] = await Promise.all([
-    db
-      .from('mcp_access_grants')
+    db.from('mcp_access_grants')
       .select('id, scope, resource_pattern, requested_task, granted_at, expires_at, revoked_at, grant_type, session_id')
       .is('granted_at', null)
       .is('revoked_at', null)
       .gt('expires_at', new Date().toISOString())
       .order('expires_at', { ascending: true })
       .limit(50),
-    db
-      .from('mcp_access_grants')
+    db.from('mcp_access_grants')
       .select('id, scope, resource_pattern, requested_task, granted_at, expires_at, revoked_at, grant_type, session_id')
       .not('granted_at', 'is', null)
       .order('granted_at', { ascending: false })
       .limit(limit),
   ])
-
-  const pending = (pendingRes.data as GrantRow[]) || []
-  const decided = (decidedRes.data as GrantRow[]) || []
-  return [...pending, ...decided]
+  return [...((pendingRes.data as GrantRow[]) || []), ...((decidedRes.data as GrantRow[]) || [])]
 }
 
 export async function getLatestDigest(): Promise<DigestEntry | null> {
@@ -336,26 +461,25 @@ export async function getLatestDigest(): Promise<DigestEntry | null> {
     .select('id, digest_date, digest_content, created_at')
     .order('digest_date', { ascending: false })
     .limit(1)
-
   return data?.[0] as DigestEntry || null
 }
 
 export async function getSystemPulse() {
-  const [taskCounts, alertCounts, pendingGrants] = await Promise.all([
+  const [taskCounts, alertCounts, pendingGrants, workerStats] = await Promise.all([
     getTaskCounts(),
     getAlertCounts(),
     getPendingGrants(),
+    getWorkerStats(),
   ])
-
   const isOperational = alertCounts.critical === 0 && taskCounts.pending === 0
   const needsAttention = alertCounts.critical + pendingGrants.length
-
   return {
     isOperational,
     needsAttention,
     taskCounts,
     alertCounts,
     pendingGrants: pendingGrants.length,
+    workerStats,
   }
 }
 
@@ -372,9 +496,7 @@ export async function getTasksPage(opts: {
 
   let query = db
     .from('tasks')
-    .select(
-      'id, action, state, tier, priority, attempts, max_attempts, last_error, created_at, started_at, completed_at, parent_job_id, artifacts'
-    )
+    .select('id, action, state, tier, priority, attempts, max_attempts, last_error, created_at, started_at, completed_at, parent_job_id, artifacts')
     .order('created_at', { ascending: false })
     .range(from, to)
 
@@ -383,43 +505,21 @@ export async function getTasksPage(opts: {
   }
 
   const { data, error } = await query
-  if (error) {
-    return { rows: [], page, pageSize, hasMore: false }
-  }
-
+  if (error) return { rows: [], page, pageSize, hasMore: false }
   const rows = (data || []) as TaskRow[]
   const hasMore = rows.length > pageSize
-  return {
-    rows: hasMore ? rows.slice(0, pageSize) : rows,
-    page,
-    pageSize,
-    hasMore,
-  }
+  return { rows: hasMore ? rows.slice(0, pageSize) : rows, page, pageSize, hasMore }
 }
 
-/**
- * Full task detail — all columns.
- * Returns null if not found or ID is invalid UUID.
- */
 export async function getTaskById(id: string): Promise<TaskDetail | null> {
   const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
   if (!UUID_RE.test(id)) return null
-
   const db = createServerClient()
-  const { data, error } = await db
-    .from('tasks')
-    .select('*')
-    .eq('id', id)
-    .maybeSingle()
-
+  const { data, error } = await db.from('tasks').select('*').eq('id', id).maybeSingle()
   if (error || !data) return null
   return data as TaskDetail
 }
 
-/**
- * Browser artifacts with status 'review' or 'fail', with 1h signed URLs.
- * Used by /founder/baselines to surface visual regression findings.
- */
 export async function getReviewArtifacts(): Promise<ReviewArtifact[]> {
   const db = createServerClient()
   const { data, error } = await db
@@ -428,16 +528,18 @@ export async function getReviewArtifacts(): Promise<ReviewArtifact[]> {
     .in('status', ['review', 'fail'])
     .order('created_at', { ascending: false })
     .limit(50)
-
   if (error || !data) return []
-
   const withUrls = await Promise.all(
     data.map(async (a) => {
-      const { data: signed } = await db.storage
-        .from('artifacts')
-        .createSignedUrl(a.storage_path, 3600)
+      const { data: signed } = await db.storage.from('artifacts').createSignedUrl(a.storage_path, 3600)
       return { ...a, signed_url: signed?.signedUrl || null }
     })
   )
   return withUrls as ReviewArtifact[]
+}
+
+export async function getMemoryCount(): Promise<number> {
+  const db = createServerClient()
+  const { count } = await db.from('pranix_memory').select('*', { count: 'exact', head: true })
+  return count ?? 0
 }
