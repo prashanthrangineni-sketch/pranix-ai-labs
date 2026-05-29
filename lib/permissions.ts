@@ -11,6 +11,8 @@ export type PermissionRequest = {
   requested_task: string | null
   grant_type: string | null
   risk_level: string | null
+  impact: string | null
+  alternatives: string | null
   requested_at: string | null
   granted_at: string | null
   expires_at: string
@@ -29,7 +31,7 @@ export type PermissionInbox = {
 }
 
 const GRANT_COLS =
-  'id, client_id, scope, resource_pattern, reason, requested_task, grant_type, risk_level, requested_at, granted_at, expires_at, revoked_at, session_id'
+  'id, client_id, scope, resource_pattern, reason, requested_task, grant_type, risk_level, impact, alternatives, requested_at, granted_at, expires_at, revoked_at, session_id'
 
 /**
  * Read the permission inbox straight from the control plane (service role,
@@ -93,6 +95,8 @@ export async function getPermissionInbox(limit = 150): Promise<PermissionInbox> 
       requested_task: g.requested_task ?? null,
       grant_type: g.grant_type ?? null,
       risk_level: g.risk_level ?? null,
+      impact: g.impact ?? null,
+      alternatives: g.alternatives ?? null,
       requested_at: g.requested_at ?? null,
       granted_at: g.granted_at ?? null,
       expires_at: g.expires_at,

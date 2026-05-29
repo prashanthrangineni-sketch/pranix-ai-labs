@@ -49,6 +49,7 @@ export type DecisionKind =
   | 'allow_permanent'
   | 'deny'
   | 'revoke'
+  | 'expire'
 
 export type DecisionState = {
   ok: boolean
@@ -63,6 +64,7 @@ const ALLOWED: DecisionKind[] = [
   'allow_permanent',
   'deny',
   'revoke',
+  'expire',
 ]
 
 /** Founder gate: must be signed in AND present in dashboard_founders. */
@@ -96,12 +98,14 @@ function computeUpdate(action: DecisionKind, now: number, nowIso: string) {
       return { granted_at: nowIso, revoked_at: null, grant_type: 'session',
                expires_at: new Date(now + 8 * HOUR).toISOString() }
     case 'allow_permanent':
-      return { granted_at: nowIso, revoked_at: null, grant_type: 'permanent',
-               expires_at: new Date(now + 100 * 365 * 24 * HOUR).toISOString() }
+      return { granted_at: nowIso, revoked_at: null, grant_type: 'standing',
+               expires_at: new Date(now + 10 * 365 * 24 * HOUR).toISOString() }
     case 'deny':
       return { revoked_at: nowIso }
     case 'revoke':
       return { revoked_at: nowIso }
+    case 'expire':
+      return { expires_at: nowIso }
   }
 }
 
@@ -112,6 +116,7 @@ function successMessage(action: DecisionKind): string {
     case 'allow_permanent': return 'Allowed permanently'
     case 'deny':            return 'Denied'
     case 'revoke':          return 'Access revoked'
+    case 'expire':          return 'Expired now'
   }
 }
 

@@ -52,8 +52,9 @@ export function DecisionControls({
           <Btn action="deny" tone="deny" icon={<X className="h-4 w-4" />} label="Deny" sub="block" />
         </div>
       ) : (
-        <div className="flex justify-end">
-          <Btn action="revoke" tone="deny" icon={<Ban className="h-4 w-4" />} label="Revoke access" sub="" wide />
+        <div className="grid grid-cols-2 gap-2">
+          <Btn action="expire" tone="deny" icon={<Clock className="h-4 w-4" />} label="Expire now" sub="end access" />
+          <Btn action="revoke" tone="deny" icon={<Ban className="h-4 w-4" />} label="Revoke" sub="block" />
         </div>
       )}
 
