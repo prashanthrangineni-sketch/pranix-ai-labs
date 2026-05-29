@@ -3,7 +3,7 @@ import Link from 'next/link'
 import {
   LayoutDashboard, Bot, ListChecks, Bell, ShieldCheck,
   Brain, Monitor, Lock, Activity, Rocket, Package,
-  Settings, Network, ChevronDown, Clock, Sparkles, Boxes,
+  Settings, Network, ChevronDown, Clock, Sparkles, Boxes, Cpu,
 } from 'lucide-react'
 
 export const metadata: Metadata = {
@@ -29,6 +29,7 @@ const SIDEBAR_NAV = [
   { label: 'Products',             href: '/founder/products',     icon: Package },
   { label: 'Accounts',             href: '/founder/accounts',     icon: Boxes },
   { label: 'Settings',             href: '/founder/more',         icon: Settings },
+  { label: 'AI Models',            href: '/founder/ai',           icon: Cpu,        badgeText: 'NEW' },
   { label: 'Orchestration',        href: '/founder/orchestrate',  icon: Network,    badgeText: 'NEW' },
 ] as const
 
