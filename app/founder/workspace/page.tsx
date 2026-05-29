@@ -4,6 +4,10 @@ import {
   LayoutGrid, Cpu, HeartPulse, Layers, DollarSign, Rocket, AlertTriangle,
   ShieldCheck, Boxes, ChevronRight, Settings2,
 } from 'lucide-react'
+import ProviderControls from '../orchestrate/ProviderControls'
+import ModelControls from './ModelControls'
+import BudgetControl from './BudgetControl'
+import { getControlPlane } from '@/app/lib/control-plane'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'AI Workspace' }
@@ -46,6 +50,7 @@ const TH = 'text-left text-[10px] uppercase tracking-wide text-fg-disabled font-
 const TD = 'text-[12px] text-fg-secondary py-1.5 pr-4 align-top'
 
 const SECTIONS = [
+  { id: 'controls', label: 'Controls' },
   { id: 'overview', label: 'Overview' },
   { id: 'providers', label: 'Providers' },
   { id: 'models', label: 'Models' },
@@ -58,6 +63,17 @@ const SECTIONS = [
 
 export default async function WorkspacePage() {
   const w = await getWorkspace()
+
+  let founderBudget: number | null = null
+  try {
+    const { data: bRow } = await getControlPlane()
+      .from('provider_registry')
+      .select('config_json')
+      .eq('provider_name', 'anthropic')
+      .maybeSingle()
+    const v = (bRow?.config_json as Record<string, unknown> | null)?.max_daily_budget_usd
+    founderBudget = v === undefined || v === null ? null : Number(v)
+  } catch {}
 
   const capByAgent = new Map<string, typeof w.capabilities>()
   for (const c of w.capabilities) {
@@ -73,7 +89,7 @@ export default async function WorkspacePage() {
         <h1 className="text-xl font-semibold text-fg-primary tracking-tight">AI Workspace</h1>
         <p className="text-[13px] text-fg-muted mt-1">
           The single destination for AI management — providers, models, capabilities, health, cost, onboarding, and approvals.
-          Read-only today; operational controls arrive here (approval-gated) in the next phase.
+          Live controls below — budget, providers, priority, and models. Changes apply immediately (spend-increasing actions ask for confirmation) and are audited.
         </p>
       </div>
 
@@ -83,6 +99,31 @@ export default async function WorkspacePage() {
           <a key={s.id} href={`#${s.id}`} className="rounded-md border border-border-subtle bg-surface px-2.5 py-1 text-[11px] text-fg-muted hover:text-fg-primary hover:bg-elevated transition-colors">{s.label}</a>
         ))}
       </div>
+
+      {/* Operational controls (F.2) — live, runtime obeys */}
+      <Section id="controls" icon={<Settings2 className="h-4 w-4" />} title="Controls" sub="live · runtime obeys">
+        <div className="space-y-4">
+          <BudgetControl current={founderBudget} />
+          <div>
+            <p className="text-[11px] font-semibold text-fg-muted mb-2">Providers — enable / disable & priority</p>
+            <ProviderControls
+              providers={w.providers.map((p) => ({
+                provider_name: p.provider_name,
+                enabled: p.enabled,
+                tier: p.tier,
+                priority: p.priority,
+                health_status: p.health_status,
+                health_checked_at: null,
+              }))}
+              stats={{}}
+            />
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold text-fg-muted mb-2">Models — enable / disable</p>
+            <ModelControls models={w.models} />
+          </div>
+        </div>
+      </Section>
 
       {/* Overview */}
       <Section id="overview" icon={<LayoutGrid className="h-4 w-4" />} title="Overview" sub="single AI destination">
@@ -249,7 +290,7 @@ export default async function WorkspacePage() {
         )}
       </Section>
 
-      <p className="text-[11px] text-fg-disabled">Read-only. Activation, routing, and budget controls require founder approval and route through the Permission Center (next phase).</p>
+      <p className="text-[11px] text-fg-disabled">Controls above are live and audited (founder-gated). Agent access requests are still decided in the Permission Center.</p>
     </div>
   )
 }
