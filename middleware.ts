@@ -22,11 +22,25 @@ export async function middleware(request: NextRequest) {
   // auth silently fails. Forward the code to the reset page (which runs
   // exchangeCodeForSession + shows the set-password form) and errors to login.
   if (pathname === '/') {
-    const authCode = request.nextUrl.searchParams.get('code')
+    const sp = request.nextUrl.searchParams
+    const authCode = sp.get('code')
+    const tokenHash = sp.get('token_hash')
+    const type = sp.get('type')
     const authErr =
-      request.nextUrl.searchParams.get('error_description') ||
-      request.nextUrl.searchParams.get('error_code') ||
-      request.nextUrl.searchParams.get('error')
+      sp.get('error_description') || sp.get('error_code') || sp.get('error')
+
+    // Stateless OTP / recovery flow (no PKCE verifier needed). Forward to the
+    // confirm route, which calls verifyOtp() server-side — works on any device,
+    // including when the email opens in a different browser than it was requested.
+    if (tokenHash && type) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/founder/auth/confirm'
+      if (!sp.get('next')) {
+        url.searchParams.set('next', type === 'recovery' ? '/founder/account' : '/founder')
+      }
+      return NextResponse.redirect(url)
+    }
+    // PKCE code flow (same-browser): the reset page exchanges it client-side.
     if (authCode) {
       const url = request.nextUrl.clone()
       url.pathname = '/founder/auth/reset'
