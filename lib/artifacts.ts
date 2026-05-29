@@ -59,7 +59,7 @@ export async function getArtifactGovernance(): Promise<ArtifactGovernance> {
     e.rows += r.row_count ?? 0
     byKindMap.set(r.kind, e)
   }
-  const byKind = [...byKindMap.values()].sort((a, b) => b.entries - a.entries)
+  const byKind = Array.from(byKindMap.values()).sort((a, b) => b.entries - a.entries)
 
   const purgeable = rows.filter((r) => r.retention === 'purgeable')
   const legalHold = rows.filter((r) => r.retention === 'legal_hold').length
