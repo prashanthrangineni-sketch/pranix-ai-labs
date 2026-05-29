@@ -64,6 +64,17 @@ const SECTIONS = [
 export default async function WorkspacePage() {
   const w = await getWorkspace()
 
+  let founderBudget: number | null = null
+  try {
+    const { data: bRow } = await getControlPlane()
+      .from('provider_registry')
+      .select('config_json')
+      .eq('provider_name', 'anthropic')
+      .maybeSingle()
+    const v = (bRow?.config_json as Record<string, unknown> | null)?.max_daily_budget_usd
+    founderBudget = v === undefined || v === null ? null : Number(v)
+  } catch {}
+
   const capByAgent = new Map<string, typeof w.capabilities>()
   for (const c of w.capabilities) {
     const arr = capByAgent.get(c.agent_name) ?? []
