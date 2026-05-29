@@ -290,7 +290,7 @@ export default async function WorkspacePage() {
         )}
       </Section>
 
-      <p className="text-[11px] text-fg-disabled">Read-only. Activation, routing, and budget controls require founder approval and route through the Permission Center (next phase).</p>
+      <p className="text-[11px] text-fg-disabled">Controls above are live and audited (founder-gated). Agent access requests are still decided in the Permission Center.</p>
     </div>
   )
 }
