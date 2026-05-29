@@ -50,6 +50,7 @@ const TH = 'text-left text-[10px] uppercase tracking-wide text-fg-disabled font-
 const TD = 'text-[12px] text-fg-secondary py-1.5 pr-4 align-top'
 
 const SECTIONS = [
+  { id: 'controls', label: 'Controls' },
   { id: 'overview', label: 'Overview' },
   { id: 'providers', label: 'Providers' },
   { id: 'models', label: 'Models' },
