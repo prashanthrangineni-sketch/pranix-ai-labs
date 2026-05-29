@@ -293,7 +293,7 @@ export default async function FounderOverviewPage() {
               <span className={row.color}>{row.value}</span>
             </div>
           ))}
-          <Link href="/founder/more"
+          <Link href="/founder/account"
                 className="mt-4 w-full flex items-center justify-center gap-1.5 rounded-lg border border-severity-critical/30 py-1.5 text-[12px] font-medium text-severity-critical hover:bg-severity-critical/10 transition-colors">
             Sign Out
           </Link>
