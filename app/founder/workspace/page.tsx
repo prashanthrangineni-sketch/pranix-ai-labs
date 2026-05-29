@@ -4,6 +4,10 @@ import {
   LayoutGrid, Cpu, HeartPulse, Layers, DollarSign, Rocket, AlertTriangle,
   ShieldCheck, Boxes, ChevronRight, Settings2,
 } from 'lucide-react'
+import ProviderControls from '../orchestrate/ProviderControls'
+import ModelControls from './ModelControls'
+import BudgetControl from './BudgetControl'
+import { getControlPlane } from '@/app/lib/control-plane'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'AI Workspace' }
