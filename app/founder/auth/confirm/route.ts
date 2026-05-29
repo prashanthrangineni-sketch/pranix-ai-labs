@@ -15,26 +15,32 @@ export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
   const tokenHash = searchParams.get('token_hash')
-  const type = searchParams.get('type') as 'magiclink' | 'email' | null
+  const type = searchParams.get('type') as
+    | 'magiclink'
+    | 'email'
+    | 'recovery'
+    | 'signup'
+    | 'invite'
+    | 'email_change'
+    | null
   const nextParam = searchParams.get('next')
 
   const supabase = createServerClient()
 
-  // Flow 1: OTP/magic-link verification (token_hash + type)
+  // Flow 1: OTP / magic-link / recovery verification (token_hash + type).
+  // Stateless — no PKCE verifier — so it works on any device.
   if (tokenHash && type) {
-    const { error } = await supabase.auth.verifyOtp({
-      token_hash: tokenHash,
-      type: type === 'email' ? 'email' : 'magiclink',
-    })
+    const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type })
     if (error) {
       return NextResponse.redirect(
         `${origin}/founder/login?error=${encodeURIComponent(error.message)}`
       )
     }
+    const fallback = type === 'recovery' ? '/founder/account' : '/founder'
     const safeNext =
       nextParam && nextParam.startsWith('/founder') && !nextParam.startsWith('//')
         ? nextParam
-        : '/founder'
+        : fallback
     return NextResponse.redirect(`${origin}${safeNext}`)
   }
 
