@@ -98,19 +98,41 @@ export default function ProviderControls({
 
             {/* Real controls — write provider_registry via /api/founder/providers */}
             <div className="flex items-center gap-2 mt-2.5 pt-2.5 border-t border-border-subtle">
-              <button
-                type="button"
-                disabled={isBusy}
-                onClick={() => call(p.provider_name, p.enabled ? 'disable' : 'enable')}
-                className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors disabled:opacity-50 ${
-                  p.enabled
-                    ? 'bg-severity-error/10 text-severity-error hover:bg-severity-error/20'
-                    : 'bg-severity-success/10 text-severity-success hover:bg-severity-success/20'
-                }`}
-              >
-                {isBusy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Power className="h-3 w-3" />}
-                {p.enabled ? 'Disable' : 'Enable'}
-              </button>
+              {confirmEnable === p.provider_name ? (
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    disabled={isBusy}
+                    onClick={() => { setConfirmEnable(null); call(p.provider_name, 'enable') }}
+                    className="flex items-center gap-1.5 rounded-md bg-severity-warn/20 px-2.5 py-1 text-[11px] font-medium text-severity-warn disabled:opacity-50"
+                  >
+                    {isBusy ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+                    Confirm enable
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isBusy}
+                    onClick={() => setConfirmEnable(null)}
+                    className="rounded-md bg-elevated px-2 py-1 text-[11px] text-fg-secondary"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  disabled={isBusy}
+                  onClick={() => (p.enabled ? call(p.provider_name, 'disable') : setConfirmEnable(p.provider_name))}
+                  className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors disabled:opacity-50 ${
+                    p.enabled
+                      ? 'bg-severity-error/10 text-severity-error hover:bg-severity-error/20'
+                      : 'bg-severity-success/10 text-severity-success hover:bg-severity-success/20'
+                  }`}
+                >
+                  {isBusy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Power className="h-3 w-3" />}
+                  {p.enabled ? 'Disable' : 'Enable'}
+                </button>
+              )}
 
               <div className="flex items-center gap-1 ml-auto">
                 <span className="text-[10px] text-fg-disabled">priority</span>
