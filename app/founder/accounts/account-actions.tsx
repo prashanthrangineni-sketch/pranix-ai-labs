@@ -11,11 +11,10 @@ import { requestAccountAction, type AccountActionState, type AccountActionKind }
 export function AccountActions({
   integrationId,
   integrationName,
-  monitored,
 }: {
   integrationId: string
   integrationName: string
-  monitored: boolean
+  monitored?: boolean
 }) {
   const [state, action] = useFormState<AccountActionState | null, FormData>(
     requestAccountAction,
