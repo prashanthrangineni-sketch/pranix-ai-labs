@@ -153,6 +153,10 @@ export default async function FounderOrchestratePage() {
 
   return (
     <div className="px-4 py-6 space-y-6">
+      <Link href="/founder/workspace" className="flex items-center justify-between gap-2 rounded-lg border border-accent/30 bg-accent-subtle px-3 py-2 text-[12px] text-accent hover:opacity-90 transition-opacity">
+        <span>Provider controls now live under the AI Workspace — one destination for providers, models, costs &amp; health.</span>
+        <span className="font-medium shrink-0">Open Workspace →</span>
+      </Link>
       <div className="flex items-center gap-2">
         <Cpu className="h-5 w-5 text-fg-muted" />
         <h1 className="text-lg font-semibold text-fg-primary">Orchestration</h1>
