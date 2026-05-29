@@ -211,18 +211,7 @@ export default async function FounderOverviewPage() {
                 }`}>{w.online ? 'Online' : 'Offline'}</span>
               </div>
             )) : (
-              ['Tier 0 — Vercel Cron','Tier 1 — Supabase Edge Function','Tier 2 — Fly.io Browser Worker'].map((t, i) => (
-                <div key={t} className="flex items-start gap-3">
-                  <span className={`mt-1 h-2 w-2 rounded-full shrink-0 ${i < 2 ? 'bg-severity-success' : 'bg-fg-disabled'}`} />
-                  <div className="flex-1">
-                    <p className="text-[12px] font-medium text-fg-primary">{t}</p>
-                    <p className="text-[11px] text-fg-muted">{['60s tick, lightweight task claiming','2min tick, heavy task processing','Playwright automation, not yet deployed'][i]}</p>
-                  </div>
-                  <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${i < 2 ? 'bg-severity-success/15 text-severity-success' : 'bg-elevated text-fg-disabled'}`}>
-                    {i < 2 ? 'Online' : 'Offline'}
-                  </span>
-                </div>
-              ))
+              <p className="text-[12px] text-fg-muted">No worker telemetry yet.</p>
             )}
           </div>
         </Panel>
