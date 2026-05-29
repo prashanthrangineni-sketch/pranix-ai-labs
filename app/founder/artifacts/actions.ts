@@ -6,7 +6,7 @@ import { getControlPlane } from '@/app/lib/control-plane'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-export type ActionResult = { ok: boolean; message: string }
+type ActionResult = { ok: boolean; message: string }
 
 const DIRECT: string[] = ['mark_canonical', 'mark_reviewed', 'mark_superseded']
 const ROUTED: string[] = ['request_archive', 'request_purge']
