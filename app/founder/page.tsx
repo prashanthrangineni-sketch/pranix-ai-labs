@@ -279,9 +279,8 @@ export default async function FounderOverviewPage() {
               <ChevronRight className="h-3.5 w-3.5 shrink-0" />
             </Link>
           </div>
-          <p className="text-[11px] font-semibold text-fg-muted mb-2.5">Other Settings</p>
+          <p className="text-[11px] font-semibold text-fg-muted mb-2.5">Settings</p>
           {[
-            { label: 'WhatsApp Alerts',    value: 'Enabled',       color: 'text-severity-success' },
             { label: 'Timezone',           value: 'Asia/Kolkata',  color: 'text-fg-secondary' },
             { label: 'Next Digest',        value: `in ${diffH}h ${diffM}m`, color: 'text-accent' },
           ].map(row => (
