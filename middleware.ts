@@ -16,6 +16,31 @@ const PUBLIC_FOUNDER_PATHS = [
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // Supabase delivers auth links (recovery / magic-link) to the configured
+  // Site URL — which is the root "/" — appending ?code=... (PKCE) or ?error=...
+  // Nothing at "/" exchanges the code, so the founder lands on the homepage and
+  // auth silently fails. Forward the code to the reset page (which runs
+  // exchangeCodeForSession + shows the set-password form) and errors to login.
+  if (pathname === '/') {
+    const authCode = request.nextUrl.searchParams.get('code')
+    const authErr =
+      request.nextUrl.searchParams.get('error_description') ||
+      request.nextUrl.searchParams.get('error_code') ||
+      request.nextUrl.searchParams.get('error')
+    if (authCode) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/founder/auth/reset'
+      return NextResponse.redirect(url)
+    }
+    if (authErr) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/founder/login'
+      url.search = ''
+      url.searchParams.set('error', authErr)
+      return NextResponse.redirect(url)
+    }
+  }
+
   let response = NextResponse.next({ request })
 
   const supabase = createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
