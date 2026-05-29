@@ -3,8 +3,7 @@ import Link from 'next/link'
 import {
   LayoutDashboard, Bot, ListChecks, Bell, ShieldCheck,
   Brain, Monitor, Lock, Activity, Rocket, Package,
-  Settings, Network, ChevronDown, Clock, TriangleAlert,
-  Sun,
+  Settings, Network, ChevronDown, Clock,
 } from 'lucide-react'
 
 export const metadata: Metadata = {
@@ -12,20 +11,23 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
+// Nav items only. No hardcoded counts — a badge is shown only when a real
+// count is wired (none are yet, so none are shown). 'NEW' is a static label,
+// not telemetry.
 const SIDEBAR_NAV = [
   { label: 'Overview',             href: '/founder',              icon: LayoutDashboard },
   { label: 'Agents',               href: '/founder/workers',      icon: Bot },
   { label: 'Tasks',                href: '/founder/tasks',        icon: ListChecks },
-  { label: 'Alerts',               href: '/founder/alerts',       icon: Bell,       badge: 27 },
-  { label: 'Approvals',            href: '/founder/approvals',    icon: ShieldCheck, badge: 0 },
+  { label: 'Alerts',               href: '/founder/alerts',       icon: Bell },
+  { label: 'Approvals',            href: '/founder/approvals',    icon: ShieldCheck },
   { label: 'Memory',               href: '/founder/memory',       icon: Brain },
   { label: 'Browser Intelligence', href: '/founder/baselines',    icon: Monitor },
   { label: 'Protocols',            href: '/founder/more',         icon: Lock },
   { label: 'Observability',        href: '/founder/more',         icon: Activity },
   { label: 'Deployments',          href: '/founder/more',         icon: Rocket },
   { label: 'Products',             href: '/founder/products',     icon: Package },
-  { label: 'Settings',             href: '/founder/more',         icon: Settings,   chevron: true },
-  { label: 'Orchestration',        href: '/founder/orchestrate',  icon: Network,    chevron: true, badgeText: 'NEW' },
+  { label: 'Settings',             href: '/founder/more',         icon: Settings },
+  { label: 'Orchestration',        href: '/founder/orchestrate',  icon: Network,    badgeText: 'NEW' },
 ] as const
 
 const BOTTOM_NAV = [
@@ -63,48 +65,19 @@ export default function FounderLayout({ children }: { children: React.ReactNode 
                   className="group flex items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] text-fg-muted hover:bg-elevated hover:text-fg-primary transition-colors">
               <item.icon className="h-4 w-4 shrink-0 text-fg-disabled group-hover:text-fg-muted" />
               <span className="flex-1 leading-none">{item.label}</span>
-              {'badge' in item && typeof item.badge === 'number' && item.badge > 0 && (
-                <span className="rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none bg-severity-critical/20 text-severity-critical">
-                  {item.badge}
-                </span>
-              )}
-              {'badge' in item && item.badge === 0 && (
-                <span className="rounded-full px-1.5 py-0.5 text-[10px] font-medium leading-none bg-elevated text-fg-disabled">0</span>
-              )}
               {'badgeText' in item && item.badgeText && (
                 <span className="rounded px-1 py-0.5 text-[9px] font-bold leading-none bg-accent-subtle text-accent">{item.badgeText}</span>
-              )}
-              {'chevron' in item && item.chevron && (
-                <ChevronDown className="h-3 w-3 text-fg-disabled" />
               )}
             </Link>
           ))}
         </nav>
 
-        {/* System Mode */}
-        <div className="border-t border-border-subtle px-3.5 py-3">
-          <p className="text-[10px] uppercase tracking-widest text-fg-disabled font-medium mb-2">System Mode</p>
-          <div className="flex items-center gap-2 mb-2.5">
-            <ShieldCheck className="h-4 w-4 text-severity-success shrink-0" />
-            <div>
-              <p className="text-[13px] font-medium text-fg-primary leading-none">Normal</p>
-              <p className="text-[11px] text-fg-disabled mt-0.5">All systems operational</p>
-            </div>
-          </div>
-          <button className="w-full rounded-md py-1.5 text-[12px] font-medium text-white transition-colors"
-                  style={{ background: '#3b82f6' }}>
-            Change Mode
-          </button>
-        </div>
-
-        {/* Next Digest */}
+        {/* Next Digest — real scheduled founder briefing */}
         <div className="border-t border-border-subtle px-3.5 py-3">
           <p className="text-[10px] uppercase tracking-widest text-fg-disabled font-medium mb-2">Next Digest</p>
           <div className="flex items-center gap-2">
             <Clock className="h-3.5 w-3.5 text-accent shrink-0" />
-            <div>
-              <p className="text-[12px] text-fg-secondary leading-none">Daily at 05:00 AM IST</p>
-            </div>
+            <p className="text-[12px] text-fg-secondary leading-none">Daily at 05:00 AM IST</p>
           </div>
         </div>
       </aside>
@@ -122,23 +95,13 @@ export default function FounderLayout({ children }: { children: React.ReactNode 
 
           <div className="flex-1" />
 
-          {/* System status pill */}
-          <div className="hidden sm:flex items-center gap-2 rounded-lg border border-border-subtle bg-canvas px-3 py-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-severity-success" />
-            <span className="text-[11px] text-fg-muted">System Status</span>
-            <span className="text-[11px] font-medium text-severity-success">Healthy</span>
-          </div>
-
-          <button className="relative p-2 rounded-lg hover:bg-elevated transition-colors text-fg-muted hover:text-fg-primary">
-            <Sun className="h-4 w-4" />
-          </button>
-
-          <Link href="/founder/alerts" className="relative p-2 rounded-lg hover:bg-elevated transition-colors text-fg-muted hover:text-fg-primary">
+          {/* Alerts (real link; badge intentionally omitted until a live count is wired) */}
+          <Link href="/founder/alerts" className="relative p-2 rounded-lg hover:bg-elevated transition-colors text-fg-muted hover:text-fg-primary" aria-label="Alerts">
             <Bell className="h-4 w-4" />
-            <span className="absolute top-1 right-1 h-3.5 w-3.5 rounded-full flex items-center justify-center text-[8px] font-bold text-white bg-severity-critical">27</span>
           </Link>
 
-          <div className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-elevated cursor-pointer transition-colors">
+          {/* Account — tap to manage password / recovery secret / sign out */}
+          <Link href="/founder/account" className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-elevated cursor-pointer transition-colors">
             <div className="h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0"
                  style={{ background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)' }}>F</div>
             <div className="hidden sm:block text-left">
@@ -146,7 +109,7 @@ export default function FounderLayout({ children }: { children: React.ReactNode 
               <p className="text-[11px] text-fg-muted mt-0.5">founder@pranixailabs.com</p>
             </div>
             <ChevronDown className="hidden sm:block h-3 w-3 text-fg-disabled" />
-          </div>
+          </Link>
         </header>
 
         {/* Page content */}
@@ -154,31 +117,9 @@ export default function FounderLayout({ children }: { children: React.ReactNode 
           {children}
         </main>
 
-        {/* Bottom action bar (desktop) */}
-        <footer className="hidden lg:flex items-center gap-2 border-t border-border-subtle bg-surface px-6 py-2.5">
-          {[
-            { label: 'New Task', icon: '＋' },
-            { label: 'Send Message', icon: '↗' },
-            { label: 'Request Approval', icon: '⊙' },
-            { label: 'View Digest', icon: '◻' },
-          ].map(btn => (
-            <button key={btn.label}
-                    className="flex items-center gap-1.5 rounded-lg border border-border-subtle bg-elevated px-3.5 py-1.5 text-[12px] font-medium text-fg-secondary hover:text-fg-primary hover:bg-canvas transition-colors">
-              <span className="text-[13px]">{btn.icon}</span>
-              {btn.label}
-            </button>
-          ))}
-          <div className="flex-1" />
-          <button className="flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-[12px] font-medium text-white transition-opacity hover:opacity-90"
-                  style={{ background: '#3b82f6' }}>
-            <Activity className="h-3.5 w-3.5" />
-            System Snapshot
-          </button>
-        </footer>
-
         {/* Footer note */}
         <div className="hidden lg:block px-6 py-1.5 border-t border-border-subtle">
-          <p className="text-[10px] text-fg-disabled">© 2025 Pranix AI Labs · All systems operational</p>
+          <p className="text-[10px] text-fg-disabled">© 2026 Pranix AI Labs</p>
         </div>
       </div>
 
