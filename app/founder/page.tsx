@@ -211,18 +211,7 @@ export default async function FounderOverviewPage() {
                 }`}>{w.online ? 'Online' : 'Offline'}</span>
               </div>
             )) : (
-              ['Tier 0 — Vercel Cron','Tier 1 — Supabase Edge Function','Tier 2 — Fly.io Browser Worker'].map((t, i) => (
-                <div key={t} className="flex items-start gap-3">
-                  <span className={`mt-1 h-2 w-2 rounded-full shrink-0 ${i < 2 ? 'bg-severity-success' : 'bg-fg-disabled'}`} />
-                  <div className="flex-1">
-                    <p className="text-[12px] font-medium text-fg-primary">{t}</p>
-                    <p className="text-[11px] text-fg-muted">{['60s tick, lightweight task claiming','2min tick, heavy task processing','Playwright automation, not yet deployed'][i]}</p>
-                  </div>
-                  <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${i < 2 ? 'bg-severity-success/15 text-severity-success' : 'bg-elevated text-fg-disabled'}`}>
-                    {i < 2 ? 'Online' : 'Offline'}
-                  </span>
-                </div>
-              ))
+              <p className="text-[12px] text-fg-muted">No worker telemetry yet.</p>
             )}
           </div>
         </Panel>
@@ -270,21 +259,17 @@ export default async function FounderOverviewPage() {
         {/* Account / Settings panel */}
         <Panel title="Account Settings">
           <div className="space-y-1 mb-4">
-            {[
-              { label: 'Profile',          icon: '👤', active: false },
-              { label: 'Password',         icon: '🔒', active: true  },
-              { label: 'Two-Factor Auth',  icon: '🛡️', active: false, soon: true },
-            ].map(item => (
-              <div key={item.label} className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[12px] ${item.active ? 'bg-accent-subtle text-accent' : 'text-fg-muted'}`}>
-                <span>{item.icon}</span>
-                <span className="flex-1">{item.label}</span>
-                {item.soon && <span className="text-[9px] bg-elevated text-fg-disabled px-1.5 py-0.5 rounded">Soon</span>}
-              </div>
-            ))}
+            <Link href="/founder/account" className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[12px] text-fg-muted hover:bg-elevated hover:text-fg-primary transition-colors">
+              <span className="flex-1">Manage account &amp; password</span>
+              <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+            </Link>
+            <Link href="/founder/break-glass" className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[12px] text-fg-muted hover:bg-elevated hover:text-fg-primary transition-colors">
+              <span className="flex-1">Recovery secret</span>
+              <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+            </Link>
           </div>
-          <p className="text-[11px] font-semibold text-fg-muted mb-2.5">Other Settings</p>
+          <p className="text-[11px] font-semibold text-fg-muted mb-2.5">Settings</p>
           {[
-            { label: 'WhatsApp Alerts',    value: 'Enabled',       color: 'text-severity-success' },
             { label: 'Timezone',           value: 'Asia/Kolkata',  color: 'text-fg-secondary' },
             { label: 'Next Digest',        value: `in ${diffH}h ${diffM}m`, color: 'text-accent' },
           ].map(row => (
@@ -333,7 +318,7 @@ export default async function FounderOverviewPage() {
             <div>
               <div className="flex justify-between items-center mb-3">
                 <span className="text-[11px] text-fg-muted font-mono">Key: {forensic.key?.slice(0, 30)}</span>
-                <span className="text-[10px] px-2 py-0.5 rounded font-medium bg-severity-success/15 text-severity-success">Complete</span>
+                <span className="text-[10px] px-2 py-0.5 rounded font-medium bg-accent-subtle text-accent">Latest</span>
               </div>
               {[
                 ['Project', forensic.project],
