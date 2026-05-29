@@ -64,6 +64,7 @@ const ALLOWED: DecisionKind[] = [
   'allow_permanent',
   'deny',
   'revoke',
+  'expire',
 ]
 
 /** Founder gate: must be signed in AND present in dashboard_founders. */
