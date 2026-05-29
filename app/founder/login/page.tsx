@@ -97,8 +97,15 @@ function LoginForm() {
     setError(null)
     try {
       const supabase = createBrowserClient()
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/founder/auth/reset`,
+      // Recovery reuses the proven magic-link (token_hash/verifyOtp) flow, which
+      // is cross-device safe. resetPasswordForEmail used PKCE and failed on
+      // mobile (code_verifier missing when the email opens in another browser).
+      const { error: resetError } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          shouldCreateUser: false,
+          emailRedirectTo: `${window.location.origin}/founder/auth/confirm?next=/founder/account`,
+        },
       })
       if (resetError) {
         setError(resetError.message)
