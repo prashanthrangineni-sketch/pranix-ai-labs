@@ -5,22 +5,18 @@ import { Cpu, Clock, CheckCircle2, AlertTriangle, Circle } from 'lucide-react'
 export const metadata: Metadata = { title: 'Orchestration' }
 export const revalidate = 60
 
-// ─── Data fetching ────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────
 
-async function getTasksByTier(): Promise<Record<string, number>> {
-  const db = createServerClient()
-  const { data } = await db
-    .from('tasks')
-    .select('tier')
-    .not('tier', 'is', null)
-
-  const counts: Record<string, number> = {}
-  for (const row of data || []) {
-    const key = String(row.tier)
-    counts[key] = (counts[key] || 0) + 1
-  }
-  return counts
+type ProviderRow = {
+  provider_name: string
+  enabled: boolean | null
+  tier: number | null
+  priority: number | null
+  health_status: string | null
+  health_checked_at: string | null
 }
+
+type ProviderStat = { ok: number; fail: number; last?: string }
 
 type InferenceRow = {
   id: number
@@ -33,6 +29,61 @@ type InferenceRow = {
   latency_ms: number | null
   success: boolean | null
   created_at: string
+}
+
+// ─── Data fetching (all runtime, no hardcoded values) ─────────────
+
+async function getProviders(): Promise<ProviderRow[]> {
+  try {
+    const db = createServerClient()
+    const { data, error } = await db
+      .from('provider_registry')
+      .select('provider_name, enabled, tier, priority, health_status, health_checked_at')
+      .order('tier', { ascending: true })
+      .order('priority', { ascending: true })
+    if (error) return []
+    return (data as ProviderRow[]) || []
+  } catch {
+    return []
+  }
+}
+
+async function getProviderStats(): Promise<Record<string, ProviderStat>> {
+  try {
+    const db = createServerClient()
+    const { data } = await db
+      .from('inference_log')
+      .select('provider, success, created_at')
+    const m: Record<string, ProviderStat> = {}
+    for (const r of (data as { provider: string | null; success: boolean | null; created_at: string }[]) || []) {
+      const p = r.provider ?? '—'
+      if (!m[p]) m[p] = { ok: 0, fail: 0 }
+      if (r.success) {
+        m[p].ok++
+        if (!m[p].last || r.created_at > m[p].last!) m[p].last = r.created_at
+      } else {
+        m[p].fail++
+      }
+    }
+    return m
+  } catch {
+    return {}
+  }
+}
+
+async function getTasksByTier(): Promise<Record<string, number>> {
+  try {
+    const db = createServerClient()
+    const { data } = await db.from('tasks').select('tier').not('tier', 'is', null)
+    const counts: Record<string, number> = {}
+    for (const row of data || []) {
+      const key = String((row as { tier: number }).tier)
+      counts[key] = (counts[key] || 0) + 1
+    }
+    return counts
+  } catch {
+    return {}
+  }
 }
 
 async function getRecentInferenceCalls(): Promise<InferenceRow[]> {
@@ -53,14 +104,15 @@ async function getRecentInferenceCalls(): Promise<InferenceRow[]> {
 async function getInferenceTotals() {
   try {
     const db = createServerClient()
-    const { data } = await db
-      .from('inference_log')
-      .select('cost_usd, tokens_in, tokens_out, success')
+    const { data } = await db.from('inference_log').select('cost_usd, tokens_in, tokens_out, success')
     if (!data || data.length === 0) return null
     const total_calls = data.length
-    const total_cost = data.reduce((s, r) => s + (r.cost_usd || 0), 0)
-    const total_tokens = data.reduce((s, r) => s + (r.tokens_in || 0) + (r.tokens_out || 0), 0)
-    const success_rate = data.filter(r => r.success).length / total_calls
+    const total_cost = data.reduce((s, r) => s + ((r as InferenceRow).cost_usd || 0), 0)
+    const total_tokens = data.reduce(
+      (s, r) => s + ((r as InferenceRow).tokens_in || 0) + ((r as InferenceRow).tokens_out || 0),
+      0,
+    )
+    const success_rate = data.filter((r) => (r as InferenceRow).success).length / total_calls
     return { total_calls, total_cost, total_tokens, success_rate }
   } catch {
     return null
@@ -69,14 +121,33 @@ async function getInferenceTotals() {
 
 // ─── Page ────────────────────────────────────────────────────────
 
+const TIER_NAMES: Record<string, string> = {
+  '0': 'T0 — Deterministic (no LLM cost)',
+  '1': 'T1 — Fast / Free tier',
+  '2': 'T2 — Premium reasoning',
+  '3': 'T3 — Browser worker',
+}
+
 export default async function FounderOrchestratePage() {
-  const [tasksByTier, recentCalls, totals] = await Promise.all([
+  const [providers, stats, tasksByTier, recentCalls, totals] = await Promise.all([
+    getProviders(),
+    getProviderStats(),
     getTasksByTier(),
     getRecentInferenceCalls(),
     getInferenceTotals(),
   ])
 
   const hasInferenceCalls = recentCalls.length > 0
+  const enabledCount = providers.filter((p) => p.enabled).length
+
+  // Group providers by tier for display
+  const byTier: Record<string, ProviderRow[]> = {}
+  for (const p of providers) {
+    const key = String(p.tier ?? '?')
+    if (!byTier[key]) byTier[key] = []
+    byTier[key].push(p)
+  }
+  const tierKeys = Object.keys(byTier).sort()
 
   return (
     <div className="px-4 py-6 space-y-6">
@@ -85,42 +156,46 @@ export default async function FounderOrchestratePage() {
         <h1 className="text-lg font-semibold text-fg-primary">Orchestration</h1>
       </div>
 
-      {/* Tier configuration */}
+      {/* Provider registry — REAL data from provider_registry */}
       <section className="space-y-2">
         <div className="flex items-center justify-between">
-          <h2 className="text-xs font-medium text-fg-muted">Inference Tiers</h2>
-          <span className="text-[10px] text-fg-disabled">Configuration — not live telemetry</span>
+          <h2 className="text-xs font-medium text-fg-muted">AI Providers</h2>
+          <span className="text-[10px] text-fg-disabled">
+            {providers.length > 0 ? `${enabledCount} of ${providers.length} enabled` : 'live'}
+          </span>
         </div>
-        <div className="space-y-2">
-          <TierCard
-            tier="T0"
-            name="Deterministic"
-            description="Rule-based routing, no LLM call"
-            status="active"
-            note="Always available"
-          />
-          <TierCard
-            tier="T1"
-            name="Ollama / NVIDIA NIM"
-            description="Local or GPU-accelerated inference"
-            status="config-missing"
-            note="NVIDIA_API_KEY not set in engine env"
-          />
-          <TierCard
-            tier="T2"
-            name="Anthropic Claude"
-            description="Premium reasoning via Claude API"
-            status="config-missing"
-            note="PMCP_ANTHROPIC_API_KEY not set in engine env"
-          />
-          <TierCard
-            tier="T3"
-            name="Browser Worker"
-            description="Playwright automation on Fly.io"
-            status="not-deployed"
-            note="Fly.io VM not yet provisioned"
-          />
-        </div>
+
+        {providers.length === 0 ? (
+          <div className="rounded-lg border border-border-subtle bg-surface px-4 py-5 space-y-1">
+            <p className="text-xs text-fg-muted">Provider registry not readable by the dashboard client.</p>
+            <p className="text-[11px] text-fg-disabled">
+              The table exists but this view returned no rows — likely a missing SELECT grant /
+              RLS policy on <span className="font-mono">provider_registry</span> for the dashboard
+              role. Grant read access (or point this page at the service-role client) and providers
+              will appear here automatically.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {tierKeys.map((tk) => (
+              <div key={tk} className="space-y-2">
+                <p className="text-[10px] uppercase tracking-widest text-fg-disabled font-medium">
+                  {TIER_NAMES[tk] ?? `Tier ${tk}`}
+                </p>
+                <div className="space-y-2">
+                  {byTier[tk].map((p) => (
+                    <ProviderCard key={p.provider_name} provider={p} stat={stats[p.provider_name]} />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <p className="text-[10px] text-fg-disabled pt-1">
+          This view is read-only. Enable/disable, set-primary, reorder and test controls ship next
+          (P1) once the engine&apos;s read of this table at routing time is confirmed.
+        </p>
       </section>
 
       {/* Task distribution by tier — real DB */}
@@ -131,27 +206,26 @@ export default async function FounderOrchestratePage() {
             <p className="text-xs text-fg-muted">No tier data on tasks yet.</p>
           ) : (
             <div className="space-y-2">
-              {TIER_LABELS.map(({ key, label }) => {
-                const count = tasksByTier[key] || 0
-                const total = Object.values(tasksByTier).reduce((a, b) => a + b, 0)
-                const pct = total > 0 ? Math.round((count / total) * 100) : 0
-                return (
-                  <div key={key} className="space-y-1">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-fg-secondary">{label}</span>
-                      <span className="font-mono text-fg-primary" data-numeric>
-                        {count.toLocaleString()} ({pct}%)
-                      </span>
+              {Object.keys(tasksByTier)
+                .sort()
+                .map((key) => {
+                  const count = tasksByTier[key] || 0
+                  const total = Object.values(tasksByTier).reduce((a, b) => a + b, 0)
+                  const pct = total > 0 ? Math.round((count / total) * 100) : 0
+                  return (
+                    <div key={key} className="space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-fg-secondary">{TIER_NAMES[key] ?? `Tier ${key}`}</span>
+                        <span className="font-mono text-fg-primary" data-numeric>
+                          {count.toLocaleString()} ({pct}%)
+                        </span>
+                      </div>
+                      <div className="h-1.5 w-full rounded-full bg-elevated overflow-hidden">
+                        <div className="h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
+                      </div>
                     </div>
-                    <div className="h-1.5 w-full rounded-full bg-elevated overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-accent"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                  </div>
-                )
-              })}
+                  )
+                })}
             </div>
           )}
         </div>
@@ -175,13 +249,8 @@ export default async function FounderOrchestratePage() {
         <h2 className="text-xs font-medium text-fg-muted">Recent Inference Calls</h2>
         <div className="rounded-lg border border-border-subtle bg-surface">
           {!hasInferenceCalls ? (
-            <div className="px-4 py-5 space-y-1">
+            <div className="px-4 py-5">
               <p className="text-xs text-fg-muted">No inference calls logged yet.</p>
-              <p className="text-[11px] text-fg-disabled">
-                Calls will appear here once NVIDIA_API_KEY and
-                PMCP_ANTHROPIC_API_KEY are set on the engine Vercel project
-                and the inference router processes its first task.
-              </p>
             </div>
           ) : (
             <ul className="divide-y divide-border-subtle">
@@ -203,16 +272,14 @@ export default async function FounderOrchestratePage() {
                       {call.tokens_in !== null && (
                         <span data-numeric>{(call.tokens_in + (call.tokens_out || 0)).toLocaleString()} tok</span>
                       )}
-                      {call.latency_ms !== null && (
-                        <span data-numeric>{call.latency_ms}ms</span>
-                      )}
-                      {call.cost_usd !== null && (
-                        <span data-numeric>${call.cost_usd.toFixed(5)}</span>
-                      )}
+                      {call.latency_ms !== null && <span data-numeric>{call.latency_ms}ms</span>}
+                      {call.cost_usd !== null && <span data-numeric>${call.cost_usd.toFixed(5)}</span>}
                       <span className="text-fg-disabled">
                         {new Date(call.created_at).toLocaleString('en-IN', {
-                          month: 'short', day: 'numeric',
-                          hour: '2-digit', minute: '2-digit',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
                         })}
                       </span>
                     </div>
@@ -221,33 +288,6 @@ export default async function FounderOrchestratePage() {
               ))}
             </ul>
           )}
-        </div>
-      </section>
-
-      {/* Pending configuration */}
-      <section className="space-y-2">
-        <h2 className="text-xs font-medium text-fg-muted">Pending Configuration</h2>
-        <div className="rounded-lg border border-border-subtle bg-surface p-4 space-y-3">
-          <ConfigItem
-            done={false}
-            label="NVIDIA_API_KEY"
-            detail="Engine Vercel env — enables T1 NVIDIA NIM tier"
-          />
-          <ConfigItem
-            done={false}
-            label="PMCP_ANTHROPIC_API_KEY"
-            detail="Engine Vercel env — enables T2 Anthropic tier"
-          />
-          <ConfigItem
-            done={false}
-            label="Fly.io browser worker"
-            detail="Oracle VM provisioning pending — enables T3 Playwright automation"
-          />
-          <ConfigItem
-            done={true}
-            label="T0 deterministic router"
-            detail="Always active — no env vars required"
-          />
         </div>
       </section>
 
@@ -261,57 +301,47 @@ export default async function FounderOrchestratePage() {
 
 // ─── Sub-components ───────────────────────────────────────────────
 
-const TIER_LABELS = [
-  { key: '0', label: 'T0 — Deterministic' },
-  { key: '1', label: 'T1 — Ollama / NVIDIA' },
-  { key: '2', label: 'T2 — Anthropic' },
-  { key: '3', label: 'T3 — Browser Worker' },
-]
+function healthVisual(enabled: boolean | null, health: string | null) {
+  if (!enabled) {
+    return { dot: 'bg-fg-disabled', Icon: Circle, icon: 'text-fg-disabled', label: 'Disabled' }
+  }
+  const h = (health || '').toLowerCase()
+  if (h === 'ok' || h === 'healthy') {
+    return { dot: 'bg-severity-success', Icon: CheckCircle2, icon: 'text-severity-success', label: 'Healthy' }
+  }
+  if (h.includes('offline') || h.includes('down')) {
+    return { dot: 'bg-severity-error', Icon: AlertTriangle, icon: 'text-severity-error', label: 'Offline' }
+  }
+  return { dot: 'bg-severity-warn', Icon: AlertTriangle, icon: 'text-severity-warn', label: health || 'Unknown' }
+}
 
-type TierStatus = 'active' | 'config-missing' | 'not-deployed'
-
-function TierCard({
-  tier, name, description, status, note,
-}: {
-  tier: string
-  name: string
-  description: string
-  status: TierStatus
-  note: string
-}) {
-  const dotClass =
-    status === 'active'
-      ? 'bg-severity-success'
-      : status === 'config-missing'
-      ? 'bg-severity-warn'
-      : 'bg-fg-disabled'
-
-  const Icon =
-    status === 'active'
-      ? CheckCircle2
-      : status === 'config-missing'
-      ? AlertTriangle
-      : Circle
-
-  const iconClass =
-    status === 'active'
-      ? 'text-severity-success'
-      : status === 'config-missing'
-      ? 'text-severity-warn'
-      : 'text-fg-disabled'
+function ProviderCard({ provider, stat }: { provider: ProviderRow; stat?: ProviderStat }) {
+  const v = healthVisual(provider.enabled, provider.health_status)
+  const lastSuccess = stat?.last
+    ? new Date(stat.last).toLocaleString('en-IN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+    : null
 
   return (
     <div className="flex items-start gap-3 rounded-lg border border-border-subtle bg-surface p-3">
-      <span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${dotClass}`} />
+      <span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${v.dot}`} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2">
-          <span className="text-xs font-medium text-fg-primary">
-            {tier} — {name}
-          </span>
-          <Icon className={`h-3.5 w-3.5 shrink-0 ${iconClass}`} />
+          <span className="text-xs font-medium text-fg-primary truncate">{provider.provider_name}</span>
+          <v.Icon className={`h-3.5 w-3.5 shrink-0 ${v.icon}`} />
         </div>
-        <p className="text-[11px] text-fg-muted mt-0.5">{description}</p>
-        <p className="text-[10px] text-fg-disabled mt-0.5">{note}</p>
+        <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-fg-muted mt-0.5">
+          <span className={provider.enabled ? 'text-severity-success' : 'text-fg-disabled'}>
+            {provider.enabled ? 'Enabled' : 'Disabled'}
+          </span>
+          <span>{v.label}</span>
+          {provider.priority !== null && <span data-numeric>priority {provider.priority}</span>}
+          {stat && (stat.ok > 0 || stat.fail > 0) && (
+            <span data-numeric>
+              {stat.ok} ok / {stat.fail} fail
+            </span>
+          )}
+          {lastSuccess && <span className="text-fg-disabled">last ok {lastSuccess}</span>}
+        </div>
       </div>
     </div>
   )
@@ -320,28 +350,10 @@ function TierCard({
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-md border border-border-subtle bg-surface p-3">
-      <div className="text-sm font-semibold text-fg-primary" data-numeric>{value}</div>
-      <div className="text-[10px] text-fg-muted mt-0.5">{label}</div>
-    </div>
-  )
-}
-
-function ConfigItem({
-  done, label, detail,
-}: {
-  done: boolean
-  label: string
-  detail: string
-}) {
-  return (
-    <div className="flex items-start gap-2">
-      <span className={`mt-0.5 h-3.5 w-3.5 shrink-0 rounded-sm border text-[9px] flex items-center justify-center font-bold ${done ? 'border-severity-success text-severity-success' : 'border-border-strong text-fg-disabled'}`}>
-        {done ? '✓' : ''}
-      </span>
-      <div className="min-w-0">
-        <div className="text-xs font-mono text-fg-primary">{label}</div>
-        <div className="text-[10px] text-fg-muted">{detail}</div>
+      <div className="text-sm font-semibold text-fg-primary" data-numeric>
+        {value}
       </div>
+      <div className="text-[10px] text-fg-muted mt-0.5">{label}</div>
     </div>
   )
 }
