@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import {
   LayoutDashboard, Bot, ListChecks, Bell, ShieldCheck,
-  Brain, Monitor, Lock, Activity, Rocket, Package,
-  Settings, Network, ChevronDown, Clock, Sparkles, Boxes, Cpu, Archive,
+  Brain, Monitor, Package,
+  Network, ChevronDown, Clock, Sparkles, Boxes, Cpu, Archive,
 } from 'lucide-react'
 
 export const metadata: Metadata = {
