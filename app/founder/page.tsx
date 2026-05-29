@@ -186,7 +186,7 @@ export default async function FounderOverviewPage() {
 
       {/* ── Stat bar ── */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        <StatCard icon={HeartPulse}  iconColor="#22c55e" label="System Health"  value={pulse.isOperational ? 'Healthy' : 'Degraded'} sub={`${pulse.needsAttention} signals need attention`}  valueClass="text-severity-success" />
+        <StatCard icon={HeartPulse}  iconColor="#22c55e" label="System Health"  value={pulse.isOperational ? 'Healthy' : 'Degraded'} sub={`${pulse.needsAttention} signals need attention`}  valueClass={pulse.isOperational ? 'text-severity-success' : 'text-severity-warn'} />
         <StatCard icon={Cpu}         iconColor="#3b82f6" label="Workers"        value={pulse.workerStats.totalRuns.toLocaleString()} sub="Total runs" valueClass="text-fg-primary" />
         <StatCard icon={Database}    iconColor="#a855f7" label="Memory"         value={memCount.toLocaleString()}                   sub="Total memories" valueClass="text-fg-primary" />
         <StatCard icon={ListOrdered} iconColor="#f59e0b" label="Task Queue"     value={pulse.taskCounts.pending}                    sub="Pending tasks" valueClass="text-fg-primary" />
@@ -293,7 +293,7 @@ export default async function FounderOverviewPage() {
               <span className={row.color}>{row.value}</span>
             </div>
           ))}
-          <Link href="/founder/more"
+          <Link href="/founder/account"
                 className="mt-4 w-full flex items-center justify-center gap-1.5 rounded-lg border border-severity-critical/30 py-1.5 text-[12px] font-medium text-severity-critical hover:bg-severity-critical/10 transition-colors">
             Sign Out
           </Link>
