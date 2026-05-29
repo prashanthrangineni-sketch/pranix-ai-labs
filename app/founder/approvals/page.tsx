@@ -81,9 +81,15 @@ function PendingCard({ r }: { r: PermissionRequest }) {
         {(r.reason || r.requested_task) && (
           <Field label="Why">{r.reason || r.requested_task}</Field>
         )}
+        {r.impact && <Field label="Impact">{r.impact}</Field>}
+        {r.alternatives && <Field label="Alternatives">{r.alternatives}</Field>}
         <div className="flex flex-wrap gap-x-4 gap-y-1 pt-0.5 text-[11px] text-fg-muted">
+          <span>Requestor: {r.requestor_name}</span>
+          <span>System: {humanResource(r.resource_pattern)}</span>
           <span>Requested {timeAgo(r.requested_at)}</span>
           <span>Asked for: {durationLabel(r.grant_type)}</span>
+          <span>Expiry: {timeUntil(r.expires_at)}</span>
+          <span>Type: {r.scope}</span>
         </div>
       </div>
 
