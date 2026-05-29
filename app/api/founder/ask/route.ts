@@ -254,7 +254,7 @@ async function routeToPermissionCenter(message: string, email: string): Promise<
   const cp = getControlPlane()
   // requestor = the founder client acting via Ask Pranix
   const { data: fc } = await cp.from('mcp_clients').select('id').eq('is_founder', true).limit(1).maybeSingle()
-  const scope = /\b(view|read|show|list)\b/.test(message.toLowerCase()) ? 'read' : 'write'
+  const scope = /\b(view|read|show|list)\b/.test(message.toLowerCase()) ? 'test' : 'write'
   const insert = {
     client_id: fc?.id ?? null,
     scope,
