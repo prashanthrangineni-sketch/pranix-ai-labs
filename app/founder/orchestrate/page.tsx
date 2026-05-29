@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { createServerClient } from '@/lib/supabase'
-import { Cpu, Clock, CheckCircle2, AlertTriangle, Circle } from 'lucide-react'
+import { Cpu, Clock } from 'lucide-react'
+import ProviderControls from './ProviderControls'
 
 export const metadata: Metadata = { title: 'Orchestration' }
 export const revalidate = 60
@@ -182,19 +183,17 @@ export default async function FounderOrchestratePage() {
                 <p className="text-[10px] uppercase tracking-widest text-fg-disabled font-medium">
                   {TIER_NAMES[tk] ?? `Tier ${tk}`}
                 </p>
-                <div className="space-y-2">
-                  {byTier[tk].map((p) => (
-                    <ProviderCard key={p.provider_name} provider={p} stat={stats[p.provider_name]} />
-                  ))}
-                </div>
+                <ProviderControls providers={byTier[tk]} stats={stats} />
               </div>
             ))}
           </div>
         )}
 
         <p className="text-[10px] text-fg-disabled pt-1">
-          This view is read-only. Enable/disable, set-primary, reorder and test controls ship next
-          (P1) once the engine&apos;s read of this table at routing time is confirmed.
+          Enable/disable and priority controls write directly to{' '}
+          <span className="font-mono">provider_registry</span>. The live router honors these at
+          routing time once the engine gate (PR #12 on the agent-engine repo) is merged and
+          deployed; until then changes are saved but not yet enforced at inference time.
         </p>
       </section>
 
@@ -300,52 +299,6 @@ export default async function FounderOrchestratePage() {
 }
 
 // ─── Sub-components ───────────────────────────────────────────────
-
-function healthVisual(enabled: boolean | null, health: string | null) {
-  if (!enabled) {
-    return { dot: 'bg-fg-disabled', Icon: Circle, icon: 'text-fg-disabled', label: 'Disabled' }
-  }
-  const h = (health || '').toLowerCase()
-  if (h === 'ok' || h === 'healthy') {
-    return { dot: 'bg-severity-success', Icon: CheckCircle2, icon: 'text-severity-success', label: 'Healthy' }
-  }
-  if (h.includes('offline') || h.includes('down')) {
-    return { dot: 'bg-severity-error', Icon: AlertTriangle, icon: 'text-severity-error', label: 'Offline' }
-  }
-  return { dot: 'bg-severity-warn', Icon: AlertTriangle, icon: 'text-severity-warn', label: health || 'Unknown' }
-}
-
-function ProviderCard({ provider, stat }: { provider: ProviderRow; stat?: ProviderStat }) {
-  const v = healthVisual(provider.enabled, provider.health_status)
-  const lastSuccess = stat?.last
-    ? new Date(stat.last).toLocaleString('en-IN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
-    : null
-
-  return (
-    <div className="flex items-start gap-3 rounded-lg border border-border-subtle bg-surface p-3">
-      <span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${v.dot}`} />
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-xs font-medium text-fg-primary truncate">{provider.provider_name}</span>
-          <v.Icon className={`h-3.5 w-3.5 shrink-0 ${v.icon}`} />
-        </div>
-        <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-fg-muted mt-0.5">
-          <span className={provider.enabled ? 'text-severity-success' : 'text-fg-disabled'}>
-            {provider.enabled ? 'Enabled' : 'Disabled'}
-          </span>
-          <span>{v.label}</span>
-          {provider.priority !== null && <span data-numeric>priority {provider.priority}</span>}
-          {stat && (stat.ok > 0 || stat.fail > 0) && (
-            <span data-numeric>
-              {stat.ok} ok / {stat.fail} fail
-            </span>
-          )}
-          {lastSuccess && <span className="text-fg-disabled">last ok {lastSuccess}</span>}
-        </div>
-      </div>
-    </div>
-  )
-}
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
