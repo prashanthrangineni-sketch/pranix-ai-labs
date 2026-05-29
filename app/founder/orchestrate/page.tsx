@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { createServerClient } from '@/lib/supabase'
+import Link from 'next/link'
 import { Cpu, Clock } from 'lucide-react'
 import ProviderControls from './ProviderControls'
 
