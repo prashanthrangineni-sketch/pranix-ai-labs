@@ -29,7 +29,7 @@ export type PermissionInbox = {
 }
 
 const GRANT_COLS =
-  'id, client_id, scope, resource_pattern, reason, requested_task, grant_type, risk_level, requested_at, granted_at, expires_at, revoked_at, session_id'
+  'id, client_id, scope, resource_pattern, reason, requested_task, grant_type, risk_level, impact, alternatives, requested_at, granted_at, expires_at, revoked_at, session_id'
 
 /**
  * Read the permission inbox straight from the control plane (service role,
