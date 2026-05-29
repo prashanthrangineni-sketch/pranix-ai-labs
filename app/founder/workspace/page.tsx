@@ -100,6 +100,31 @@ export default async function WorkspacePage() {
         ))}
       </div>
 
+      {/* Operational controls (F.2) — live, runtime obeys */}
+      <Section id="controls" icon={<Settings2 className="h-4 w-4" />} title="Controls" sub="live · runtime obeys">
+        <div className="space-y-4">
+          <BudgetControl current={founderBudget} />
+          <div>
+            <p className="text-[11px] font-semibold text-fg-muted mb-2">Providers — enable / disable & priority</p>
+            <ProviderControls
+              providers={w.providers.map((p) => ({
+                provider_name: p.provider_name,
+                enabled: p.enabled,
+                tier: p.tier,
+                priority: p.priority,
+                health_status: p.health_status,
+                health_checked_at: null,
+              }))}
+              stats={{}}
+            />
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold text-fg-muted mb-2">Models — enable / disable</p>
+            <ModelControls models={w.models} />
+          </div>
+        </div>
+      </Section>
+
       {/* Overview */}
       <Section id="overview" icon={<LayoutGrid className="h-4 w-4" />} title="Overview" sub="single AI destination">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
