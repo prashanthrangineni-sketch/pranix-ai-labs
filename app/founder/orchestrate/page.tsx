@@ -190,8 +190,10 @@ export default async function FounderOrchestratePage() {
         )}
 
         <p className="text-[10px] text-fg-disabled pt-1">
-          This view is read-only. Enable/disable, set-primary, reorder and test controls ship next
-          (P1) once the engine&apos;s read of this table at routing time is confirmed.
+          Enable/disable and priority controls write directly to{' '}
+          <span className="font-mono">provider_registry</span>. The live router honors these at
+          routing time once the engine gate (PR #12 on the agent-engine repo) is merged and
+          deployed; until then changes are saved but not yet enforced at inference time.
         </p>
       </section>
 
