@@ -16,6 +16,7 @@ export const metadata: Metadata = {
 // not telemetry.
 const SIDEBAR_NAV = [
   { label: 'Overview',             href: '/founder',              icon: LayoutDashboard },
+  { label: 'Ask Pranix',           href: '/founder/ask',          icon: Sparkles,   badgeText: 'NEW' },
   { label: 'Agents',               href: '/founder/workers',      icon: Bot },
   { label: 'Tasks',                href: '/founder/tasks',        icon: ListChecks },
   { label: 'Alerts',               href: '/founder/alerts',       icon: Bell },
