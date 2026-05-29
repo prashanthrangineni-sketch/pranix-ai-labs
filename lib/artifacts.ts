@@ -44,7 +44,7 @@ export async function getArtifactGovernance(): Promise<ArtifactGovernance> {
 
   if (error || !data) {
     return {
-      totalEntries: 0, canonical: [], archived: [], byKind: [],
+      totalEntries: 0, canonical: [], pendingReview: [], archived: [], byKind: [],
       purgeableTables: 0, purgeableRows: 0, legalHold: 0,
     }
   }
