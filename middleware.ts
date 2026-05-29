@@ -10,6 +10,7 @@ const PUBLIC_FOUNDER_PATHS = [
   '/founder/login',
   '/founder/auth/callback',
   '/founder/auth/confirm',
+  '/founder/auth/reset',
 ]
 
 export async function middleware(request: NextRequest) {

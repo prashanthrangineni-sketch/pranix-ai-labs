@@ -3,10 +3,10 @@
 import { Suspense, useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase-browser'
-import { Shield, ArrowRight, Loader2, Eye, EyeOff, Mail } from 'lucide-react'
+import { Shield, ArrowRight, Loader2, Eye, EyeOff, Mail, KeyRound } from 'lucide-react'
 
 type Mode = 'password' | 'magic'
-type Status = 'idle' | 'loading' | 'sent' | 'error' | 'success'
+type Status = 'idle' | 'loading' | 'sent' | 'reset_sent' | 'error' | 'success'
 
 function LoginForm() {
   const searchParams = useSearchParams()
@@ -18,7 +18,6 @@ function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [rememberMe, setRememberMe] = useState(true)
   const [status, setStatus] = useState<Status>('idle')
   const [error, setError] = useState<string | null>(errorParam)
 
@@ -86,6 +85,33 @@ function LoginForm() {
     }
   }
 
+  // Forgot / first-time password: sends a recovery link that lands on
+  // /founder/auth/reset where the founder sets a password they choose.
+  async function handleForgotPassword() {
+    if (!email) {
+      setError('Enter your founder email first, then tap “Forgot password”.')
+      setStatus('error')
+      return
+    }
+    setStatus('loading')
+    setError(null)
+    try {
+      const supabase = createBrowserClient()
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/founder/auth/reset`,
+      })
+      if (resetError) {
+        setError(resetError.message)
+        setStatus('error')
+      } else {
+        setStatus('reset_sent')
+      }
+    } catch {
+      setError('Network error. Check your connection.')
+      setStatus('error')
+    }
+  }
+
   return (
     <div className="w-full max-w-sm">
       {/* Header */}
@@ -141,8 +167,22 @@ function LoginForm() {
         </div>
       )}
 
+      {/* Password reset link sent confirmation */}
+      {status === 'reset_sent' && (
+        <div className="rounded-xl border border-blue-200 bg-blue-50 p-6 text-center">
+          <KeyRound className="mx-auto h-8 w-8 text-blue-600 mb-3" />
+          <p className="text-sm font-medium text-blue-800">
+            Password setup link sent to {email}
+          </p>
+          <p className="mt-2 text-xs text-blue-600">
+            Tap the link in your inbox to set a new password. Use this for
+            first-time setup or if you forgot your password.
+          </p>
+        </div>
+      )}
+
       {/* Password form */}
-      {mode === 'password' && status !== 'sent' && (
+      {mode === 'password' && status !== 'sent' && status !== 'reset_sent' && (
         <form onSubmit={handlePasswordLogin} className="space-y-4">
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">
@@ -186,19 +226,17 @@ function LoginForm() {
           </div>
 
           <div className="flex items-center justify-between">
-            <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                className="rounded border-slate-300"
-              />
-              Remember this device
-            </label>
+            <button
+              type="button"
+              onClick={handleForgotPassword}
+              className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+            >
+              Forgot / set password
+            </button>
             <button
               type="button"
               onClick={() => { setMode('magic'); setError(null); setStatus('idle') }}
-              className="text-xs text-blue-600 hover:text-blue-700"
+              className="text-xs text-slate-500 hover:text-slate-700"
             >
               Use magic link instead
             </button>
@@ -226,7 +264,7 @@ function LoginForm() {
       )}
 
       {/* Magic link form */}
-      {mode === 'magic' && status !== 'sent' && (
+      {mode === 'magic' && status !== 'sent' && status !== 'reset_sent' && (
         <form onSubmit={handleMagicLink} className="space-y-4">
           <div>
             <label htmlFor="email-magic" className="block text-sm font-medium text-slate-700 mb-1">
