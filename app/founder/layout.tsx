@@ -33,6 +33,7 @@ const SIDEBAR_NAV = [
 
 const BOTTOM_NAV = [
   { label: 'Overview',  href: '/founder',           icon: LayoutDashboard },
+  { label: 'Ask',       href: '/founder/ask',       icon: Sparkles },
   { label: 'Products',  href: '/founder/products',  icon: Package },
   { label: 'Tasks',     href: '/founder/tasks',     icon: ListChecks },
   { label: 'Alerts',    href: '/founder/alerts',    icon: Bell },
