@@ -3,7 +3,7 @@ import Link from 'next/link'
 import {
   LayoutDashboard, Bot, ListChecks, Bell, ShieldCheck,
   Brain, Monitor, Lock, Activity, Rocket, Package,
-  Settings, Network, ChevronDown, Clock, Sparkles, Boxes,
+  Settings, Network, ChevronDown, Clock, Sparkles, Boxes, Cpu,
 } from 'lucide-react'
 
 export const metadata: Metadata = {
