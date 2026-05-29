@@ -35,6 +35,7 @@ export default function ProviderControls({
   const [, startTransition] = useTransition()
   const [busy, setBusy] = useState<string | null>(null)
   const [err, setErr] = useState<string | null>(null)
+  const [confirmEnable, setConfirmEnable] = useState<string | null>(null)
 
   async function call(provider_name: string, action: 'enable' | 'disable' | 'set_priority', priority?: number) {
     setBusy(provider_name)
