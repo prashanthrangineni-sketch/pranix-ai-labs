@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { createServerClient } from '@/lib/supabase'
-import { Cpu, Clock, CheckCircle2, AlertTriangle, Circle } from 'lucide-react'
+import { Cpu, Clock } from 'lucide-react'
+import ProviderControls from './ProviderControls'
 
 export const metadata: Metadata = { title: 'Orchestration' }
 export const revalidate = 60
