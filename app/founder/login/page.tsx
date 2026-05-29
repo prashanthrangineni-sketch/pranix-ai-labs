@@ -327,7 +327,13 @@ function LoginForm() {
 export default function FounderLoginPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center px-4">
-      <Suspense fallback={<div className="min-h-screen" />}>
+      <Suspense
+        fallback={
+          <div className="flex items-center justify-center gap-2 py-20 text-sm text-slate-400">
+            <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+          </div>
+        }
+      >
         <LoginForm />
       </Suspense>
     </div>
