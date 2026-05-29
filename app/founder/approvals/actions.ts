@@ -116,6 +116,7 @@ function successMessage(action: DecisionKind): string {
     case 'allow_permanent': return 'Allowed permanently'
     case 'deny':            return 'Denied'
     case 'revoke':          return 'Access revoked'
+    case 'expire':          return 'Expired now'
   }
 }
 
