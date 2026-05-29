@@ -11,6 +11,8 @@ export type PermissionRequest = {
   requested_task: string | null
   grant_type: string | null
   risk_level: string | null
+  impact: string | null
+  alternatives: string | null
   requested_at: string | null
   granted_at: string | null
   expires_at: string
