@@ -28,6 +28,7 @@ const SIDEBAR_NAV = [
   { label: 'Artifacts',            href: '/founder/artifacts',    icon: Archive,    badgeText: 'NEW' },
   { label: 'More',                 href: '/founder/more',         icon: ChevronDown },
   { label: 'AI Models',            href: '/founder/ai',           icon: Cpu,        badgeText: 'NEW' },
+  { label: 'AI Workspace',         href: '/founder/workspace',    icon: LayoutGrid, badgeText: 'NEW' },
   { label: 'Orchestration',        href: '/founder/orchestrate',  icon: Network,    badgeText: 'NEW' },
 ] as const
 
