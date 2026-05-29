@@ -67,7 +67,7 @@ export function AskChat() {
   const empty = messages.length === 0
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-3.5rem)] w-full max-w-2xl flex-col">
+    <div className="mx-auto flex h-[calc(100dvh-7rem)] w-full max-w-2xl flex-col lg:h-[calc(100dvh-3.5rem)]">
       {/* Conversation */}
       <div className="flex-1 overflow-y-auto px-4 pt-5 pb-3 space-y-4">
         {empty && (
