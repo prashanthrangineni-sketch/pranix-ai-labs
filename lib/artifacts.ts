@@ -23,6 +23,7 @@ export type KindSummary = { kind: string; entries: number; rows: number }
 export type ArtifactGovernance = {
   totalEntries: number
   canonical: ArtifactRow[]
+  pendingReview: ArtifactRow[]
   archived: ArtifactRow[]
   byKind: KindSummary[]
   purgeableTables: number
