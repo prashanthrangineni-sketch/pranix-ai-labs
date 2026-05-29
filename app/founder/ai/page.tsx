@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Sparkles, Check, X, CircleDot, ExternalLink } from 'lucide-react'
+import { Sparkles, Check, X, CircleDot } from 'lucide-react'
 import { getAiFramework, type ProviderOnboarding } from '@/lib/ai-framework'
 import { ActivationButton } from './activation-button'
 
