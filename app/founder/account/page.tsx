@@ -16,6 +16,9 @@ export default function FounderAccountPage() {
   const [save, setSave] = useState<SaveState>('idle')
   const [error, setError] = useState<string | null>(null)
   const [signingOut, setSigningOut] = useState(false)
+  const [secret, setSecret] = useState('')
+  const [secretSave, setSecretSave] = useState<SaveState>('idle')
+  const [secretError, setSecretError] = useState<string | null>(null)
 
   useEffect(() => {
     const supabase = createBrowserClient()
@@ -38,6 +41,28 @@ export default function FounderAccountPage() {
     } catch {
       setError('Network error. Check your connection.')
       setSave('error')
+    }
+  }
+
+  async function handleSetSecret(e: React.FormEvent) {
+    e.preventDefault()
+    setSecretError(null)
+    if (secret.length < 8) { setSecretError('Recovery secret must be at least 8 characters.'); return }
+    setSecretSave('saving')
+    try {
+      const res = await fetch('/api/founder/break-glass', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'set_secret', secret }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) { setSecretError(json?.error || 'Could not save.'); setSecretSave('error'); return }
+      setSecretSave('saved')
+      setSecret('')
+      setTimeout(() => setSecretSave('idle'), 3000)
+    } catch {
+      setSecretError('Network error. Check your connection.')
+      setSecretSave('error')
     }
   }
 
@@ -114,6 +139,47 @@ export default function FounderAccountPage() {
               <><Loader2 className="h-4 w-4 animate-spin" /> Saving…</>
             ) : (
               <><KeyRound className="h-4 w-4" /> Update Password</>
+            )}
+          </button>
+        </form>
+      </section>
+
+      {/* Break-glass recovery secret */}
+      <section className="space-y-2">
+        <h2 className="text-xs font-medium text-fg-muted">Recovery Secret (break-glass)</h2>
+        <form onSubmit={handleSetSecret} className="rounded-lg border border-border-subtle bg-surface p-4 space-y-3">
+          <p className="text-[11px] text-fg-muted">
+            Set a secret you&apos;ll remember. If you&apos;re ever locked out and email isn&apos;t
+            working, go to <span className="font-mono">/founder/break-glass</span>, enter your email +
+            this secret, and set a new password — no email required.
+          </p>
+          <input
+            type="text"
+            value={secret}
+            onChange={(e) => setSecret(e.target.value)}
+            placeholder="Recovery secret (min 8 chars)"
+            autoComplete="off"
+            className="w-full rounded-lg border border-border-subtle bg-elevated px-3 py-2.5 text-sm text-fg-primary placeholder:text-fg-disabled focus:outline-none focus:ring-2 focus:ring-accent/30"
+          />
+          {secretError && (
+            <div className="rounded-lg border border-severity-error/30 bg-severity-error/10 px-3 py-2 text-xs text-severity-error">
+              {secretError}
+            </div>
+          )}
+          {secretSave === 'saved' && (
+            <div className="flex items-center gap-2 text-xs text-severity-success">
+              <CheckCircle2 className="h-4 w-4" /> Recovery secret saved.
+            </div>
+          )}
+          <button
+            type="submit"
+            disabled={secretSave === 'saving' || !secret}
+            className="w-full flex items-center justify-center gap-2 rounded-lg border border-border-subtle bg-elevated px-4 py-2.5 text-sm font-medium text-fg-primary transition-colors hover:bg-canvas disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {secretSave === 'saving' ? (
+              <><Loader2 className="h-4 w-4 animate-spin" /> Saving…</>
+            ) : (
+              <><KeyRound className="h-4 w-4" /> Save Recovery Secret</>
             )}
           </button>
         </form>
