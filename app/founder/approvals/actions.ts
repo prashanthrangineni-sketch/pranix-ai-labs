@@ -49,6 +49,7 @@ export type DecisionKind =
   | 'allow_permanent'
   | 'deny'
   | 'revoke'
+  | 'expire'
 
 export type DecisionState = {
   ok: boolean
