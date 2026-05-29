@@ -97,8 +97,15 @@ function LoginForm() {
     setError(null)
     try {
       const supabase = createBrowserClient()
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/founder/auth/reset`,
+      // Recovery reuses the proven magic-link (token_hash/verifyOtp) flow, which
+      // is cross-device safe. resetPasswordForEmail used PKCE and failed on
+      // mobile (code_verifier missing when the email opens in another browser).
+      const { error: resetError } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          shouldCreateUser: false,
+          emailRedirectTo: `${window.location.origin}/founder/auth/confirm?next=/founder/account`,
+        },
       })
       if (resetError) {
         setError(resetError.message)
@@ -172,11 +179,12 @@ function LoginForm() {
         <div className="rounded-xl border border-blue-200 bg-blue-50 p-6 text-center">
           <KeyRound className="mx-auto h-8 w-8 text-blue-600 mb-3" />
           <p className="text-sm font-medium text-blue-800">
-            Password setup link sent to {email}
+            Secure sign-in link sent to {email}
           </p>
           <p className="mt-2 text-xs text-blue-600">
-            Tap the link in your inbox to set a new password. Use this for
-            first-time setup or if you forgot your password.
+            Tap the link in your inbox. You&apos;ll land on your Account page,
+            where you can set a new password. Works for first-time setup or if
+            you forgot your password.
           </p>
         </div>
       )}
