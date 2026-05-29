@@ -29,6 +29,7 @@ const SIDEBAR_NAV = [
   { label: 'Products',             href: '/founder/products',     icon: Package },
   { label: 'Accounts',             href: '/founder/accounts',     icon: Boxes },
   { label: 'Settings',             href: '/founder/more',         icon: Settings },
+  { label: 'AI Models',            href: '/founder/ai',           icon: Cpu,        badgeText: 'NEW' },
   { label: 'Orchestration',        href: '/founder/orchestrate',  icon: Network,    badgeText: 'NEW' },
 ] as const
 
