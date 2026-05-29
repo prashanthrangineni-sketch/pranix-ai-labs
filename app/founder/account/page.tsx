@@ -44,6 +44,28 @@ export default function FounderAccountPage() {
     }
   }
 
+  async function handleSetSecret(e: React.FormEvent) {
+    e.preventDefault()
+    setSecretError(null)
+    if (secret.length < 8) { setSecretError('Recovery secret must be at least 8 characters.'); return }
+    setSecretSave('saving')
+    try {
+      const res = await fetch('/api/founder/break-glass', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'set_secret', secret }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) { setSecretError(json?.error || 'Could not save.'); setSecretSave('error'); return }
+      setSecretSave('saved')
+      setSecret('')
+      setTimeout(() => setSecretSave('idle'), 3000)
+    } catch {
+      setSecretError('Network error. Check your connection.')
+      setSecretSave('error')
+    }
+  }
+
   async function handleSignOut() {
     setSigningOut(true)
     try {
