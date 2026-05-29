@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getControlPlane } from '../../../../lib/control-plane'
+import { getControlPlane } from '../../../../../lib/control-plane'
 
 // POST /api/founder/grants/[id]/approve  — grants an MCP access request
 // POST /api/founder/grants/[id]/revoke   — revokes a previously granted access
