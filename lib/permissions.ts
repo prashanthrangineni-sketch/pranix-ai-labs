@@ -95,6 +95,8 @@ export async function getPermissionInbox(limit = 150): Promise<PermissionInbox> 
       requested_task: g.requested_task ?? null,
       grant_type: g.grant_type ?? null,
       risk_level: g.risk_level ?? null,
+      impact: g.impact ?? null,
+      alternatives: g.alternatives ?? null,
       requested_at: g.requested_at ?? null,
       granted_at: g.granted_at ?? null,
       expires_at: g.expires_at,
