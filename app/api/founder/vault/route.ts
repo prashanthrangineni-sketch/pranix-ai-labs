@@ -67,6 +67,25 @@ export async function POST(req: Request) {
     });
 
     if (dbErr) return NextResponse.json({ error: dbErr.message }, { status: 500 });
+
+    // Phase D.1 — register governance metadata (no duplicate store; never blocks the upload)
+    try {
+      await supabase.from("artifact_registry").insert({
+        kind: "document",
+        title,
+        category,
+        status: "active",
+        origin: "upload",
+        source_table: "company_documents",
+        source_id: id,
+        storage_path: storagePath,
+        retention: "keep",
+        founder_reviewed: false,
+        tags,
+        row_count: 1,
+      });
+    } catch { /* governance index is best-effort */ }
+
     return NextResponse.json({ ok: true, id });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });

@@ -1,5 +1,6 @@
-import { getArtifactGovernance } from '@/lib/artifacts'
+import { getArtifactGovernance, type ArtifactRow } from '@/lib/artifacts'
 import { FileText, Scale, Archive, Database, ShieldCheck } from 'lucide-react'
+import { ArtifactControls, PurgeScratchButton } from './artifact-controls'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Artifacts' }
@@ -25,6 +26,26 @@ function StatusPill({ status }: { status: string }) {
   return <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${tone}`}>{status}</span>
 }
 
+function Row({ r, controls }: { r: ArtifactRow; controls?: boolean }) {
+  return (
+    <div className="rounded-lg border border-border-subtle bg-surface px-4 py-3">
+      <div className="flex items-center gap-2">
+        <p className="text-[13px] font-medium text-fg-primary truncate flex-1 min-w-0">{r.title}</p>
+        <StatusPill status={r.status} />
+        {r.founder_reviewed && <ShieldCheck className="h-3.5 w-3.5 text-accent shrink-0" aria-label="Founder reviewed" />}
+      </div>
+      <p className="text-[11px] text-fg-muted mt-0.5">
+        {r.kind} · {r.row_count ?? 0} records · source: {r.source_table ?? '—'} · retention: {r.retention}
+      </p>
+      {controls && (
+        <div className="mt-2 pt-2 border-t border-border-subtle">
+          <ArtifactControls id={r.id} status={r.status} reviewed={r.founder_reviewed} />
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default async function ArtifactsPage() {
   const g = await getArtifactGovernance()
 
@@ -34,13 +55,10 @@ export default async function ArtifactsPage() {
         <h1 className="text-xl font-semibold text-fg-primary tracking-tight">Artifact Governance</h1>
         <p className="text-[13px] text-fg-muted mt-1">
           One canonical index for every document, legal record, and build artifact across Pranix.
-          {g.totalEntries === 0
-            ? ' Nothing cataloged yet.'
-            : ` ${g.totalEntries} governed entries.`}
+          {g.totalEntries === 0 ? ' Nothing cataloged yet.' : ` ${g.totalEntries} governed entries.`}
         </p>
       </div>
 
-      {/* Summary */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         <Stat icon={<FileText className="h-4 w-4" />} label="Canonical" value={String(g.canonical.length)} sub="documents & legal" />
         <Stat icon={<Scale className="h-4 w-4" />} label="Legal hold" value={String(g.legalHold)} sub="never auto-purged" />
@@ -48,7 +66,6 @@ export default async function ArtifactsPage() {
         <Stat icon={<Database className="h-4 w-4" />} label="Purgeable rows" value={g.purgeableRows.toLocaleString('en-IN')} sub="recoverable until purged" />
       </div>
 
-      {/* By kind */}
       {g.byKind.length > 0 && (
         <div className="mb-6">
           <h2 className="text-[12px] uppercase tracking-wide text-fg-muted mb-2">By kind</h2>
@@ -63,6 +80,18 @@ export default async function ArtifactsPage() {
         </div>
       )}
 
+      {/* Pending review (D.4) */}
+      <div className="mb-6">
+        <h2 className="text-[13px] font-medium text-fg-primary mb-2">Pending review</h2>
+        {g.pendingReview.length === 0 ? (
+          <p className="text-[13px] text-fg-muted rounded-lg border border-dashed border-border-subtle p-4">Nothing awaiting review.</p>
+        ) : (
+          <div className="space-y-2">
+            {g.pendingReview.map((r) => <Row key={r.id} r={r} controls />)}
+          </div>
+        )}
+      </div>
+
       {/* Canonical stores */}
       <div className="mb-6">
         <h2 className="text-[13px] font-medium text-fg-primary mb-2">Canonical stores</h2>
@@ -70,33 +99,20 @@ export default async function ArtifactsPage() {
           <p className="text-[13px] text-fg-muted rounded-lg border border-dashed border-border-subtle p-4">No canonical stores cataloged.</p>
         ) : (
           <div className="space-y-2">
-            {g.canonical.map((r) => (
-              <div key={r.id} className="rounded-lg border border-border-subtle bg-surface px-4 py-3 flex items-center gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="text-[13px] font-medium text-fg-primary truncate">{r.title}</p>
-                    <StatusPill status={r.status} />
-                  </div>
-                  <p className="text-[11px] text-fg-muted mt-0.5">
-                    {r.kind} · {r.row_count ?? 0} records · source: {r.source_table} · retention: {r.retention}
-                  </p>
-                </div>
-                {r.founder_reviewed && <ShieldCheck className="h-4 w-4 text-accent shrink-0" aria-label="Founder reviewed" />}
-              </div>
-            ))}
+            {g.canonical.map((r) => <Row key={r.id} r={r} controls />)}
           </div>
         )}
       </div>
 
       {/* Archived build scratch */}
       <div>
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
           <h2 className="text-[13px] font-medium text-fg-primary">Archived build scratch</h2>
-          <span className="text-[11px] text-fg-muted">{g.archived.length} tables · {g.purgeableRows.toLocaleString('en-IN')} rows</span>
+          <PurgeScratchButton />
         </div>
         <p className="text-[12px] text-fg-muted mb-3">
-          Legacy outputs from past agent runs. Retained for history and marked purgeable. Dropping them is a destructive
-          action and routes through the Permission Center for founder approval — nothing is deleted automatically.
+          Legacy outputs from past agent runs, retained for history and marked purgeable. Dropping them routes through the
+          Permission Center for founder approval — nothing is deleted automatically.
         </p>
         {g.archived.length === 0 ? (
           <p className="text-[13px] text-fg-muted rounded-lg border border-dashed border-border-subtle p-4">No archived artifacts.</p>
@@ -106,7 +122,7 @@ export default async function ArtifactsPage() {
               <div key={r.id} className="flex items-center gap-3 px-4 py-2">
                 <Archive className="h-3.5 w-3.5 text-fg-disabled shrink-0" />
                 <span className="flex-1 min-w-0 text-[12px] text-fg-secondary truncate font-mono">{r.source_table ?? r.title}</span>
-                <span className="text-[11px] text-fg-muted shrink-0">{(r.row_count ?? 0)} rows</span>
+                <span className="text-[11px] text-fg-muted shrink-0">{r.row_count ?? 0} rows</span>
                 <span className="text-[10px] text-fg-disabled shrink-0 hidden sm:inline">{r.origin}</span>
               </div>
             ))}

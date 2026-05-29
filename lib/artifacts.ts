@@ -23,6 +23,7 @@ export type KindSummary = { kind: string; entries: number; rows: number }
 export type ArtifactGovernance = {
   totalEntries: number
   canonical: ArtifactRow[]
+  pendingReview: ArtifactRow[]
   archived: ArtifactRow[]
   byKind: KindSummary[]
   purgeableTables: number
@@ -43,7 +44,7 @@ export async function getArtifactGovernance(): Promise<ArtifactGovernance> {
 
   if (error || !data) {
     return {
-      totalEntries: 0, canonical: [], archived: [], byKind: [],
+      totalEntries: 0, canonical: [], pendingReview: [], archived: [], byKind: [],
       purgeableTables: 0, purgeableRows: 0, legalHold: 0,
     }
   }
@@ -63,10 +64,14 @@ export async function getArtifactGovernance(): Promise<ArtifactGovernance> {
 
   const purgeable = rows.filter((r) => r.retention === 'purgeable')
   const legalHold = rows.filter((r) => r.retention === 'legal_hold').length
+  const pendingReview = rows.filter(
+    (r) => !r.founder_reviewed && (r.status === 'draft' || r.status === 'active')
+  )
 
   return {
     totalEntries: rows.length,
     canonical,
+    pendingReview,
     archived,
     byKind,
     purgeableTables: purgeable.length,
