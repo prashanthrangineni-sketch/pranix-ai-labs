@@ -3,7 +3,7 @@ import Link from 'next/link'
 import {
   LayoutDashboard, Bot, ListChecks, Bell, ShieldCheck,
   Brain, Monitor, Package,
-  Network, ChevronDown, Clock, Sparkles, Boxes, Cpu, Archive, LayoutGrid,
+  ChevronDown, Clock, Sparkles, Boxes, Archive, LayoutGrid,
 } from 'lucide-react'
 
 export const metadata: Metadata = {
@@ -27,9 +27,7 @@ const SIDEBAR_NAV = [
   { label: 'Accounts',             href: '/founder/accounts',     icon: Boxes },
   { label: 'Artifacts',            href: '/founder/artifacts',    icon: Archive,    badgeText: 'NEW' },
   { label: 'More',                 href: '/founder/more',         icon: ChevronDown },
-  { label: 'AI Models',            href: '/founder/ai',           icon: Cpu,        badgeText: 'NEW' },
   { label: 'AI Workspace',         href: '/founder/workspace',    icon: LayoutGrid, badgeText: 'NEW' },
-  { label: 'Orchestration',        href: '/founder/orchestrate',  icon: Network,    badgeText: 'NEW' },
 ] as const
 
 const BOTTOM_NAV = [
