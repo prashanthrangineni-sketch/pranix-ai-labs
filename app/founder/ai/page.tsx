@@ -16,6 +16,10 @@ export default async function AiFrameworkPage() {
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-6 space-y-7">
+      <Link href="/founder/workspace" className="flex items-center justify-between gap-2 rounded-lg border border-accent/30 bg-accent-subtle px-3 py-2 text-[12px] text-accent hover:opacity-90 transition-opacity">
+        <span>AI management is consolidating into the AI Workspace — providers, models, costs &amp; health in one place.</span>
+        <span className="font-medium shrink-0">Open Workspace →</span>
+      </Link>
       <header className="space-y-1">
         <div className="flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-accent" />
