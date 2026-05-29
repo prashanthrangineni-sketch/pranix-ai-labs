@@ -89,7 +89,7 @@ export default async function WorkspacePage() {
         <h1 className="text-xl font-semibold text-fg-primary tracking-tight">AI Workspace</h1>
         <p className="text-[13px] text-fg-muted mt-1">
           The single destination for AI management — providers, models, capabilities, health, cost, onboarding, and approvals.
-          Read-only today; operational controls arrive here (approval-gated) in the next phase.
+          Live controls below — budget, providers, priority, and models. Changes apply immediately (spend-increasing actions ask for confirmation) and are audited.
         </p>
       </div>
 
