@@ -16,6 +16,9 @@ export default function FounderAccountPage() {
   const [save, setSave] = useState<SaveState>('idle')
   const [error, setError] = useState<string | null>(null)
   const [signingOut, setSigningOut] = useState(false)
+  const [secret, setSecret] = useState('')
+  const [secretSave, setSecretSave] = useState<SaveState>('idle')
+  const [secretError, setSecretError] = useState<string | null>(null)
 
   useEffect(() => {
     const supabase = createBrowserClient()
