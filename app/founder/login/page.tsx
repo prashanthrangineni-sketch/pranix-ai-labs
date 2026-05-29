@@ -310,9 +310,16 @@ function LoginForm() {
         </form>
       )}
 
-      <p className="mt-6 text-center text-xs text-slate-400">
-        Exclusive access for authorized founders only.
-      </p>
+      <div className="mt-6 text-center space-y-1.5">
+        <button
+          type="button"
+          onClick={() => router.push('/founder/break-glass')}
+          className="text-xs font-medium text-slate-500 hover:text-slate-700"
+        >
+          Locked out & email not working? Break-glass recovery →
+        </button>
+        <p className="text-xs text-slate-400">Exclusive access for authorized founders only.</p>
+      </div>
     </div>
   )
 }
