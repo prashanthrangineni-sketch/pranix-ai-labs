@@ -3,7 +3,7 @@ import Link from 'next/link'
 import {
   LayoutDashboard, Bot, ListChecks, Bell, ShieldCheck,
   Brain, Monitor, Lock, Activity, Rocket, Package,
-  Settings, Network, ChevronDown, Clock,
+  Settings, Network, ChevronDown, Clock, Sparkles,
 } from 'lucide-react'
 
 export const metadata: Metadata = {
@@ -16,6 +16,7 @@ export const metadata: Metadata = {
 // not telemetry.
 const SIDEBAR_NAV = [
   { label: 'Overview',             href: '/founder',              icon: LayoutDashboard },
+  { label: 'Ask Pranix',           href: '/founder/ask',          icon: Sparkles,   badgeText: 'NEW' },
   { label: 'Agents',               href: '/founder/workers',      icon: Bot },
   { label: 'Tasks',                href: '/founder/tasks',        icon: ListChecks },
   { label: 'Alerts',               href: '/founder/alerts',       icon: Bell },
@@ -32,6 +33,7 @@ const SIDEBAR_NAV = [
 
 const BOTTOM_NAV = [
   { label: 'Overview',  href: '/founder',           icon: LayoutDashboard },
+  { label: 'Ask',       href: '/founder/ask',       icon: Sparkles },
   { label: 'Products',  href: '/founder/products',  icon: Package },
   { label: 'Tasks',     href: '/founder/tasks',     icon: ListChecks },
   { label: 'Alerts',    href: '/founder/alerts',    icon: Bell },
