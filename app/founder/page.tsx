@@ -318,7 +318,7 @@ export default async function FounderOverviewPage() {
             <div>
               <div className="flex justify-between items-center mb-3">
                 <span className="text-[11px] text-fg-muted font-mono">Key: {forensic.key?.slice(0, 30)}</span>
-                <span className="text-[10px] px-2 py-0.5 rounded font-medium bg-severity-success/15 text-severity-success">Complete</span>
+                <span className="text-[10px] px-2 py-0.5 rounded font-medium bg-accent-subtle text-accent">Latest</span>
               </div>
               {[
                 ['Project', forensic.project],
