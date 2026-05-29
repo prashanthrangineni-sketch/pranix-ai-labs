@@ -183,11 +183,7 @@ export default async function FounderOrchestratePage() {
                 <p className="text-[10px] uppercase tracking-widest text-fg-disabled font-medium">
                   {TIER_NAMES[tk] ?? `Tier ${tk}`}
                 </p>
-                <div className="space-y-2">
-                  {byTier[tk].map((p) => (
-                    <ProviderCard key={p.provider_name} provider={p} stat={stats[p.provider_name]} />
-                  ))}
-                </div>
+                <ProviderControls providers={byTier[tk]} stats={stats} />
               </div>
             ))}
           </div>
