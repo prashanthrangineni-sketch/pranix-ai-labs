@@ -270,17 +270,14 @@ export default async function FounderOverviewPage() {
         {/* Account / Settings panel */}
         <Panel title="Account Settings">
           <div className="space-y-1 mb-4">
-            {[
-              { label: 'Profile',          icon: '👤', active: false },
-              { label: 'Password',         icon: '🔒', active: true  },
-              { label: 'Two-Factor Auth',  icon: '🛡️', active: false, soon: true },
-            ].map(item => (
-              <div key={item.label} className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[12px] ${item.active ? 'bg-accent-subtle text-accent' : 'text-fg-muted'}`}>
-                <span>{item.icon}</span>
-                <span className="flex-1">{item.label}</span>
-                {item.soon && <span className="text-[9px] bg-elevated text-fg-disabled px-1.5 py-0.5 rounded">Soon</span>}
-              </div>
-            ))}
+            <Link href="/founder/account" className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[12px] text-fg-muted hover:bg-elevated hover:text-fg-primary transition-colors">
+              <span className="flex-1">Manage account &amp; password</span>
+              <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+            </Link>
+            <Link href="/founder/break-glass" className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[12px] text-fg-muted hover:bg-elevated hover:text-fg-primary transition-colors">
+              <span className="flex-1">Recovery secret</span>
+              <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+            </Link>
           </div>
           <p className="text-[11px] font-semibold text-fg-muted mb-2.5">Other Settings</p>
           {[
