@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase'
 import { getControlPlane } from '../../../lib/control-plane'
-import { founderStepUpGuard } from '@/lib/auth-aal'
 
 // POST /api/founder/models
 // Body: { provider_name: string, model_id: string, action: 'enable' | 'disable' }
