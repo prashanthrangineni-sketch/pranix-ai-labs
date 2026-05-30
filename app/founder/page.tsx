@@ -159,7 +159,7 @@ function AlertDonut({ p1, p2, p3, p4 }: { p1: number; p2: number; p3: number; p4
 export default async function FounderOverviewPage() {
   const [
     pulse, criticalAlerts, patterns, products, grants, digest,
-    workers, providers, activity, forensic, tierCounts, memCount,
+    workers, providers, activity, forensic, tierCounts, memCount, business,
   ] = await Promise.all([
     getSystemPulse(),
     getCriticalAlerts(20),
@@ -173,6 +173,7 @@ export default async function FounderOverviewPage() {
     getLatestForensic(),
     getAlertTierCounts(),
     getMemoryCount(),
+    getBusinessSnapshot(),
   ])
 
   const nextDigest = new Date()
