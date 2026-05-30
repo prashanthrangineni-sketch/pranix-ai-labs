@@ -116,7 +116,7 @@ export default function FounderLayout({ children }: { children: React.ReactNode 
 
         {/* Page content */}
         <main className="flex-1 pb-16 lg:pb-6 overflow-x-hidden">
-          {children}
+          <BiometricGate>{children}</BiometricGate>
         </main>
 
         {/* Footer note */}
