@@ -175,6 +175,9 @@ function statusBadge(status: string): { label: string; cls: string } {
     pilot:        { label: 'Pilot',        cls: 'text-accent bg-accent-subtle' },
     pre_launch:   { label: 'Pre-launch',   cls: 'text-severity-warn bg-severity-warn/12' },
     out_of_scope: { label: 'No DB access', cls: 'text-fg-disabled bg-elevated' },
+    pre_revenue:  { label: 'Pre-revenue', cls: 'text-severity-warn bg-severity-warn/12' },
+    beta:         { label: 'Beta',        cls: 'text-accent bg-accent-subtle' },
+    unavailable:  { label: 'Unavailable', cls: 'text-fg-disabled bg-elevated' },
   }
   return map[status] ?? { label: status, cls: 'text-fg-disabled bg-elevated' }
 }
