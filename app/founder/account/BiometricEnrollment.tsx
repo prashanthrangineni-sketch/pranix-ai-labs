@@ -4,24 +4,17 @@ import { useState, useEffect, useCallback } from 'react'
 import { createBrowserClient } from '@/lib/supabase-browser'
 import { Loader2, Fingerprint, CheckCircle2, Trash2 } from 'lucide-react'
 
-type EnrollState = 'idle' | 'working' | 'done' | 'error'
+// F.2C Phase 1 — biometric unlock via Supabase Passkeys (signInWithPasskey /
+// registerPasskey). MFA-WebAuthn is platform-disabled on this project
+// ("Enabling of MFA with WebAuthn not currently supported"); passkeys are the
+// supported, server-verified WebAuthn surface (passkey_enabled=true).
+// Biometric is a DASHBOARD UNLOCK only — it does not gate control writes.
 
-// enroll({factorType:'webauthn'}) is compile-proven. Ceremony + management
-// methods typed defensively so the build never breaks on the exact webauthn
-// union; runtime ceremony validated on-device.
-type MfaEnrollLike = {
-  enroll: (p: { factorType: 'webauthn'; friendlyName?: string }) => Promise<{ data: { id: string } | null; error: { message: string } | null }>
-  challenge: (p: { factorId: string }) => Promise<{ data: { id: string } | null; error: { message: string } | null }>
-  verify: (p: { factorId: string; challengeId: string }) => Promise<{ data: unknown; error: { message: string } | null }>
-  listFactors: () => Promise<{
-    data: { all?: Array<{ id: string; factor_type?: string; status?: string; friendly_name?: string }> } | null
-    error: unknown
-  }>
-  unenroll: (p: { factorId: string }) => Promise<{ data: unknown; error: { message: string } | null }>
-}
+type EnrollState = 'idle' | 'working' | 'done' | 'error'
+type Passkey = { id: string; friendly_name?: string }
 
 export default function BiometricEnrollment() {
-  const [factors, setFactors] = useState<Array<{ id: string; friendly_name?: string }>>([])
+  const [passkeys, setPasskeys] = useState<Passkey[]>([])
   const [state, setState] = useState<EnrollState>('idle')
   const [err, setErr] = useState<string | null>(null)
   const [supported, setSupported] = useState(true)
@@ -29,10 +22,8 @@ export default function BiometricEnrollment() {
   const refresh = useCallback(async () => {
     try {
       const supabase = createBrowserClient()
-      const mfa = supabase.auth.mfa as unknown as MfaEnrollLike
-      const { data } = await mfa.listFactors()
-      const verified = (data?.all ?? []).filter((f) => f.factor_type === 'webauthn' && f.status === 'verified')
-      setFactors(verified.map((f) => ({ id: f.id, friendly_name: f.friendly_name })))
+      const { data } = await supabase.auth.passkey.list()
+      setPasskeys((data ?? []).map((p) => ({ id: p.id, friendly_name: p.friendly_name })))
     } catch {
       /* non-fatal */
     }
@@ -47,27 +38,23 @@ export default function BiometricEnrollment() {
     setState('working'); setErr(null)
     try {
       const supabase = createBrowserClient()
-      const mfa = supabase.auth.mfa as unknown as MfaEnrollLike
-      const { data: f, error: eErr } = await mfa.enroll({ factorType: 'webauthn', friendlyName: `device-${Date.now()}` })
-      if (eErr || !f) { setErr(eErr?.message ?? 'Could not start enrollment.'); setState('error'); return }
-      const { data: ch, error: cErr } = await mfa.challenge({ factorId: f.id })
-      if (cErr || !ch) { setErr(cErr?.message ?? 'Could not create challenge.'); setState('error'); return }
-      const { error: vErr } = await mfa.verify({ factorId: f.id, challengeId: ch.id })
-      if (vErr) { setErr(vErr.message ?? 'Verification failed.'); setState('error'); return }
+      // registerPasskey() runs the full WebAuthn ceremony in the browser and
+      // requires the active founder session (it's the account page).
+      const { error } = await supabase.auth.registerPasskey()
+      if (error) { setErr(error.message || 'Could not register biometric.'); setState('error'); return }
       setState('done'); await refresh()
       setTimeout(() => setState('idle'), 3000)
     } catch {
-      setErr('Enrollment failed. Make sure your device has fingerprint or face unlock set up.')
+      setErr('Registration failed. Make sure your device has fingerprint or face unlock set up.')
       setState('error')
     }
   }, [refresh])
 
-  const remove = useCallback(async (factorId: string) => {
+  const remove = useCallback(async (passkeyId: string) => {
     setState('working'); setErr(null)
     try {
       const supabase = createBrowserClient()
-      const mfa = supabase.auth.mfa as unknown as MfaEnrollLike
-      const { error } = await mfa.unenroll({ factorId })
+      const { error } = await supabase.auth.passkey.delete({ passkeyId })
       if (error) { setErr(error.message); setState('error'); return }
       await refresh(); setState('idle')
     } catch {
@@ -80,8 +67,9 @@ export default function BiometricEnrollment() {
       <h2 className="text-xs font-medium text-fg-muted">Biometric Unlock</h2>
       <div className="rounded-lg border border-border-subtle bg-surface p-4 space-y-3">
         <p className="text-[11px] text-fg-muted">
-          Add your fingerprint or face as a fast unlock. Your password always still works as a fallback. When a
-          biometric is registered, opening the dashboard and changing AI controls will ask you to confirm it&apos;s you.
+          Add your fingerprint or face as a fast unlock for opening the dashboard. Your password always
+          still works as a fallback. This is a convenience lock on app open — it doesn&apos;t change who can
+          sign in or what you can do once inside.
         </p>
 
         {!supported && (
@@ -90,14 +78,14 @@ export default function BiometricEnrollment() {
           </div>
         )}
 
-        {factors.length > 0 ? (
+        {passkeys.length > 0 ? (
           <div className="space-y-2">
-            {factors.map((f) => (
-              <div key={f.id} className="flex items-center justify-between rounded-lg border border-border-subtle bg-elevated px-3 py-2">
+            {passkeys.map((p) => (
+              <div key={p.id} className="flex items-center justify-between rounded-lg border border-border-subtle bg-elevated px-3 py-2">
                 <span className="flex items-center gap-2 text-xs text-fg-primary">
-                  <Fingerprint className="h-4 w-4 text-accent" /> {f.friendly_name || 'Registered biometric'}
+                  <Fingerprint className="h-4 w-4 text-accent" /> {p.friendly_name || 'Registered biometric'}
                 </span>
-                <button onClick={() => remove(f.id)} disabled={state === 'working'}
+                <button onClick={() => remove(p.id)} disabled={state === 'working'}
                   className="flex items-center gap-1 text-[11px] text-severity-error hover:opacity-80 disabled:opacity-50">
                   <Trash2 className="h-3.5 w-3.5" /> Remove
                 </button>
