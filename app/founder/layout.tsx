@@ -5,6 +5,7 @@ import {
   Brain, Monitor, Package,
   ChevronDown, Clock, Sparkles, Boxes, Archive, LayoutGrid,
 } from 'lucide-react'
+import BiometricGate from './_components/BiometricGate'
 
 export const metadata: Metadata = {
   title: { default: 'Founder', template: '%s — Founder — Pranix' },
@@ -115,7 +116,7 @@ export default function FounderLayout({ children }: { children: React.ReactNode 
 
         {/* Page content */}
         <main className="flex-1 pb-16 lg:pb-6 overflow-x-hidden">
-          {children}
+          <BiometricGate>{children}</BiometricGate>
         </main>
 
         {/* Footer note */}
