@@ -450,7 +450,7 @@ export default async function FounderOverviewPage() {
         </Panel>
 
         {/* Orchestration Status */}
-        <Panel title="Orchestration Status" link="Configure" linkHref="/founder/orchestrate">
+        <Panel title="Orchestration Status" link="Configure" linkHref="/founder/workspace">
           <div className="space-y-2.5">
             {providers.slice(0, 8).map(p => {
               const meta = PROVIDER_META[p.provider_name] ?? { label: p.provider_name, color: '#6b7280' }
