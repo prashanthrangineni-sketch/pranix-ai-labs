@@ -22,5 +22,7 @@ const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
  * the client bundle.
  */
 export function createBrowserClient() {
-  return createSsrBrowserClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  return createSsrBrowserClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    cookieOptions: AUTH_COOKIE_OPTIONS,
+  })
 }
