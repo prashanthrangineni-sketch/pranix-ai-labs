@@ -74,6 +74,7 @@ export async function middleware(request: NextRequest) {
         )
       },
     },
+    cookieOptions: AUTH_COOKIE_OPTIONS,
   })
 
   const {
