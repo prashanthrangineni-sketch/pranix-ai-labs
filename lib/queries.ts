@@ -568,3 +568,39 @@ export async function getMemoryCount(): Promise<number> {
   const { count } = await db.from('pranix_memory').select('*', { count: 'exact', head: true })
   return count ?? 0
 }
+
+// ─── Founder Business Command Center (Phase G) ───────────────────
+// Reads the daily business snapshot. Reuses the existing revenue_snapshots
+// table (source='business_snapshot_v1') — no new table, no new DB.
+
+export type ProductBusiness = {
+  status: string
+  readable: boolean
+  [k: string]: any
+}
+
+export type BusinessSnapshot = {
+  captured_at: string
+  version: number
+  products: Record<string, ProductBusiness>
+  totals: { revenue_collected_inr?: number; revenue_billed_inr?: number }
+}
+
+export async function getBusinessSnapshot(): Promise<BusinessSnapshot | null> {
+  const db = createServerClient()
+  const { data, error } = await db
+    .from('revenue_snapshots')
+    .select('captured_at, raw_payload')
+    .eq('source', 'business_snapshot_v1')
+    .order('captured_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (error || !data) return null
+  const p = (data.raw_payload || {}) as any
+  return {
+    captured_at: data.captured_at,
+    version: p.version ?? 1,
+    products: p.products ?? {},
+    totals: p.totals ?? {},
+  }
+}
