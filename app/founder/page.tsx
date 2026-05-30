@@ -18,6 +18,7 @@ import {
   getLatestForensic,
   getAlertTierCounts,
   getMemoryCount,
+  getBusinessSnapshot,
 } from '@/lib/queries'
 
 export const metadata: Metadata = { title: 'Overview' }
