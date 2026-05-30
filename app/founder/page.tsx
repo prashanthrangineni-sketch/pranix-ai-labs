@@ -207,7 +207,8 @@ function BusinessCommandCenter({ business }: { business: Awaited<ReturnType<type
     : p.readable === false ? 'deployment-only'
     : '\u2014'
   const revenueOf = (p: any): string =>
-    p.fees_collected_inr != null ? fmtINR(p.fees_collected_inr) : '\u2014'
+    p.revenue_label != null ? p.revenue_label
+    : p.fees_collected_inr != null ? fmtINR(p.fees_collected_inr) : '\u2014'
   const healthOf = (p: any): { label: string; cls: string } => {
     if (p.readable === false) return { label: 'Unmonitored', cls: 'text-fg-disabled' }
     const open = (p.alerts_open ?? 0) + (p.risks_open ?? 0) + (p.genome_alerts ?? 0)
