@@ -252,7 +252,7 @@ function BusinessCommandCenter({ business }: { business: Awaited<ReturnType<type
         </tbody>
       </table>
       <p className="mt-3 text-[11px] text-fg-disabled">
-        Snapshot {relTime(business.captured_at)} · collected {fmtINR(business.totals?.revenue_collected_inr ?? 0)} of {fmtINR(business.totals?.revenue_billed_inr ?? 0)} billed · Cart2Save &amp; QuietKeep are outside current MCP scope (deployment-health only).
+        Snapshot {relTime(business.captured_at)} · collected {fmtINR(business.totals?.revenue_collected_inr ?? 0)} of {fmtINR(business.totals?.revenue_billed_inr ?? 0)} billed · Cart2Save &amp; QuietKeep read via the read-only dashboard function (aggregate counts only).
       </p>
     </div>
   )
