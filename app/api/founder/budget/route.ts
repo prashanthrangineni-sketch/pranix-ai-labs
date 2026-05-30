@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase'
 import { getControlPlane } from '../../../lib/control-plane'
-import { founderStepUpGuard } from '@/lib/auth-aal'
 
 // POST /api/founder/budget
 // Body: { action: 'set' | 'clear', budget_usd?: number }
