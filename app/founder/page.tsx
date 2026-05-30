@@ -240,7 +240,10 @@ function BusinessCommandCenter({ business }: { business: Awaited<ReturnType<type
                 <td className={`${tdc} font-medium text-fg-primary`}>{PRODUCT_LABELS[p.key] ?? p.key}</td>
                 <td className={tdc}><span className={`text-[11px] px-1.5 py-0.5 rounded font-medium ${sb.cls}`}>{sb.label}</span></td>
                 <td className={`${tdc} tabular-nums`}>{usersOf(p)}</td>
-                <td className={`${tdc} tabular-nums`}>{activityOf(p)}</td>
+                <td className={`${tdc} tabular-nums`}>
+                  <div>{activityOf(p)}</div>
+                  {p.instrumentation_note && <div className="text-[10px] text-fg-disabled mt-0.5 normal-case">{p.instrumentation_note}</div>}
+                </td>
                 <td className={`${tdc} tabular-nums font-semibold ${p.fees_collected_inr ? 'text-severity-success' : 'text-fg-disabled'}`}>{revenueOf(p)}</td>
                 <td className={tdc}><span className={`text-[11px] font-medium ${h.cls}`}>{h.label}</span></td>
               </tr>
