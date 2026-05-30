@@ -262,12 +262,37 @@ export async function getFailurePatterns(): Promise<FailurePattern[]> {
 
 export async function getProductHealth(): Promise<ProductHealth[]> {
   const db = createServerClient()
-  const { data } = await db
-    .from('project_registry')
-    .select('project_name, url, account_tier, product_type, github_repo, vercel_project_id, supabase_project_id, deployment_health')
-    .order('account_tier')
-    .order('project_name')
-  return (data || []).map(p => ({ ...p, open_findings: 0, last_audit_at: null })) as ProductHealth[]
+  // Phase G3 — replace hardcoded zeros with real audit telemetry.
+  const [registryRes, findingsRes, runsRes] = await Promise.all([
+    db.from('project_registry')
+      .select('project_name, url, account_tier, product_type, github_repo, vercel_project_id, supabase_project_id, deployment_health')
+      .order('account_tier')
+      .order('project_name'),
+    db.from('audit_findings')
+      .select('product_name')
+      .eq('status', 'open'),
+    db.from('audit_runs')
+      .select('product_name, completed_at')
+      .eq('status', 'completed')
+      .order('completed_at', { ascending: false }),
+  ])
+
+  const openByProduct = new Map<string, number>()
+  for (const f of ((findingsRes.data || []) as { product_name: string | null }[])) {
+    if (!f.product_name) continue
+    openByProduct.set(f.product_name, (openByProduct.get(f.product_name) ?? 0) + 1)
+  }
+  const lastAuditByProduct = new Map<string, string>()
+  for (const r of ((runsRes.data || []) as { product_name: string | null; completed_at: string | null }[])) {
+    if (!r.product_name || !r.completed_at) continue
+    if (!lastAuditByProduct.has(r.product_name)) lastAuditByProduct.set(r.product_name, r.completed_at)
+  }
+
+  return ((registryRes.data || []) as Omit<ProductHealth, 'open_findings' | 'last_audit_at'>[]).map(p => ({
+    ...p,
+    open_findings: openByProduct.get(p.project_name) ?? 0,
+    last_audit_at: lastAuditByProduct.get(p.project_name) ?? null,
+  })) as ProductHealth[]
 }
 
 export async function getWorkerNodes(): Promise<WorkerNode[]> {
