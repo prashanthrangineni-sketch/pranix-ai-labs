@@ -154,6 +154,102 @@ function AlertDonut({ p1, p2, p3, p4 }: { p1: number; p2: number; p3: number; p4
   )
 }
 
+// ── Founder Business Command Center (Phase G) ─────────────────────
+
+function fmtINR(n: number) {
+  if (!n) return '\u20b90'
+  if (n >= 10000000) return `\u20b9${(n / 10000000).toFixed(2)}Cr`
+  if (n >= 100000) return `\u20b9${(n / 100000).toFixed(2)}L`
+  if (n >= 1000) return `\u20b9${(n / 1000).toFixed(1)}k`
+  return `\u20b9${n.toLocaleString('en-IN')}`
+}
+
+const PRODUCT_LABELS: Record<string, string> = {
+  schoolos: 'SchoolOS', vidyagrid: 'VidyaGrid', quickscanz: 'QuickScanZ',
+  cart2save: 'Cart2Save', quietkeep: 'QuietKeep',
+}
+
+function statusBadge(status: string): { label: string; cls: string } {
+  const map: Record<string, { label: string; cls: string }> = {
+    live:         { label: 'Live',         cls: 'text-severity-success bg-severity-success/12 border border-severity-success/20' },
+    pilot:        { label: 'Pilot',        cls: 'text-accent bg-accent-subtle' },
+    pre_launch:   { label: 'Pre-launch',   cls: 'text-severity-warn bg-severity-warn/12' },
+    out_of_scope: { label: 'No DB access', cls: 'text-fg-disabled bg-elevated' },
+  }
+  return map[status] ?? { label: status, cls: 'text-fg-disabled bg-elevated' }
+}
+
+function BusinessCommandCenter({ business }: { business: Awaited<ReturnType<typeof getBusinessSnapshot>> }) {
+  if (!business) {
+    return (
+      <p className="text-[12px] text-fg-muted">
+        No business snapshot yet — the daily job has not populated{' '}
+        <span className="font-mono">revenue_snapshots</span> (source=business_snapshot_v1).
+      </p>
+    )
+  }
+  const order = ['schoolos', 'vidyagrid', 'quickscanz', 'cart2save', 'quietkeep']
+  const rows = order.filter((k) => business.products[k]).map((k) => ({ key: k, ...(business.products[k] as any) }))
+
+  const usersOf = (p: any): string =>
+    p.students != null ? `${p.students} students`
+    : p.users != null ? `${p.users} users`
+    : p.signups != null ? `${p.signups} signups`
+    : '\u2014'
+  const activityOf = (p: any): string =>
+    p.attendance_30d != null ? `${p.attendance_30d.toLocaleString('en-IN')} attendance (30d)`
+    : p.test_sessions != null ? `${p.test_sessions} test sessions`
+    : p.status === 'pre_launch' ? 'awaiting launch'
+    : p.readable === false ? 'deployment-only'
+    : '\u2014'
+  const revenueOf = (p: any): string =>
+    p.fees_collected_inr != null ? fmtINR(p.fees_collected_inr) : '\u2014'
+  const healthOf = (p: any): { label: string; cls: string } => {
+    if (p.readable === false) return { label: 'Unmonitored', cls: 'text-fg-disabled' }
+    const open = (p.alerts_open ?? 0) + (p.risks_open ?? 0) + (p.genome_alerts ?? 0)
+    return open === 0 ? { label: 'Healthy', cls: 'text-severity-success' } : { label: `${open} open`, cls: 'text-severity-warn' }
+  }
+
+  const thc = 'text-left text-[10px] uppercase tracking-wide text-fg-disabled font-medium pb-2 px-3'
+  const tdc = 'text-[12px] text-fg-secondary py-2 px-3 align-middle'
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[640px]">
+        <thead>
+          <tr>
+            <th className={thc}>Product</th>
+            <th className={thc}>Status</th>
+            <th className={thc}>Users</th>
+            <th className={thc}>Activity</th>
+            <th className={thc}>Revenue</th>
+            <th className={thc}>Health</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((p) => {
+            const sb = statusBadge(p.status)
+            const h = healthOf(p)
+            return (
+              <tr key={p.key} className="border-t border-border-subtle">
+                <td className={`${tdc} font-medium text-fg-primary`}>{PRODUCT_LABELS[p.key] ?? p.key}</td>
+                <td className={tdc}><span className={`text-[11px] px-1.5 py-0.5 rounded font-medium ${sb.cls}`}>{sb.label}</span></td>
+                <td className={`${tdc} tabular-nums`}>{usersOf(p)}</td>
+                <td className={`${tdc} tabular-nums`}>{activityOf(p)}</td>
+                <td className={`${tdc} tabular-nums font-semibold ${p.fees_collected_inr ? 'text-severity-success' : 'text-fg-disabled'}`}>{revenueOf(p)}</td>
+                <td className={tdc}><span className={`text-[11px] font-medium ${h.cls}`}>{h.label}</span></td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+      <p className="mt-3 text-[11px] text-fg-disabled">
+        Snapshot {relTime(business.captured_at)} · collected {fmtINR(business.totals?.revenue_collected_inr ?? 0)} of {fmtINR(business.totals?.revenue_billed_inr ?? 0)} billed · Cart2Save &amp; QuietKeep are outside current MCP scope (deployment-health only).
+      </p>
+    </div>
+  )
+}
+
 // ── page ─────────────────────────────────────────────────────────
 
 export default async function FounderOverviewPage() {
