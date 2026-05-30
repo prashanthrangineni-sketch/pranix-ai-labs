@@ -145,6 +145,8 @@ export default function FounderAccountPage() {
         </form>
       </section>
 
+      <BiometricEnrollment />
+
       {/* Break-glass recovery secret */}
       <section className="space-y-2">
         <h2 className="text-xs font-medium text-fg-muted">Recovery Secret (break-glass)</h2>
