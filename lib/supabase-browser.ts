@@ -24,5 +24,10 @@ const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 export function createBrowserClient() {
   return createSsrBrowserClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     cookieOptions: AUTH_COOKIE_OPTIONS,
+    // F.2C (passkey): enable the experimental passkey client API
+    // (auth.signInWithPasskey / auth.registerPasskey / auth.passkey.*).
+    // Required by @supabase/auth-js — these methods throw if unset.
+    // Additive: does not affect password / magic-link / persistence (F.2B).
+    auth: { experimental: { passkey: true } },
   })
 }

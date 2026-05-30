@@ -5,8 +5,7 @@ import { usePathname } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase-browser'
 import { Loader2, Fingerprint, KeyRound, Eye, EyeOff } from 'lucide-react'
 
-// Public founder paths must NEVER be gated (mirror of middleware PUBLIC list) —
-// a logged-out founder has to be able to reach login / recovery / break-glass.
+// Public founder paths must NEVER be gated (mirror of middleware PUBLIC list).
 const PUBLIC_PATHS = [
   '/founder/login',
   '/founder/auth/callback',
@@ -17,19 +16,12 @@ const PUBLIC_PATHS = [
 
 type GateState = 'checking' | 'unlocked' | 'locked'
 
-// enroll({factorType:'webauthn'}) is compile-proven against the resolved SDK.
-// The ceremony methods (listFactors/challenge/verify) are the standard MFA
-// methods; typed defensively here so the build never breaks on the exact
-// webauthn param/return union. Runtime ceremony is validated on-device.
-type MfaLike = {
-  listFactors: () => Promise<{
-    data: { all?: Array<{ id: string; factor_type?: string; status?: string }> } | null
-    error: unknown
-  }>
-  challenge: (p: { factorId: string }) => Promise<{ data: { id: string } | null; error: { message: string } | null }>
-  verify: (p: { factorId: string; challengeId: string }) => Promise<{ data: unknown; error: { message: string } | null }>
-}
-
+// F.2C Phase 1 — app-open biometric lock backed by Supabase Passkeys.
+// If the founder has registered a passkey and hasn't unlocked this app-session,
+// the dashboard is hidden until they pass biometric (signInWithPasskey) OR
+// password (signInWithPassword fallback). No passkey registered → passthrough
+// (additive). Biometric is a DASHBOARD UNLOCK only; it adds no server-side
+// authorization (no AMR gating in Phase 1).
 export default function BiometricGate({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const isPublic = PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'))
@@ -52,10 +44,10 @@ export default function BiometricGate({ children }: { children: React.ReactNode 
         const { data: userData } = await supabase.auth.getUser()
         if (!userData.user) { if (!cancelled) setState('unlocked'); return } // unauth → middleware redirects
         if (!cancelled) setEmail(userData.user.email ?? '')
-        const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
-        if (error || !data) { if (!cancelled) setState('unlocked'); return } // fail-open
-        const needsStepUp = data.nextLevel === 'aal2' && data.currentLevel !== 'aal2'
-        if (!cancelled) setState(needsStepUp ? 'locked' : 'unlocked')
+        const { data, error } = await supabase.auth.passkey.list()
+        if (error) { if (!cancelled) setState('unlocked'); return } // fail-open (never harder than today)
+        const hasPasskey = (data ?? []).length > 0
+        if (!cancelled) setState(hasPasskey ? 'locked' : 'unlocked')
       } catch {
         if (!cancelled) setState('unlocked')
       }
@@ -67,16 +59,13 @@ export default function BiometricGate({ children }: { children: React.ReactNode 
     setBusy(true); setErr(null)
     try {
       const supabase = createBrowserClient()
-      const mfa = supabase.auth.mfa as unknown as MfaLike
-      const { data: factors } = await mfa.listFactors()
-      const factor =
-        factors?.all?.find((f) => f.factor_type === 'webauthn' && f.status === 'verified') ??
-        factors?.all?.find((f) => f.status === 'verified')
-      if (!factor) { setErr('No biometric registered. Use your password.'); setBusy(false); return }
-      const { data: ch, error: chErr } = await mfa.challenge({ factorId: factor.id })
-      if (chErr || !ch) { setErr(chErr?.message ?? 'Could not start biometric.'); setBusy(false); return }
-      const { error: vErr } = await mfa.verify({ factorId: factor.id, challengeId: ch.id })
-      if (vErr) { setErr(vErr.message ?? 'Biometric verification failed.'); setBusy(false); return }
+      // Runs the full WebAuthn ceremony and establishes a fresh session
+      // (persisted via the F.2B cookie options on this client).
+      const { data, error } = await supabase.auth.signInWithPasskey()
+      if (error || !data.session) {
+        setErr(error?.message ?? 'Biometric unlock failed. Use your password.')
+        setBusy(false); return
+      }
       setState('unlocked')
     } catch {
       setErr('Biometric unlock failed. Use your password.')

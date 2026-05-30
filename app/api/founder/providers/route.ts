@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase'
 import { getControlPlane } from '../../../lib/control-plane'
-import { founderStepUpGuard } from '@/lib/auth-aal'
 
 // POST /api/founder/providers
 // Body: { provider_name: string, action: 'enable'|'disable'|'set_priority', priority?: number }
@@ -27,10 +26,6 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: 'auth_check_failed' }, { status: 500 })
   }
-
-  // 1b. Step-up — biometric (AAL2) required for control writes when enrolled.
-  const stepUp = await founderStepUpGuard()
-  if (stepUp) return stepUp
 
   // 2. Parse + validate.
   const body = await req.json().catch(() => ({}))

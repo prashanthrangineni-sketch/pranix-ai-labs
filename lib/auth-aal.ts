@@ -1,32 +1,14 @@
-import { NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase'
-
-// F.2C — server-side step-up enforcement for sensitive founder-control writes.
+// DEPRECATED — F.2C Phase 1.
 //
-// Model: the persistent session (F.2B) authenticates the founder at AAL1
-// (password / magic-link). Once a founder ENROLLS a WebAuthn biometric factor,
-// `getAuthenticatorAssuranceLevel()` reports nextLevel='aal2'. Until they step
-// up (biometric unlock) the session stays currentLevel='aal1'. For control
-// WRITES we then require the step-up, returning 403 `step_up_required`.
+// Server-side AAL / step-up enforcement has been removed. The original F.2C
+// design gated founder-control writes on AAL2 via MFA-WebAuthn; that path is
+// platform-disabled on this project ("Enabling of MFA with WebAuthn not
+// currently supported"). The replacement uses Supabase Passkeys purely as a
+// DASHBOARD UNLOCK and introduces NO AMR-based authorization in Phase 1
+// (founder decision). Control routes are gated by founder session only, as
+// before F.2C.
 //
-// Properties:
-//  - Additive: a founder with NO enrolled factor (nextLevel!=='aal2') is never
-//    blocked — behaviour is identical to pre-F.2C.
-//  - No weakening: when a factor IS enrolled, controls become STRONGER (aal2).
-//  - Fail-open on read error: a transient MFA read failure never makes the
-//    route MORE restrictive than today, so it can't lock the founder out.
-//  - Password remains a first-class fallback for app access; biometric is the
-//    factor required specifically for high-sensitivity control writes.
-export async function founderStepUpGuard(): Promise<NextResponse | null> {
-  try {
-    const supabase = createServerClient()
-    const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
-    if (error || !data) return null
-    if (data.nextLevel === 'aal2' && data.currentLevel !== 'aal2') {
-      return NextResponse.json({ error: 'step_up_required' }, { status: 403 })
-    }
-  } catch {
-    // fail-open — never more restrictive than pre-F.2C
-  }
-  return null
-}
+// This module is intentionally inert and is no longer imported anywhere.
+// Kept as a stub because the toolchain cannot delete files; safe to delete
+// via the GitHub UI.
+export {}
