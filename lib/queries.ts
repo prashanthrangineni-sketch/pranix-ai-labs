@@ -262,12 +262,37 @@ export async function getFailurePatterns(): Promise<FailurePattern[]> {
 
 export async function getProductHealth(): Promise<ProductHealth[]> {
   const db = createServerClient()
-  const { data } = await db
-    .from('project_registry')
-    .select('project_name, url, account_tier, product_type, github_repo, vercel_project_id, supabase_project_id, deployment_health')
-    .order('account_tier')
-    .order('project_name')
-  return (data || []).map(p => ({ ...p, open_findings: 0, last_audit_at: null })) as ProductHealth[]
+  // Phase G3 — replace hardcoded zeros with real audit telemetry.
+  const [registryRes, findingsRes, runsRes] = await Promise.all([
+    db.from('project_registry')
+      .select('project_name, url, account_tier, product_type, github_repo, vercel_project_id, supabase_project_id, deployment_health')
+      .order('account_tier')
+      .order('project_name'),
+    db.from('audit_findings')
+      .select('product_name')
+      .eq('status', 'open'),
+    db.from('audit_runs')
+      .select('product_name, completed_at')
+      .eq('status', 'completed')
+      .order('completed_at', { ascending: false }),
+  ])
+
+  const openByProduct = new Map<string, number>()
+  for (const f of ((findingsRes.data || []) as { product_name: string | null }[])) {
+    if (!f.product_name) continue
+    openByProduct.set(f.product_name, (openByProduct.get(f.product_name) ?? 0) + 1)
+  }
+  const lastAuditByProduct = new Map<string, string>()
+  for (const r of ((runsRes.data || []) as { product_name: string | null; completed_at: string | null }[])) {
+    if (!r.product_name || !r.completed_at) continue
+    if (!lastAuditByProduct.has(r.product_name)) lastAuditByProduct.set(r.product_name, r.completed_at)
+  }
+
+  return ((registryRes.data || []) as Omit<ProductHealth, 'open_findings' | 'last_audit_at'>[]).map(p => ({
+    ...p,
+    open_findings: openByProduct.get(p.project_name) ?? 0,
+    last_audit_at: lastAuditByProduct.get(p.project_name) ?? null,
+  })) as ProductHealth[]
 }
 
 export async function getWorkerNodes(): Promise<WorkerNode[]> {
@@ -542,4 +567,40 @@ export async function getMemoryCount(): Promise<number> {
   const db = createServerClient()
   const { count } = await db.from('pranix_memory').select('*', { count: 'exact', head: true })
   return count ?? 0
+}
+
+// ─── Founder Business Command Center (Phase G) ───────────────────
+// Reads the daily business snapshot. Reuses the existing revenue_snapshots
+// table (source='business_snapshot_v1') — no new table, no new DB.
+
+export type ProductBusiness = {
+  status: string
+  readable: boolean
+  [k: string]: any
+}
+
+export type BusinessSnapshot = {
+  captured_at: string
+  version: number
+  products: Record<string, ProductBusiness>
+  totals: { revenue_collected_inr?: number; revenue_billed_inr?: number }
+}
+
+export async function getBusinessSnapshot(): Promise<BusinessSnapshot | null> {
+  const db = createServerClient()
+  const { data, error } = await db
+    .from('revenue_snapshots')
+    .select('captured_at, raw_payload')
+    .eq('source', 'business_snapshot_v1')
+    .order('captured_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (error || !data) return null
+  const p = (data.raw_payload || {}) as any
+  return {
+    captured_at: data.captured_at,
+    version: p.version ?? 1,
+    products: p.products ?? {},
+    totals: p.totals ?? {},
+  }
 }
