@@ -12,5 +12,8 @@
         { "key": "X-Content-Type-Options","value": "nosniff" }
       ]
     }
+  ],
+  "crons": [
+    { "path": "/api/cron/business-snapshot", "schedule": "0 1 * * *" }
   ]
 }
