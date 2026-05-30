@@ -175,6 +175,9 @@ function statusBadge(status: string): { label: string; cls: string } {
     pilot:        { label: 'Pilot',        cls: 'text-accent bg-accent-subtle' },
     pre_launch:   { label: 'Pre-launch',   cls: 'text-severity-warn bg-severity-warn/12' },
     out_of_scope: { label: 'No DB access', cls: 'text-fg-disabled bg-elevated' },
+    pre_revenue:  { label: 'Pre-revenue', cls: 'text-severity-warn bg-severity-warn/12' },
+    beta:         { label: 'Beta',        cls: 'text-accent bg-accent-subtle' },
+    unavailable:  { label: 'Unavailable', cls: 'text-fg-disabled bg-elevated' },
   }
   return map[status] ?? { label: status, cls: 'text-fg-disabled bg-elevated' }
 }
@@ -197,13 +200,15 @@ function BusinessCommandCenter({ business }: { business: Awaited<ReturnType<type
     : p.signups != null ? `${p.signups} signups`
     : '\u2014'
   const activityOf = (p: any): string =>
-    p.attendance_30d != null ? `${p.attendance_30d.toLocaleString('en-IN')} attendance (30d)`
+    p.activity_label != null ? p.activity_label
+    : p.attendance_30d != null ? `${p.attendance_30d.toLocaleString('en-IN')} attendance (30d)`
     : p.test_sessions != null ? `${p.test_sessions} test sessions`
     : p.status === 'pre_launch' ? 'awaiting launch'
     : p.readable === false ? 'deployment-only'
     : '\u2014'
   const revenueOf = (p: any): string =>
-    p.fees_collected_inr != null ? fmtINR(p.fees_collected_inr) : '\u2014'
+    p.revenue_label != null ? p.revenue_label
+    : p.fees_collected_inr != null ? fmtINR(p.fees_collected_inr) : '\u2014'
   const healthOf = (p: any): { label: string; cls: string } => {
     if (p.readable === false) return { label: 'Unmonitored', cls: 'text-fg-disabled' }
     const open = (p.alerts_open ?? 0) + (p.risks_open ?? 0) + (p.genome_alerts ?? 0)
@@ -235,7 +240,10 @@ function BusinessCommandCenter({ business }: { business: Awaited<ReturnType<type
                 <td className={`${tdc} font-medium text-fg-primary`}>{PRODUCT_LABELS[p.key] ?? p.key}</td>
                 <td className={tdc}><span className={`text-[11px] px-1.5 py-0.5 rounded font-medium ${sb.cls}`}>{sb.label}</span></td>
                 <td className={`${tdc} tabular-nums`}>{usersOf(p)}</td>
-                <td className={`${tdc} tabular-nums`}>{activityOf(p)}</td>
+                <td className={`${tdc} tabular-nums`}>
+                  <div>{activityOf(p)}</div>
+                  {p.instrumentation_note && <div className="text-[10px] text-fg-disabled mt-0.5 normal-case">{p.instrumentation_note}</div>}
+                </td>
                 <td className={`${tdc} tabular-nums font-semibold ${p.fees_collected_inr ? 'text-severity-success' : 'text-fg-disabled'}`}>{revenueOf(p)}</td>
                 <td className={tdc}><span className={`text-[11px] font-medium ${h.cls}`}>{h.label}</span></td>
               </tr>
@@ -244,7 +252,7 @@ function BusinessCommandCenter({ business }: { business: Awaited<ReturnType<type
         </tbody>
       </table>
       <p className="mt-3 text-[11px] text-fg-disabled">
-        Snapshot {relTime(business.captured_at)} · collected {fmtINR(business.totals?.revenue_collected_inr ?? 0)} of {fmtINR(business.totals?.revenue_billed_inr ?? 0)} billed · Cart2Save &amp; QuietKeep are outside current MCP scope (deployment-health only).
+        Snapshot {relTime(business.captured_at)} · collected {fmtINR(business.totals?.revenue_collected_inr ?? 0)} of {fmtINR(business.totals?.revenue_billed_inr ?? 0)} billed · Cart2Save &amp; QuietKeep read via the read-only dashboard function (aggregate counts only).
       </p>
     </div>
   )
