@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase-browser'
 import { Loader2, Eye, EyeOff, KeyRound, LogOut, CheckCircle2, UserCircle } from 'lucide-react'
+import BiometricEnrollment from './BiometricEnrollment'
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error'
 
