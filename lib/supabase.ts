@@ -1,5 +1,6 @@
 import { createServerClient as createSsrServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { AUTH_COOKIE_OPTIONS } from './auth-cookie-options'
 
 // Hard-coded fallback URL — project is public, URL is safe to expose in source.
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? 'https://mvdjyjccvioxircxuzgz.supabase.co'
@@ -33,5 +34,6 @@ export function createServerClient() {
         }
       },
     },
+    cookieOptions: AUTH_COOKIE_OPTIONS,
   })
 }
