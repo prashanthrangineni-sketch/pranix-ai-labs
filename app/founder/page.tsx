@@ -200,7 +200,8 @@ function BusinessCommandCenter({ business }: { business: Awaited<ReturnType<type
     : p.signups != null ? `${p.signups} signups`
     : '\u2014'
   const activityOf = (p: any): string =>
-    p.attendance_30d != null ? `${p.attendance_30d.toLocaleString('en-IN')} attendance (30d)`
+    p.activity_label != null ? p.activity_label
+    : p.attendance_30d != null ? `${p.attendance_30d.toLocaleString('en-IN')} attendance (30d)`
     : p.test_sessions != null ? `${p.test_sessions} test sessions`
     : p.status === 'pre_launch' ? 'awaiting launch'
     : p.readable === false ? 'deployment-only'
