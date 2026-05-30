@@ -29,6 +29,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'auth_check_failed' }, { status: 500 })
   }
 
+  // 1b. Step-up — biometric (AAL2) required for control writes when enrolled.
+  const stepUp = await founderStepUpGuard()
+  if (stepUp) return stepUp
+
   // 2. Parse + validate.
   const body = await req.json().catch(() => ({}))
   const action = body?.action
