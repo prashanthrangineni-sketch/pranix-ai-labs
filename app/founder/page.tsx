@@ -291,6 +291,11 @@ export default async function FounderOverviewPage() {
         <StatCard icon={ShieldAlert} iconColor="#ef4444" label="Critical Alerts" value={pulse.alertCounts.critical}                 sub="Requires attention" valueClass="text-severity-critical" />
       </div>
 
+      {/* ── Founder Business Command Center (Phase G) ── */}
+      <Panel title="Founder Business Command Center" link="All products" linkHref="/founder/products">
+        <BusinessCommandCenter business={business} />
+      </Panel>
+
       {/* ── Row 1: Worker Topology | Alert Summary | Product Health | Account Settings ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
 
