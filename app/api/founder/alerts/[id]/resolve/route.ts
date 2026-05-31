@@ -6,6 +6,8 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const __gate = await requireWritableFounder()
+  if (__gate instanceof NextResponse) return __gate
   try {
     const db = getControlPlane()
     const { id } = await params
