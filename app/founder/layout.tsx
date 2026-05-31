@@ -42,7 +42,9 @@ const BOTTOM_NAV = [
   { label: 'More',      href: '/founder/more',      icon: ChevronDown },
 ] as const
 
-export default function FounderLayout({ children }: { children: React.ReactNode }) {
+export default async function FounderLayout({ children }: { children: React.ReactNode }) {
+  const session = await getFounderSession()
+  const readOnly = session?.role === 'readonly'
   return (
     <div className="flex min-h-screen bg-canvas text-fg-primary" style={{ fontFamily: "'DM Sans', 'Inter', system-ui, sans-serif" }}>
 
