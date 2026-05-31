@@ -1,8 +1,24 @@
 import { getOperations } from '@/lib/operations'
-import { Lock, Activity, Rocket, Settings, CheckCircle2, AlertCircle, Smartphone } from 'lucide-react'
+import Link from 'next/link'
+import { Lock, Activity, Rocket, Settings, CheckCircle2, AlertCircle, Smartphone, Monitor, Image as ImageIcon, Database, Network, Bot, Users, FolderArchive, Cpu, ListTree } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'More' }
+
+// Routes that live in the desktop-only sidebar (hidden lg:flex) and are not in
+// the mobile bottom nav. Surfaced here so a mobile-only founder can reach them.
+const CONSOLE_LINKS: { href: string; label: string; sub: string; icon: React.ReactNode }[] = [
+  { href: '/founder/baselines', label: 'Browser Intelligence', sub: 'Visual regression screenshots', icon: <Monitor className="h-4 w-4" /> },
+  { href: '/founder/artifacts', label: 'Artifacts', sub: 'Artifact governance', icon: <ImageIcon className="h-4 w-4" /> },
+  { href: '/founder/workers', label: 'Workers', sub: 'Worker runs', icon: <Cpu className="h-4 w-4" /> },
+  { href: '/founder/orchestrate', label: 'Orchestrate', sub: 'Inference & routing', icon: <Network className="h-4 w-4" /> },
+  { href: '/founder/ai', label: 'AI Workspace', sub: 'Operational layer', icon: <Bot className="h-4 w-4" /> },
+  { href: '/founder/actions', label: 'Actions', sub: 'Action registry', icon: <ListTree className="h-4 w-4" /> },
+  { href: '/founder/memory', label: 'Memory', sub: 'Pranix memory', icon: <Database className="h-4 w-4" /> },
+  { href: '/founder/accounts', label: 'Accounts', sub: 'Connected accounts', icon: <Users className="h-4 w-4" /> },
+  { href: '/founder/workspace', label: 'Workspace', sub: 'Founder workspace', icon: <FolderArchive className="h-4 w-4" /> },
+  { href: '/founder/vault', label: 'Vault', sub: 'Document vault', icon: <Lock className="h-4 w-4" /> },
+]
 
 function rel(iso: string | null) {
   if (!iso) return '—'
@@ -38,6 +54,25 @@ export default async function MorePage() {
         <h1 className="text-xl font-semibold text-fg-primary tracking-tight">Operations</h1>
         <p className="text-[13px] text-fg-muted mt-1">Protocols, observability, deployments, and settings — read-only, from live control-plane data.</p>
       </div>
+
+      {/* Console — reach desktop-only views on mobile */}
+      <Section icon={<Monitor className="h-4 w-4" />} title="Console" sub="more views">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+          {CONSOLE_LINKS.map((l) => (
+            <Link
+              key={l.href}
+              href={l.href}
+              className="rounded-lg border border-border-subtle bg-canvas px-3 py-2.5 hover:border-accent hover:bg-accent-subtle transition-colors"
+            >
+              <div className="flex items-center gap-2 text-fg-muted">
+                {l.icon}
+                <span className="text-[12px] font-medium text-fg-primary truncate">{l.label}</span>
+              </div>
+              <p className="text-[10px] text-fg-disabled mt-1 truncate">{l.sub}</p>
+            </Link>
+          ))}
+        </div>
+      </Section>
 
       {/* Observability */}
       <Section icon={<Activity className="h-4 w-4" />} title="Observability" sub={s ? `snapshot ${rel(s.snapshot_at)}` : 'no snapshots'}>
