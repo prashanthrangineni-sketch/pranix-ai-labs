@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase'
+import { requireWritableFounder } from '@/lib/auth'
 import { getControlPlane } from '@/app/lib/control-plane'
 import { getPermissionInbox } from '@/lib/permissions'
 import {
