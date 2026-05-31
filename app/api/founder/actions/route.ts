@@ -19,6 +19,8 @@ export async function GET() {
 }
 
 export async function PATCH(req: NextRequest) {
+  const __gate = await requireWritableFounder()
+  if (__gate instanceof NextResponse) return __gate
   try {
     const supabase = getControlPlane();
     const { id, resolved, resolution_note } = await req.json() as { id: number; resolved: boolean; resolution_note?: string };
