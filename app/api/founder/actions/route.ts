@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getControlPlane } from "../../../lib/control-plane";
+import { requireWritableFounder } from "@/lib/auth";
 
 export async function GET() {
   try {
