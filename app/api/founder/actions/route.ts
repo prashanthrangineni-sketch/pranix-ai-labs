@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getControlPlane } from "../../../lib/control-plane";
+import { requireWritableFounder } from "@/lib/auth";
 
 export async function GET() {
   try {
@@ -18,6 +19,8 @@ export async function GET() {
 }
 
 export async function PATCH(req: NextRequest) {
+  const __gate = await requireWritableFounder()
+  if (__gate instanceof NextResponse) return __gate
   try {
     const supabase = getControlPlane();
     const { id, resolved, resolution_note } = await req.json() as { id: number; resolved: boolean; resolution_note?: string };

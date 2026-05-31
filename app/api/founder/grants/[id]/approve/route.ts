@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getControlPlane } from '../../../../../lib/control-plane'
+import { requireWritableFounder } from '@/lib/auth'
 
 // POST /api/founder/grants/[id]/approve  — grants an MCP access request
 // POST /api/founder/grants/[id]/revoke   — revokes a previously granted access
@@ -8,6 +9,8 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const __gate = await requireWritableFounder()
+  if (__gate instanceof NextResponse) return __gate
   try {
     const db = getControlPlane()
     const { id } = await params

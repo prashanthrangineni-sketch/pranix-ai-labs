@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getControlPlane } from "../../../lib/control-plane";
+import { requireWritableFounder } from "@/lib/auth";
 
 const BUCKET = "company-documents";
 
@@ -20,6 +21,8 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const __gate = await requireWritableFounder()
+  if (__gate instanceof NextResponse) return __gate
   try {
     const supabase = getControlPlane();
     const formData = await req.formData();

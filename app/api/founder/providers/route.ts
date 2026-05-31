@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase'
+import { requireWritableFounder } from '@/lib/auth'
 import { getControlPlane } from '../../../lib/control-plane'
 
 // POST /api/founder/providers
@@ -10,6 +11,10 @@ import { getControlPlane } from '../../../lib/control-plane'
 const ALLOWED_ACTIONS = ['enable', 'disable', 'set_priority'] as const
 
 export async function POST(req: NextRequest) {
+  // 0. Read-only guard — readonly founders (e.g. QA) may view but not mutate.
+  const __gate = await requireWritableFounder()
+  if (__gate instanceof NextResponse) return __gate
+
   // 1. AuthN/AuthZ — must be a logged-in founder on the allowlist.
   let email: string | null = null
   try {

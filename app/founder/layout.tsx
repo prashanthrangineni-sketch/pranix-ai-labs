@@ -6,6 +6,7 @@ import {
   ChevronDown, Clock, Sparkles, Boxes, Archive, LayoutGrid,
 } from 'lucide-react'
 import BiometricGate from './_components/BiometricGate'
+import { getFounderSession } from '@/lib/auth'
 
 export const metadata: Metadata = {
   title: { default: 'Founder', template: '%s — Founder — Pranix' },
@@ -41,7 +42,9 @@ const BOTTOM_NAV = [
   { label: 'More',      href: '/founder/more',      icon: ChevronDown },
 ] as const
 
-export default function FounderLayout({ children }: { children: React.ReactNode }) {
+export default async function FounderLayout({ children }: { children: React.ReactNode }) {
+  const session = await getFounderSession()
+  const readOnly = session?.role === 'readonly'
   return (
     <div className="flex min-h-screen bg-canvas text-fg-primary" style={{ fontFamily: "'DM Sans', 'Inter', system-ui, sans-serif" }}>
 
@@ -113,6 +116,14 @@ export default function FounderLayout({ children }: { children: React.ReactNode 
             <ChevronDown className="hidden sm:block h-3 w-3 text-fg-disabled" />
           </Link>
         </header>
+
+        {readOnly && (
+          <div className="bg-severity-warn/12 border-b border-severity-warn/20 px-4 lg:px-6 py-2">
+            <p className="text-[12px] text-severity-warn font-medium">
+              Read-only (QA) session — viewing is enabled, but actions that change settings are disabled.
+            </p>
+          </div>
+        )}
 
         {/* Page content */}
         <main className="flex-1 pb-16 lg:pb-6 overflow-x-hidden">
