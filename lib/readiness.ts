@@ -50,7 +50,7 @@ export async function getReadiness(): Promise<ProductReadiness[]> {
   }
 
   const out: ProductReadiness[] = []
-  for (const [product, a] of acc) {
+  for (const [product, a] of Array.from(acc.entries())) {
     const verified = a.total - a.unverified
     const pct = (n: number) => (a.total ? Math.round((n / a.total) * 100) : 0)
     out.push({
