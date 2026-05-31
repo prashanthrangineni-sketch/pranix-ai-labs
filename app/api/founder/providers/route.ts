@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase'
+import { requireWritableFounder } from '@/lib/auth'
 import { getControlPlane } from '../../../lib/control-plane'
 
 // POST /api/founder/providers
