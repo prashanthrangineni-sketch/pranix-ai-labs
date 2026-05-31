@@ -59,6 +59,8 @@ export async function POST(req: NextRequest) {
 
   // ── Mode 1: set recovery secret (session-gated) ──
   if (action === 'set_secret') {
+    const __gate = await requireWritableFounder()
+    if (__gate instanceof NextResponse) return __gate
     const caller = await callerFounderEmail()
     if (!caller) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 })
     const secret = String(body?.secret ?? '')
