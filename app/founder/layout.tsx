@@ -117,6 +117,14 @@ export default async function FounderLayout({ children }: { children: React.Reac
           </Link>
         </header>
 
+        {readOnly && (
+          <div className="bg-severity-warn/12 border-b border-severity-warn/20 px-4 lg:px-6 py-2">
+            <p className="text-[12px] text-severity-warn font-medium">
+              Read-only (QA) session — viewing is enabled, but actions that change settings are disabled.
+            </p>
+          </div>
+        )}
+
         {/* Page content */}
         <main className="flex-1 pb-16 lg:pb-6 overflow-x-hidden">
           <BiometricGate>{children}</BiometricGate>
