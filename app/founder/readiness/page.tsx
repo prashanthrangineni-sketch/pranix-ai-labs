@@ -1,4 +1,4 @@
-import { getReadiness } from '@/lib/readiness'
+import { getReadiness, getPlatformSignals } from '@/lib/readiness'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Readiness' }
@@ -14,7 +14,7 @@ function Metric({ label, value, sub }: { label: string; value: string; sub: stri
 }
 
 export default async function ReadinessPage() {
-  const rows = await getReadiness()
+  const [rows, signals] = await Promise.all([getReadiness(), getPlatformSignals()])
 
   return (
     <div className="p-4 lg:p-6 space-y-5 max-w-5xl mx-auto">
@@ -24,6 +24,17 @@ export default async function ReadinessPage() {
           Per-product outcome validation, readiness, and rejection risk — from live <code>outcome_checks</code>.
           Unverified outcomes are not yet proven.
         </p>
+      </div>
+
+      <div className="rounded-xl border border-border-subtle bg-surface p-4">
+        <p className="text-[12px] font-semibold text-fg-primary mb-3">Platform activation</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <Metric label="Outcome coverage" value={`${signals.outcomeCoveragePct}%`} sub={`${signals.outcomeValidated}/${signals.outcomeTotal} measured`} />
+          <Metric label="Outcome pass" value={`${signals.outcomePassPct}%`} sub={`${signals.outcomePass}/${signals.outcomeTotal} pass`} />
+          <Metric label="Open issues" value={`${signals.issuesRecent}`} sub={`${signals.issuesTotal} total intake · 7d`} />
+          <Metric label="LoveBot usage" value={`${signals.lovebotInvocations}`} sub="answered invocations" />
+          <Metric label="Critical failures" value={`${signals.criticalFailures}`} sub="outcomes marked fail" />
+        </div>
       </div>
 
       {rows.length === 0 ? (
@@ -51,7 +62,7 @@ export default async function ReadinessPage() {
 
       <p className="text-[11px] text-fg-disabled">
         Outcome statuses are written by automated probes (software-path) and human-in-loop intake (OCR/voice/journeys).
-        Unverified = not yet measured.
+        Open issues come from <code>mcp_intakes</code> (stakeholder intake → routing). Unverified = not yet measured.
       </p>
     </div>
   )
