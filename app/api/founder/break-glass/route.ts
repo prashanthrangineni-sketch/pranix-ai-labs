@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createHash, timingSafeEqual, randomUUID } from 'crypto'
 import { createServerClient } from '@/lib/supabase'
 import { getControlPlane } from '../../../lib/control-plane'
+import { requireWritableFounder } from '@/lib/auth'
 
 // Founder Password Administration — Admin-API based, NO email / magic-link / PKCE.
 //
