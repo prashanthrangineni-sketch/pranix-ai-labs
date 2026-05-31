@@ -81,6 +81,13 @@ export async function POST(req: Request) {
   try {
     // 1) Sensitive actions → Permission Center (no bypass)
     if (ACTION_RE.test(q)) {
+      // Read-only accounts (e.g. QA) cannot route actions — routeToPermissionCenter writes a grant request.
+      const w = await requireWritableFounder()
+      if (w instanceof NextResponse) {
+        return NextResponse.json({
+          reply: { kind: 'info', title: 'Read-only account', lines: ['This account has read-only access. Actions that change settings are disabled for it.'] } as Reply,
+        })
+      }
       const reply = await routeToPermissionCenter(message, gate.email)
       return NextResponse.json({ reply })
     }
