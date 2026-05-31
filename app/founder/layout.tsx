@@ -3,7 +3,7 @@ import Link from 'next/link'
 import {
   LayoutDashboard, Bot, ListChecks, Bell, ShieldCheck,
   Brain, Monitor, Package,
-  ChevronDown, Clock, Sparkles, Boxes, Archive, LayoutGrid,
+  ChevronDown, Clock, Sparkles, Boxes, Archive, LayoutGrid, Gauge,
 } from 'lucide-react'
 import BiometricGate from './_components/BiometricGate'
 import { getFounderSession } from '@/lib/auth'
@@ -26,6 +26,7 @@ const SIDEBAR_NAV = [
   { label: 'Memory',               href: '/founder/memory',       icon: Brain },
   { label: 'Browser Intelligence', href: '/founder/baselines',    icon: Monitor },
   { label: 'Products',             href: '/founder/products',     icon: Package },
+  { label: 'Readiness',            href: '/founder/readiness',    icon: Gauge,      badgeText: 'NEW' },
   { label: 'Accounts',             href: '/founder/accounts',     icon: Boxes },
   { label: 'Artifacts',            href: '/founder/artifacts',    icon: Archive,    badgeText: 'NEW' },
   { label: 'More',                 href: '/founder/more',         icon: ChevronDown },
@@ -37,8 +38,8 @@ const BOTTOM_NAV = [
   { label: 'Ask',       href: '/founder/ask',       icon: Sparkles },
   { label: 'Products',  href: '/founder/products',  icon: Package },
   { label: 'Tasks',     href: '/founder/tasks',     icon: ListChecks },
+  { label: 'Readiness', href: '/founder/readiness', icon: Gauge },
   { label: 'Alerts',    href: '/founder/alerts',    icon: Bell },
-  { label: 'Approvals', href: '/founder/approvals', icon: ShieldCheck },
   { label: 'More',      href: '/founder/more',      icon: ChevronDown },
 ] as const
 
