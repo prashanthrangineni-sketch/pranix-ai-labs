@@ -6,6 +6,7 @@ import {
   ChevronDown, Clock, Sparkles, Boxes, Archive, LayoutGrid,
 } from 'lucide-react'
 import BiometricGate from './_components/BiometricGate'
+import { getFounderSession } from '@/lib/auth'
 
 export const metadata: Metadata = {
   title: { default: 'Founder', template: '%s — Founder — Pranix' },
