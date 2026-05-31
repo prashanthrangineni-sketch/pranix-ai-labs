@@ -68,3 +68,48 @@ export async function getReadiness(): Promise<ProductReadiness[]> {
   out.sort((x, y) => x.product.localeCompare(y.product))
   return out
 }
+
+// Platform-wide activation signals (read-only). Reuses existing control-plane
+// tables only: outcome_checks (validation), mcp_intakes (stakeholder issues +
+// founder visibility), tasks (LoveBot adoption). No new tables, no new storage.
+export type PlatformSignals = {
+  outcomeTotal: number
+  outcomeValidated: number
+  outcomePass: number
+  outcomeCoveragePct: number   // validated / total
+  outcomePassPct: number       // pass / total
+  criticalFailures: number     // outcome_checks fail
+  issuesTotal: number          // mcp_intakes all-time
+  issuesRecent: number         // mcp_intakes last 7 days
+  lovebotInvocations: number   // tasks lovebot_answer completed
+}
+
+export async function getPlatformSignals(): Promise<PlatformSignals> {
+  const db = getControlPlane()
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+  const [ocRes, intakesAll, intakesRecent, lovebot] = await Promise.all([
+    db.from('outcome_checks').select('status'),
+    db.from('mcp_intakes').select('id', { count: 'exact', head: true }),
+    db.from('mcp_intakes').select('id', { count: 'exact', head: true }).gte('created_at', sevenDaysAgo),
+    db.from('tasks').select('id', { count: 'exact', head: true }).eq('action', 'lovebot_answer').eq('state', 'completed'),
+  ])
+
+  const checks = (ocRes.data ?? []) as Array<{ status: string }>
+  const outcomeTotal = checks.length
+  const outcomePass = checks.filter((c) => c.status === 'pass').length
+  const criticalFailures = checks.filter((c) => c.status === 'fail').length
+  const outcomeValidated = checks.filter((c) => c.status !== 'unverified').length
+  const pct = (n: number, d: number) => (d ? Math.round((n / d) * 100) : 0)
+
+  return {
+    outcomeTotal,
+    outcomeValidated,
+    outcomePass,
+    outcomeCoveragePct: pct(outcomeValidated, outcomeTotal),
+    outcomePassPct: pct(outcomePass, outcomeTotal),
+    criticalFailures,
+    issuesTotal: intakesAll.count ?? 0,
+    issuesRecent: intakesRecent.count ?? 0,
+    lovebotInvocations: lovebot.count ?? 0,
+  }
+}
