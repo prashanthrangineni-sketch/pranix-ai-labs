@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getControlPlane } from "../../../lib/control-plane";
+import { requireWritableFounder } from "@/lib/auth";
 
 const BUCKET = "company-documents";
 
