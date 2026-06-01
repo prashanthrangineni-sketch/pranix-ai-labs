@@ -71,7 +71,8 @@ export async function getReadiness(): Promise<ProductReadiness[]> {
 
 // Platform-wide activation signals (read-only). Reuses existing control-plane
 // tables only: outcome_checks (validation), mcp_intakes (stakeholder issues +
-// founder visibility), tasks (LoveBot adoption). No new tables, no new storage.
+// founder visibility), tasks (LoveBot responses), pranix_memory (LoveBot
+// escalations). No new tables, no new storage.
 export type PlatformSignals = {
   outcomeTotal: number
   outcomeValidated: number
@@ -81,17 +82,40 @@ export type PlatformSignals = {
   criticalFailures: number     // outcome_checks fail
   issuesTotal: number          // mcp_intakes all-time
   issuesRecent: number         // mcp_intakes last 7 days
-  lovebotInvocations: number   // tasks lovebot_answer completed
+  lovebotInvocations: number   // = lovebotResponses (kept for back-compat)
+  lovebotResponses: number     // tasks lovebot_answer completed
+  lovebotEscalations: number   // pranix_memory source_kind=lovebot_escalation
+  escalationRatePct: number    // escalations / responses
+  issueTrend7d: number[]       // daily mcp_intakes counts, oldest->newest (len 7)
+  escalationTrend7d: number[]  // daily escalation counts, oldest->newest (len 7)
+}
+
+// Bucket ISO timestamps into 7 daily counts (UTC), index 0 = 6 days ago, index 6 = today.
+function bucket7d(timestamps: string[]): number[] {
+  const days = 7
+  const now = new Date()
+  const startOfTodayUtc = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+  const counts = new Array(days).fill(0)
+  for (const ts of timestamps) {
+    const t = new Date(ts)
+    const dayUtc = Date.UTC(t.getUTCFullYear(), t.getUTCMonth(), t.getUTCDate())
+    const diffDays = Math.floor((startOfTodayUtc - dayUtc) / 86400000)
+    if (diffDays >= 0 && diffDays < days) counts[days - 1 - diffDays] += 1
+  }
+  return counts
 }
 
 export async function getPlatformSignals(): Promise<PlatformSignals> {
   const db = getControlPlane()
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-  const [ocRes, intakesAll, intakesRecent, lovebot] = await Promise.all([
+  const [ocRes, intakesAll, intakesRecent, lovebot, escal, intakeDates, escalDates] = await Promise.all([
     db.from('outcome_checks').select('status'),
     db.from('mcp_intakes').select('id', { count: 'exact', head: true }),
     db.from('mcp_intakes').select('id', { count: 'exact', head: true }).gte('created_at', sevenDaysAgo),
     db.from('tasks').select('id', { count: 'exact', head: true }).eq('action', 'lovebot_answer').eq('state', 'completed'),
+    db.from('pranix_memory').select('id', { count: 'exact', head: true }).eq('source_kind', 'lovebot_escalation'),
+    db.from('mcp_intakes').select('created_at').gte('created_at', sevenDaysAgo),
+    db.from('pranix_memory').select('created_at').eq('source_kind', 'lovebot_escalation').gte('created_at', sevenDaysAgo),
   ])
 
   const checks = (ocRes.data ?? []) as Array<{ status: string }>
@@ -100,6 +124,11 @@ export async function getPlatformSignals(): Promise<PlatformSignals> {
   const criticalFailures = checks.filter((c) => c.status === 'fail').length
   const outcomeValidated = checks.filter((c) => c.status !== 'unverified').length
   const pct = (n: number, d: number) => (d ? Math.round((n / d) * 100) : 0)
+
+  const responses = lovebot.count ?? 0
+  const escalations = escal.count ?? 0
+  const intakeTimes = ((intakeDates.data ?? []) as Array<{ created_at: string }>).map((r) => r.created_at)
+  const escalTimes = ((escalDates.data ?? []) as Array<{ created_at: string }>).map((r) => r.created_at)
 
   return {
     outcomeTotal,
@@ -110,6 +139,11 @@ export async function getPlatformSignals(): Promise<PlatformSignals> {
     criticalFailures,
     issuesTotal: intakesAll.count ?? 0,
     issuesRecent: intakesRecent.count ?? 0,
-    lovebotInvocations: lovebot.count ?? 0,
+    lovebotInvocations: responses,
+    lovebotResponses: responses,
+    lovebotEscalations: escalations,
+    escalationRatePct: pct(escalations, responses),
+    issueTrend7d: bucket7d(intakeTimes),
+    escalationTrend7d: bucket7d(escalTimes),
   }
 }
