@@ -1,4 +1,4 @@
-import { getControlPlane } from '@/lib/control-plane'
+import { getControlPlane } from '@/app/lib/control-plane'
 
 export type CredentialHealth = {
   name: string
