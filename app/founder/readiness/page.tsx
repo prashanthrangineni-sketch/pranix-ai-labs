@@ -1,4 +1,5 @@
 import { getReadiness, getPlatformSignals } from '@/lib/readiness'
+import { getCredentialHealth, getPromotionGates } from '@/lib/credential-health'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Readiness' }
