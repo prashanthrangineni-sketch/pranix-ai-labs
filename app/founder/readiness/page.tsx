@@ -1,4 +1,5 @@
 import { getReadiness, getPlatformSignals } from '@/lib/readiness'
+import { getCredentialHealth, getPromotionGates } from '@/lib/credential-health'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Readiness' }
@@ -30,7 +31,12 @@ function Spark({ label, series, sub }: { label: string; series: number[]; sub: s
 }
 
 export default async function ReadinessPage() {
-  const [rows, signals] = await Promise.all([getReadiness(), getPlatformSignals()])
+  const [rows, signals, creds, gates] = await Promise.all([
+    getReadiness(),
+    getPlatformSignals(),
+    getCredentialHealth(),
+    getPromotionGates(),
+  ])
 
   return (
     <div className="p-4 lg:p-6 space-y-5 max-w-5xl mx-auto">
@@ -62,6 +68,42 @@ export default async function ReadinessPage() {
           <Spark label="Issue trend (7d)" series={signals.issueTrend7d} sub="daily new intakes" />
           <Spark label="Escalation trend (7d)" series={signals.escalationTrend7d} sub="daily escalations" />
         </div>
+      </div>
+
+      <div className="rounded-xl border border-border-subtle bg-surface p-4">
+        <p className="text-[12px] font-semibold text-fg-primary mb-3">Credential health</p>
+        {creds.length === 0 ? (
+          <p className="text-[12px] text-fg-muted">No credentials monitored.</p>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {creds.map((c) => (
+              <Metric
+                key={c.name}
+                label={c.provider ?? c.name}
+                value={c.status}
+                sub={c.expires_at ? `expires ${new Date(c.expires_at).toLocaleDateString()}` : c.balance_value != null ? `bal ${c.balance_value}` : 'no expiry data'}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="rounded-xl border border-border-subtle bg-surface p-4">
+        <p className="text-[12px] font-semibold text-fg-primary mb-3">Promotion gates (enforced)</p>
+        {gates.length === 0 ? (
+          <p className="text-[12px] text-fg-muted">No artifacts in the readiness gate yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {gates.map((g) => (
+              <div key={`${g.project}/${g.artifact}`} className="flex items-center justify-between text-[12px]">
+                <span className="text-fg-primary">{g.project}/{g.artifact}</span>
+                <span className="text-fg-muted tabular-nums">
+                  {g.implemented ? 'I' : '·'} {g.tested ? 'T' : '·'} {g.proven ? 'P' : '·'} {g.production_ok ? 'PROD ✓' : 'PROD ✗'}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {rows.length === 0 ? (
