@@ -70,6 +70,42 @@ export default async function ReadinessPage() {
         </div>
       </div>
 
+      <div className="rounded-xl border border-border-subtle bg-surface p-4">
+        <p className="text-[12px] font-semibold text-fg-primary mb-3">Credential health</p>
+        {creds.length === 0 ? (
+          <p className="text-[12px] text-fg-muted">No credentials monitored.</p>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {creds.map((c) => (
+              <Metric
+                key={c.name}
+                label={c.provider ?? c.name}
+                value={c.status}
+                sub={c.expires_at ? `expires ${new Date(c.expires_at).toLocaleDateString()}` : c.balance_value != null ? `bal ${c.balance_value}` : 'no expiry data'}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="rounded-xl border border-border-subtle bg-surface p-4">
+        <p className="text-[12px] font-semibold text-fg-primary mb-3">Promotion gates (enforced)</p>
+        {gates.length === 0 ? (
+          <p className="text-[12px] text-fg-muted">No artifacts in the readiness gate yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {gates.map((g) => (
+              <div key={`${g.project}/${g.artifact}`} className="flex items-center justify-between text-[12px]">
+                <span className="text-fg-primary">{g.project}/{g.artifact}</span>
+                <span className="text-fg-muted tabular-nums">
+                  {g.implemented ? 'I' : '·'} {g.tested ? 'T' : '·'} {g.proven ? 'P' : '·'} {g.production_ok ? 'PROD ✓' : 'PROD ✗'}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {rows.length === 0 ? (
         <p className="text-[13px] text-fg-muted">No outcome checks recorded yet.</p>
       ) : (
