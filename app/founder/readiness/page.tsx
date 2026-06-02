@@ -31,7 +31,12 @@ function Spark({ label, series, sub }: { label: string; series: number[]; sub: s
 }
 
 export default async function ReadinessPage() {
-  const [rows, signals] = await Promise.all([getReadiness(), getPlatformSignals()])
+  const [rows, signals, creds, gates] = await Promise.all([
+    getReadiness(),
+    getPlatformSignals(),
+    getCredentialHealth(),
+    getPromotionGates(),
+  ])
 
   return (
     <div className="p-4 lg:p-6 space-y-5 max-w-5xl mx-auto">
