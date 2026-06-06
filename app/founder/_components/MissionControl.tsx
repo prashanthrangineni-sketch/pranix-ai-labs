@@ -1,8 +1,10 @@
 'use client'
 // app/founder/_components/MissionControl.tsx
-// P4 — Founder Mission Control.
+// P4 + P5 — Founder Mission Control.
 // Polls GET /api/founder/overview every 30s and renders a push-style executive
-// dashboard. Read-only — zero write calls.
+// dashboard. Also polls GET /api/founder/recommendations every 60s and renders
+// a Recommendation Inbox sorted by severity.
+// Read-only — zero write calls here.
 
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
@@ -10,7 +12,9 @@ import {
   ShieldCheck, Loader2, RefreshCw, AlertOctagon, CheckCircle2,
   Zap, Activity, ListChecks, ClipboardList, ChevronRight,
   AlertTriangle, Lightbulb, BrainCircuit, Sunrise, Circle,
+  Inbox, FlameKindling, AlertCircle, Info,
 } from 'lucide-react'
+import type { Recommendation, RiskLevel } from '@/app/api/founder/recommendations/route'
 
 // ── Types ────────────────────────────────────────────────────────────────
 interface ApprovalItem  { task_id: string; title: string; goal: string; created_at: string }
