@@ -424,6 +424,90 @@ export default async function FounderPermissionsPage() {
         )
       })()}
 
+      {/* ── P11: Execution Review ── */}
+      {(() => {
+        const allExec: ExecutionRecord[] = [
+          ...executionData.blocked,
+          ...executionData.eligible,
+          ...executionData.executing,
+          ...executionData.queued,
+          ...executionData.failed,
+          ...executionData.completed,
+        ]
+        if (allExec.length === 0) return null
+
+        return (
+          <section id="execution" className="space-y-3 scroll-mt-4">
+            <div className="flex items-center gap-2">
+              <PlayCircle className="h-4 w-4 text-accent" />
+              <h2 className="text-[13px] font-semibold text-fg-secondary">Execution Review</h2>
+              <span className="rounded-full bg-elevated px-2 py-0.5 text-[11px] font-medium text-fg-muted">
+                {executionData.eligible.length} eligible
+                &nbsp;&middot;&nbsp;
+                {executionData.blocked.length} blocked
+                &nbsp;&middot;&nbsp;
+                {executionData.completed.length} completed
+              </span>
+            </div>
+
+            <div className="divide-y divide-border-subtle rounded-xl border border-border-subtle bg-surface overflow-hidden">
+              {allExec.map(rec => {
+                const statusMeta: Record<string, { badge: string; label: string }> = {
+                  eligible:  { badge: 'bg-severity-success/10 text-severity-success', label: 'Eligible' },
+                  executing: { badge: 'bg-severity-warn/10 text-severity-warn',       label: 'Executing' },
+                  completed: { badge: 'bg-severity-success/10 text-severity-success', label: 'Completed' },
+                  queued:    { badge: 'bg-elevated text-fg-muted',                    label: 'Queued' },
+                  failed:    { badge: 'bg-severity-critical/10 text-severity-critical', label: 'Failed' },
+                  blocked:   { badge: 'bg-severity-critical/10 text-severity-critical', label: 'Blocked' },
+                }
+                const meta = statusMeta[rec.execution_status] ?? statusMeta.queued
+
+                return (
+                  <div key={rec.execution_id} className="px-3 py-3 space-y-1.5">
+                    {/* Row 1: title + status badge */}
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-[13px] font-medium text-fg-primary truncate flex-1">
+                        {rec.operation_title}
+                      </p>
+                      <span className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${meta.badge}`}>
+                        {meta.label}
+                      </span>
+                    </div>
+
+                    {/* Row 2: authority status + mode */}
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-fg-muted">
+                      <span>Authority: <span className="text-fg-secondary font-medium capitalize">{rec.authority_status}</span></span>
+                      <span>Mode: <span className="text-fg-secondary">{rec.mode_id}</span></span>
+                      <span>Governance: <span className="text-fg-secondary capitalize">{rec.governance_verdict}</span></span>
+                      {rec.read_only && (
+                        <span className="text-accent">Read-only</span>
+                      )}
+                    </div>
+
+                    {/* Row 3: execution reason */}
+                    <p className="text-[11px] text-fg-secondary">{rec.execution_reason}</p>
+
+                    {/* Row 4: timing */}
+                    {rec.completed_at && (
+                      <p className="text-[11px] text-fg-muted tabular-nums">
+                        Completed:{' '}
+                        <span className="text-fg-secondary">
+                          {new Date(rec.completed_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                        </span>
+                        {rec.duration_ms != null && ` — ${rec.duration_ms}ms`}
+                      </p>
+                    )}
+                    {rec.result_summary && (
+                      <p className="text-[11px] text-fg-secondary italic">{rec.result_summary}</p>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+        )
+      })()}
+
       {/* ── P6: Operation History ── */}
       {ops.history.length > 0 && (
         <section className="space-y-2">
