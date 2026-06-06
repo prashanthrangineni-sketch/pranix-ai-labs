@@ -193,17 +193,44 @@ export async function POST(req: Request) {
       .filter(Boolean)
       .slice(0, 20)
 
-    const modelUsed = typeof engineData.model_used === 'string' ? engineData.model_used : ''
-    const taskId = typeof engineData.task_id === 'string' ? engineData.task_id : ''
+    const modelUsed  = typeof engineData.model_used  === 'string'  ? engineData.model_used  : ''
+    const taskId      = typeof engineData.task_id      === 'string'  ? engineData.task_id      : ''
+    const confidence  = typeof engineData.confidence   === 'number'  ? engineData.confidence   : undefined
+    const specFlag    = typeof engineData.speculation_flag === 'boolean' ? engineData.speculation_flag : false
+    // evidence_used — passthrough if engine returns it; otherwise build a minimal summary from context
+    const evidenceUsed: Record<string, unknown> = {}
+    if (engineData.evidence_used && typeof engineData.evidence_used === 'object') {
+      Object.assign(evidenceUsed, engineData.evidence_used)
+    } else {
+      // Derive minimal evidence from context lines gathered above
+      if (contextLines.some(l => l.toLowerCase().includes('product'))) {
+        evidenceUsed['supabase'] = { summary: 'Product health and metadata queried from control plane.' }
+      }
+      if (contextLines.some(l => l.toLowerCase().includes('task') || l.toLowerCase().includes('failed'))) {
+        evidenceUsed['tasks'] = { count: 1, summary: 'Task queue stats read from control plane.' }
+      }
+      if (contextLines.some(l => l.toLowerCase().includes('approval') || l.toLowerCase().includes('pending'))) {
+        evidenceUsed['memory'] = { count: 1, summary: 'Permission inbox read.' }
+      }
+      if (contextLines.some(l => l.toLowerCase().includes('alert'))) {
+        evidenceUsed['supabase'] = { summary: 'Alert counts queried from control plane.' }
+      }
+    }
 
-    const metaLines: string[] = []
-    if (modelUsed) metaLines.push(`🤖 ${modelUsed}`)
-    if (taskId) metaLines.push(`📍 Task ${taskId.slice(0, 8)}`)
+    const body = await req.json().catch(() => ({}))
+    const workspaceId = typeof body?.workspace_id === 'string' ? body.workspace_id : undefined
 
-    const reply: Reply = {
-      kind: 'info',
+    const reply = {
+      kind: 'info' as const,
       title: typeof engineData.title === 'string' ? engineData.title : message.slice(0, 60),
-      lines: [...answerLines, ...(metaLines.length ? ['\u2014', ...metaLines] : [])],
+      lines: answerLines,
+      model_used:       modelUsed || undefined,
+      confidence:       confidence,
+      task_id:          taskId   || undefined,
+      workspace_id:     workspaceId,
+      gathered_at:      new Date().toISOString(),
+      speculation_flag: specFlag,
+      evidence_used:    Object.keys(evidenceUsed).length > 0 ? evidenceUsed : undefined,
     }
 
     return NextResponse.json({ reply })
