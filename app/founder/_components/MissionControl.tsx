@@ -273,6 +273,26 @@ export function MissionControl() {
     } catch { /* non-fatal */ }
   }, [])
 
+  // P12 — Learning
+  const [learning, setLearning] = useState<Pick<LearningEngine,
+    'learning_count' | 'success_patterns' | 'failure_patterns' | 'top_insights' | 'recommendation_quality'
+  >>({ learning_count: 0, success_patterns: [], failure_patterns: [], top_insights: [], recommendation_quality: 0 })
+
+  const loadLearning = useCallback(async () => {
+    try {
+      const res = await fetch('/api/founder/learning', { cache: 'no-store' })
+      if (!res.ok) return
+      const j = await res.json()
+      setLearning({
+        learning_count:         j.learning_count         ?? 0,
+        success_patterns:       j.success_patterns       ?? [],
+        failure_patterns:       j.failure_patterns       ?? [],
+        top_insights:           j.top_insights           ?? [],
+        recommendation_quality: j.recommendation_quality ?? 0,
+      })
+    } catch { /* non-fatal */ }
+  }, [])
+
   // P11 — Execution
   const [execution, setExecution] = useState<{
     queued:    ExecutionRecord[]
