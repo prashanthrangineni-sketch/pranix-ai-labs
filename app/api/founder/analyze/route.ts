@@ -261,12 +261,26 @@ function analyzeEvidence(snapshot: PersistedTask): TaskAnalysis {
   }
 
   // ── Founder Decision ──────────────────────────────────────────────────────
+  // S1 SAFETY RULE: if ANY step has execution_verified === false,
+  // founder_decision CANNOT be 'approve_next_step'.
+  // This is a hard constraint enforced before all other conditions.
+  if (hasUnverified) {
+    recs.unshift('Restore MCP gateway connectivity, then retry unverified steps before approving next action')
+  }
+
   const founder_decision: FounderDecision =
-    (inferred.length >= steps.length * 0.8)                                    ? 'blocked_missing_data' :
-    (failed.length > 0 || driftStep || confidence === 'Low')                   ? 'investigate_further'  :
-    (confidence === 'High' && failed.length === 0 && completed.length > 0)     ? 'approve_next_step'    :
-    (completed.length === steps.length && failed.length === 0)                 ? 'no_action_required'   :
+    (inferred.length >= steps.length * 0.8)                                         ? 'blocked_missing_data' :
+    // S1: unverified execution blocks approve — must retry first
+    hasUnverified                                                                    ? 'retry_unverified'     :
+    (failed.length > 0 || driftStep || confidence === 'Low')                         ? 'investigate_further'  :
+    (confidence === 'High' && failed.length === 0 && completed.length > 0)           ? 'approve_next_step'    :
+    (completed.length === steps.length && failed.length === 0)                       ? 'no_action_required'   :
     'investigate_further'
+
+  // S1: override executive_summary when unverified
+  if (hasUnverified) {
+    executive_summary = `⚠ ${unverified.length} step${unverified.length !== 1 ? 's' : ''} executed without gateway verification. Results are untrustworthy. Restore connectivity and retry before proceeding.`
+  }
 
   return {
     executive_summary,
