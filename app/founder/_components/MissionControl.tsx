@@ -1308,6 +1308,87 @@ export function MissionControl() {
         )
       })()}
 
+      {/* ── S6: Execution Engine ── */}
+      {executor.records.length > 0 && (() => {
+        const total = executor.running + executor.completed + executor.failed + executor.unverified
+        if (total === 0) return null
+        return (
+          <div className="rounded-xl border border-border-subtle bg-surface px-4 py-3 space-y-3">
+            {/* Header */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Zap className="h-3.5 w-3.5 text-severity-success shrink-0" />
+                <span className="text-[11px] font-semibold text-fg-primary uppercase tracking-wide">Execution Engine</span>
+                <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                  executor.gateway_live
+                    ? 'bg-severity-success/10 text-severity-success'
+                    : 'bg-severity-critical/10 text-severity-critical'
+                }`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${
+                    executor.gateway_live ? 'bg-severity-success' : 'bg-severity-critical'
+                  }`} />
+                  {executor.gateway_live ? 'Gateway Live' : 'Gateway Offline'}
+                </span>
+              </div>
+              <Link href="/founder/approvals#executor" className="text-[10px] text-accent hover:underline">
+                Review →
+              </Link>
+            </div>
+
+            {/* Pills */}
+            <div className="flex flex-wrap gap-2">
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                executor.running > 0 ? 'bg-accent/10 text-accent' : 'bg-elevated text-fg-muted'
+              }`}>
+                <Activity className="h-3 w-3" />
+                Running: {executor.running}
+              </span>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                executor.completed > 0 ? 'bg-severity-success/10 text-severity-success' : 'bg-elevated text-fg-muted'
+              }`}>
+                <CheckCircle2 className="h-3 w-3" />
+                Completed: {executor.completed}
+              </span>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                executor.failed > 0 ? 'bg-severity-critical/10 text-severity-critical' : 'bg-elevated text-fg-muted'
+              }`}>
+                <AlertOctagon className="h-3 w-3" />
+                Failed: {executor.failed}
+              </span>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                executor.unverified > 0 ? 'bg-severity-warn/10 text-severity-warn' : 'bg-elevated text-fg-muted'
+              }`}>
+                <Eye className="h-3 w-3" />
+                Unverified: {executor.unverified}
+              </span>
+            </div>
+
+            {/* Top Running Task */}
+            {executor.top_running && (
+              <div className="rounded-lg border border-accent/20 bg-accent/[0.03] px-3 py-2.5 space-y-1">
+                <p className="text-[10px] font-semibold text-fg-disabled uppercase tracking-wide">Top Running Task</p>
+                <p className="text-[13px] font-semibold text-fg-primary leading-snug">{executor.top_running.operation_title}</p>
+                <p className="text-[12px] text-fg-secondary leading-relaxed">{executor.top_running.execution_reason}</p>
+                <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-fg-muted">
+                  <span>Mode: <span className="font-medium text-fg-secondary">{executor.top_running.founder_mode}</span></span>
+                  <span className={`font-medium ${
+                    executor.top_running.verification_status === 'verified'   ? 'text-severity-success'
+                    : executor.top_running.verification_status === 'unverified' ? 'text-severity-warn'
+                    : executor.top_running.verification_status === 'failed'     ? 'text-severity-critical'
+                    : 'text-fg-muted'
+                  }`}>
+                    Verification: {executor.top_running.verification_status}
+                  </span>
+                  {executor.top_running.duration_ms !== null && (
+                    <span className="text-fg-disabled tabular-nums">{executor.top_running.duration_ms}ms</span>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )
+      })()}
+
       {/* ── Count cards ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <CountCard
