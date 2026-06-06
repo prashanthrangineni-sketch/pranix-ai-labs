@@ -602,7 +602,53 @@ function PranixBubble({
 }
 
 // ── PlanView ──────────────────────────────────────────────────────────────────
-type ExecPhase = 'idle' | 'executing' | 'completed' | 'failed'
+// S1: 'unverified' is a new terminal phase — gateway was offline
+type ExecPhase = 'idle' | 'executing' | 'completed' | 'failed' | 'unverified'
+
+// ── S1: ExecutionSummary ──────────────────────────────────────────────────────
+function ExecutionSummary({ plan, verification }: {
+  plan:          RichPlanStep[]
+  verification?: ExecutionVerification
+}) {
+  const verified   = verification?.verified_steps   ?? plan.filter(s => s.verified === true).length
+  const unverified = verification?.unverified_steps ?? plan.filter(s => s.status === 'unverified').length
+  const failed     = verification?.failed_steps     ?? plan.filter(s => s.status === 'failed').length
+  const total      = verification?.total_steps      ?? plan.length
+  const gatewayOk  = verification?.gateway_live ?? true
+  if (total === 0) return null
+  return (
+    <div className="mt-3 rounded-xl border border-border-subtle bg-canvas px-3 py-2.5 space-y-2">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-fg-muted">Execution Summary</p>
+      <div className="flex flex-wrap gap-2">
+        <span className="inline-flex items-center gap-1 rounded-full border border-border-subtle bg-surface px-2 py-0.5 text-[11px]">
+          <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+          <span className="text-fg-secondary">{verified}</span>
+          <span className="text-fg-muted">Verified</span>
+        </span>
+        {unverified > 0 && (
+          <span className="inline-flex items-center gap-1 rounded-full border border-severity-warn/40 bg-severity-warn/[0.06] px-2 py-0.5 text-[11px]">
+            <span className="h-1.5 w-1.5 rounded-full bg-severity-warn" />
+            <span className="text-severity-warn font-medium">{unverified}</span>
+            <span className="text-fg-muted">Unverified</span>
+          </span>
+        )}
+        {failed > 0 && (
+          <span className="inline-flex items-center gap-1 rounded-full border border-severity-critical/40 bg-severity-critical/[0.06] px-2 py-0.5 text-[11px]">
+            <span className="h-1.5 w-1.5 rounded-full bg-severity-critical" />
+            <span className="text-severity-critical font-medium">{failed}</span>
+            <span className="text-fg-muted">Failed</span>
+          </span>
+        )}
+      </div>
+      {!gatewayOk && (
+        <p className="flex items-center gap-1.5 text-[11px] text-severity-warn">
+          <AlertCircle className="h-3 w-3 shrink-0" />
+          Gateway was offline — unverified steps cannot be treated as successful.
+        </p>
+      )}
+    </div>
+  )
+}
 
 type RichPlanStep = PlanStep & {
   result_summary?: string
