@@ -765,8 +765,9 @@ function PlanView({
         setSteps(task.plan as RichPlanStep[])
         setTimeline(task.timeline)
         const s = task.status
-        if (s === 'completed' || s === 'failed') {
-          setPhase(s)
+        // S1: 'unverified' is also a terminal status — stop polling
+        if (s === 'completed' || s === 'failed' || s === 'unverified') {
+          setPhase(s as ExecPhase)
           clearInterval(pollRef.current!)
           pollRef.current = null
           const richTask = task as PersistedTask & { analysis?: TaskAnalysis }
