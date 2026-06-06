@@ -105,13 +105,20 @@ function deriveConfidence(steps: RichStep[]): { confidence: ConfidenceLevel; evi
 
 // ── Analysis engine ───────────────────────────────────────────────────────────
 function analyzeEvidence(snapshot: PersistedTask): TaskAnalysis {
-  const steps     = (snapshot.plan ?? []) as RichStep[]
+  const steps     = (snapshot.plan ?? []) as (RichStep & Partial<VerifiedStep>)[]
   const timeline  = snapshot.timeline ?? []
   const goal      = snapshot.goal ?? 'Unknown task'
   const completed = steps.filter(s => s.status === 'completed')
   const failed    = steps.filter(s => s.status === 'failed')
   const blocked   = steps.filter(s => s.result_summary?.includes('blocked') || s.result_summary?.includes('not in read-only allowlist'))
   const inferred  = steps.filter(s => s.result_summary?.includes('inferred') || s.result_summary?.includes('unavailable'))
+
+  // S1: detect unverified steps — any step where execution_verified is explicitly false
+  // (field absent on legacy steps — absence is NOT treated as unverified for back-compat)
+  const unverified = steps.filter(
+    s => s.status === 'unverified' || s.execution_verified === false
+  )
+  const hasUnverified = unverified.length > 0
 
   const { confidence, evidence_quality } = deriveConfidence(steps)
 
