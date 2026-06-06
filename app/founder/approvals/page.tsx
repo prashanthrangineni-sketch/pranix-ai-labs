@@ -348,7 +348,27 @@ function opStatusBadge(status: OpStatus) {
   )
 }
 
-function OpCard({ op }: { op: Operation }) {
+function ExecReadinessBadge({ entry }: { entry: ScheduleEntry | undefined }) {
+  if (!entry) return null
+  if (!entry.can_run_now) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-fg-disabled/10 px-2 py-0.5 text-[10px] font-semibold text-fg-disabled">
+        <Ban className="h-2.5 w-2.5" /> Blocked
+      </span>
+    )
+  }
+  const tierCls = entry.tier === 'critical' ? 'bg-severity-critical/10 text-severity-critical'
+    : entry.tier === 'high'     ? 'bg-severity-warn/10 text-severity-warn'
+    : entry.tier === 'medium'   ? 'bg-accent/10 text-accent'
+    : 'bg-elevated text-fg-muted'
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${tierCls}`}>
+      <PlayCircle className="h-2.5 w-2.5" /> Ready · {entry.priority_score}/100
+    </span>
+  )
+}
+
+function OpCard({ op, schedule }: { op: Operation; schedule?: ScheduleEntry }) {
   return (
     <div className="rounded-xl border border-severity-success/20 bg-severity-success/[0.02] p-4 space-y-3">
       <div className="flex items-start justify-between gap-3">
@@ -361,10 +381,34 @@ function OpCard({ op }: { op: Operation }) {
             <p className="text-[11px] text-fg-disabled capitalize">{op.category} · {op.execution_mode}</p>
           </div>
         </div>
-        {opStatusBadge(op.status)}
+        <div className="flex flex-col items-end gap-1">
+          {opStatusBadge(op.status)}
+          <ExecReadinessBadge entry={schedule} />
+        </div>
       </div>
 
       <p className="text-[12px] text-fg-secondary">{op.description}</p>
+
+      {/* P7 schedule intel */}
+      {schedule && (
+        <div className="rounded-lg bg-elevated px-3 py-2 space-y-1">
+          <p className="text-[10px] font-semibold text-fg-disabled uppercase tracking-wide">Execution Readiness</p>
+          <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-fg-secondary">
+            <span><span className="text-fg-disabled">Priority: </span><span className="font-semibold tabular-nums">{schedule.priority_score}/100</span></span>
+            <span><span className="text-fg-disabled">Urgency: </span><span className="tabular-nums">{schedule.urgency_score}/100</span></span>
+            <span><span className="text-fg-disabled">Value: </span><span className="tabular-nums">{schedule.founder_value_score}/100</span></span>
+            <span><span className="text-fg-disabled">Exec risk: </span><span className="tabular-nums">{schedule.risk_score}/100</span></span>
+          </div>
+          <p className="text-[11px] text-fg-muted">{schedule.reason}</p>
+          <p className="text-[11px]">
+            <span className="text-fg-disabled">Impact: </span>
+            <span className="text-fg-secondary">{schedule.expected_impact}</span>
+          </p>
+          {!schedule.can_run_now && schedule.blocked_by.length > 0 && (
+            <p className="text-[11px] text-severity-warn">⚠ Blocked by {schedule.blocked_by.length} prerequisite</p>
+          )}
+        </div>
+      )}
 
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-fg-muted">
         <span>Risk: {op.risk_level}</span>
