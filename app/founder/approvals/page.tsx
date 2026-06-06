@@ -12,6 +12,7 @@ import type { Recommendation, RiskLevel } from '@/app/api/founder/recommendation
 import type { Operation, OpStatus }       from '@/app/api/founder/operations/route'
 import type { ScheduleEntry }              from '@/app/api/founder/scheduler/route'
 import type { GovernanceEvaluation, Policy } from '@/app/api/founder/governance/route'
+import type { AuthorityRecord }               from '@/app/api/founder/authority/route'
 import { RecDecisionControls }            from './rec-decision-controls'
 
 export const metadata: Metadata = { title: 'Permissions' }
