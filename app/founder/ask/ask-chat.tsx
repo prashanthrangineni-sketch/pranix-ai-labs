@@ -709,7 +709,7 @@ function PlanView({
 }
 
 // ── StepRow ───────────────────────────────────────────────────────────────────
-function StepRow({ step, active }: { step: PlanStep; active: boolean }) {
+function StepRow({ step, active }: { step: RichPlanStep; active: boolean }) {
   const statusIcon = {
     planned:   <Circle       className="h-3.5 w-3.5 text-fg-disabled" />,
     approved:  <Circle       className="h-3.5 w-3.5 text-accent" />,
@@ -723,19 +723,30 @@ function StepRow({ step, active }: { step: PlanStep; active: boolean }) {
       active ? 'bg-accent/[0.07] border border-accent/20' : 'hover:bg-elevated'
     }`}>
       <span className="mt-0.5 shrink-0">{statusIcon}</span>
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <p className={`font-medium leading-snug ${
-          step.status === 'completed' ? 'text-fg-muted line-through' :
+          step.status === 'completed' ? 'text-fg-secondary' :
+          step.status === 'failed'    ? 'text-severity-critical' :
           step.status === 'executing' ? 'text-accent' :
           'text-fg-primary'
         }`}>
           {step.step_number}. {step.title}
         </p>
-        {step.description && (
+        {step.result_summary && (
+          <p className="mt-1 rounded-md bg-elevated px-2 py-1 text-[11px] text-fg-secondary leading-relaxed">
+            {step.result_summary}
+          </p>
+        )}
+        {!step.result_summary && step.description && (
           <p className="mt-0.5 text-[11px] text-fg-disabled leading-relaxed">{step.description}</p>
         )}
-        {step.tool && (
+        {step.tool && !step.result_summary && (
           <span className="mt-0.5 inline-block rounded bg-elevated px-1.5 py-0.5 text-[10px] font-mono text-fg-muted">
+            {step.tool}
+          </span>
+        )}
+        {step.tool && step.result_summary && (
+          <span className="mt-1 inline-block rounded bg-canvas px-1.5 py-0.5 text-[10px] font-mono text-fg-disabled">
             {step.tool}
           </span>
         )}
