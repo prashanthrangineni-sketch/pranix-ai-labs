@@ -15,6 +15,7 @@ import {
   Inbox, FlameKindling, AlertCircle, Info,
 } from 'lucide-react'
 import type { Recommendation, RiskLevel } from '@/app/api/founder/recommendations/route'
+import type { Operation as OpItem } from '@/app/api/founder/operations/route'
 
 // ── Types ────────────────────────────────────────────────────────────────
 interface ApprovalItem  { task_id: string; title: string; goal: string; created_at: string }
