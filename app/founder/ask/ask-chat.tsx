@@ -837,6 +837,100 @@ function StepRow({ step, active }: { step: RichPlanStep; active: boolean }) {
 }
 
 // ── TimelineIcon ──────────────────────────────────────────────────────────────
+function AnalysisView({ analysis }: { analysis: TaskAnalysis }) {
+  const decisionConfig: Record<string, { label: string; color: string; bg: string }> = {
+    approve_next_step:    { label: 'Approve Next Step',      color: 'text-accent',              bg: 'bg-accent/[0.07] border-accent/20' },
+    investigate_further:  { label: 'Investigate Further',    color: 'text-severity-warn',       bg: 'bg-severity-warn/[0.06] border-severity-warn/20' },
+    no_action_required:   { label: 'No Action Required',     color: 'text-fg-secondary',        bg: 'bg-elevated border-border-subtle' },
+    blocked_missing_data: { label: 'Blocked — Missing Data', color: 'text-severity-critical',   bg: 'bg-severity-critical/[0.05] border-severity-critical/20' },
+  }
+  const confidenceColor: Record<string, string> = {
+    High:   'text-accent bg-accent/[0.08] border-accent/20',
+    Medium: 'text-severity-warn bg-severity-warn/[0.08] border-severity-warn/20',
+    Low:    'text-severity-critical bg-severity-critical/[0.08] border-severity-critical/20',
+  }
+  const dc = decisionConfig[analysis.founder_decision] ?? decisionConfig.investigate_further
+  const cc = confidenceColor[analysis.confidence] ?? confidenceColor.Medium
+
+  return (
+    <div className="mt-1 space-y-3 rounded-xl border border-border-subtle bg-canvas p-3">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5">
+          <BarChart3 className="h-3.5 w-3.5 text-accent" />
+          <span className="text-[12px] font-semibold text-fg-primary">AI Analysis</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${cc}`}>
+            {analysis.confidence} confidence
+          </span>
+          <span className="text-[10px] text-fg-disabled">{analysis.evidence_quality} evidence</span>
+        </div>
+      </div>
+
+      <div className="rounded-lg bg-elevated px-3 py-2">
+        <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-fg-disabled">Executive Summary</p>
+        <p className="text-[12px] leading-relaxed text-fg-secondary">{analysis.executive_summary}</p>
+      </div>
+
+      {analysis.findings.length > 0 && (
+        <div>
+          <div className="mb-1.5 flex items-center gap-1 text-[11px] font-semibold text-fg-primary">
+            <TrendingUp className="h-3 w-3 text-accent" /> Findings
+          </div>
+          <ul className="space-y-1">
+            {analysis.findings.map((f, i) => (
+              <li key={i} className="flex items-start gap-1.5 text-[11px] text-fg-secondary leading-relaxed">
+                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                {f}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {analysis.risks.filter(r => !r.startsWith('No critical')).length > 0 && (
+        <div>
+          <div className="mb-1.5 flex items-center gap-1 text-[11px] font-semibold text-fg-primary">
+            <Shield className="h-3 w-3 text-severity-warn" /> Risks
+          </div>
+          <ul className="space-y-1">
+            {analysis.risks.map((r, i) => (
+              <li key={i} className="flex items-start gap-1.5 text-[11px] text-severity-warn leading-relaxed">
+                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-severity-warn" />
+                {r}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {analysis.recommendations.length > 0 && (
+        <div>
+          <div className="mb-1.5 flex items-center gap-1 text-[11px] font-semibold text-fg-primary">
+            <Lightbulb className="h-3 w-3 text-accent" /> Recommendations
+          </div>
+          <ul className="space-y-1">
+            {analysis.recommendations.map((rec, i) => (
+              <li key={i} className="flex items-start gap-1.5 text-[11px] text-fg-secondary leading-relaxed">
+                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-fg-muted" />
+                {rec}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div className={`flex items-center gap-2 rounded-lg border px-3 py-2 ${dc.bg}`}>
+        <Target className={`h-3.5 w-3.5 shrink-0 ${dc.color}`} />
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-fg-disabled">Founder Decision</p>
+          <p className={`text-[12px] font-semibold ${dc.color}`}>{dc.label}</p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function TimelineIcon({ kind }: { kind: TimelineEvent['kind'] }) {
   const cls = 'h-3 w-3 shrink-0 mt-0.5'
   if (kind === 'planned')   return <Clock        className={`${cls} text-fg-disabled`} />
