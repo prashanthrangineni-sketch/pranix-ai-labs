@@ -9,9 +9,10 @@ import { AgentTaskControls } from './agent-task-controls'
 import { ViewReplayButton } from './view-replay-button'
 import type { PersistedTask } from '../ask/ask-chat'
 import type { Recommendation, RiskLevel } from '@/app/api/founder/recommendations/route'
-import type { Operation, OpStatus }    from '@/app/api/founder/operations/route'
-import type { ScheduleEntry }           from '@/app/api/founder/scheduler/route'
-import { RecDecisionControls }         from './rec-decision-controls'
+import type { Operation, OpStatus }       from '@/app/api/founder/operations/route'
+import type { ScheduleEntry }              from '@/app/api/founder/scheduler/route'
+import type { GovernanceEvaluation, Policy } from '@/app/api/founder/governance/route'
+import { RecDecisionControls }            from './rec-decision-controls'
 
 export const metadata: Metadata = { title: 'Permissions' }
 export const revalidate = 0
