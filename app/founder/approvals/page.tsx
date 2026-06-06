@@ -117,6 +117,32 @@ async function getAutonomy(): Promise<AutonomyEngine | null> {
   } catch { return null }
 }
 
+async function getQueue(): Promise<{
+  records: QueueRecord[]
+  queued: number
+  leased: number
+  executing: number
+  completed: number
+  failed: number
+  dead_letter: number
+  top_item: QueueRecord | null
+}> {
+  const empty = { records: [], queued: 0, leased: 0, executing: 0, completed: 0, failed: 0, dead_letter: 0, top_item: null }
+  try {
+    const j = await fetchFromBase('/api/founder/queue')
+    return j ? {
+      records:     (j.records ?? []) as QueueRecord[],
+      queued:       j.queued      ?? 0,
+      leased:       j.leased      ?? 0,
+      executing:    j.executing   ?? 0,
+      completed:    j.completed   ?? 0,
+      failed:       j.failed      ?? 0,
+      dead_letter:  j.dead_letter ?? 0,
+      top_item:     j.top_item    ?? null,
+    } : empty
+  } catch { return empty }
+}
+
 async function getActivation(): Promise<{
   records: ActivationRecord[]
   pending: number
