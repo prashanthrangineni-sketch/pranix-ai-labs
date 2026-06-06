@@ -974,6 +974,95 @@ export function MissionControl() {
         )
       })()}
 
+      {/* ── S2: State Health ── */}
+      {stateHealth.records.length > 0 && (() => {
+        const { summary, records } = stateHealth
+        const hasCritical = summary.critical > 0
+        const hasExpired  = summary.expired  > 0
+        const topCritical = records.find(r => r.health_status === 'critical')
+        const topExpired  = records.find(r => r.health_status === 'expired')
+
+        return (
+          <>
+            {/* Critical banner */}
+            {hasCritical && (
+              <div className="rounded-xl border border-severity-critical/40 bg-severity-critical/[0.06] px-4 py-2.5 flex items-start gap-2">
+                <AlertOctagon className="mt-0.5 h-4 w-4 shrink-0 text-severity-critical" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[12px] font-semibold text-severity-critical">Founder action required — state expiration approaching</p>
+                  {topCritical && (
+                    <p className="text-[11px] text-fg-secondary mt-0.5">
+                      {topCritical.label}{topCritical.preview ? ` · ${topCritical.preview}` : ''} expires in {topCritical.hours_remaining.toFixed(1)}h
+                    </p>
+                  )}
+                </div>
+                <Link href="/founder/approvals#state" className="text-[10px] text-severity-critical hover:underline shrink-0 mt-0.5">Review</Link>
+              </div>
+            )}
+
+            {/* State Health panel */}
+            <div className="rounded-xl border border-border-subtle bg-surface px-4 py-3 space-y-3">
+              {/* Header */}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Activity className="h-3.5 w-3.5 text-accent shrink-0" />
+                  <span className="text-[11px] font-semibold text-fg-primary uppercase tracking-wide">State Health</span>
+                </div>
+                <Link href="/founder/approvals#state" className="text-[10px] text-accent hover:underline">
+                  Full review
+                </Link>
+              </div>
+
+              {/* 4 status pills */}
+              <div className="flex flex-wrap gap-2">
+                <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                  summary.healthy > 0 ? 'bg-severity-success/10 text-severity-success' : 'bg-elevated text-fg-muted'
+                }`}>
+                  <CheckCircle2 className="h-3 w-3" />
+                  Healthy: {summary.healthy}
+                </span>
+                <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                  summary.warning > 0 ? 'bg-severity-warn/10 text-severity-warn' : 'bg-elevated text-fg-muted'
+                }`}>
+                  <AlertTriangle className="h-3 w-3" />
+                  Warning: {summary.warning}
+                </span>
+                <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                  summary.critical > 0 ? 'bg-severity-critical/10 text-severity-critical' : 'bg-elevated text-fg-muted'
+                }`}>
+                  <AlertOctagon className="h-3 w-3" />
+                  Critical: {summary.critical}
+                </span>
+                <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                  summary.expired > 0 ? 'bg-fg-disabled/10 text-fg-disabled' : 'bg-elevated text-fg-muted'
+                }`}>
+                  <Clock className="h-3 w-3" />
+                  Expired: {summary.expired}
+                </span>
+              </div>
+
+              {/* Top critical item */}
+              {topCritical && (
+                <div className="rounded-lg border border-severity-critical/20 bg-severity-critical/[0.03] px-3 py-2">
+                  <p className="text-[10px] font-semibold text-fg-disabled uppercase tracking-wide mb-0.5">Critical — Expires soon</p>
+                  <p className="text-[12px] font-medium text-fg-primary">{topCritical.label}{topCritical.preview ? ` · ${topCritical.preview}` : ''}</p>
+                  <p className="text-[11px] text-fg-secondary mt-0.5">Expires in {topCritical.hours_remaining.toFixed(1)}h · Refresh immediately</p>
+                </div>
+              )}
+
+              {/* Top expired item (if no critical) */}
+              {!topCritical && topExpired && (
+                <div className="rounded-lg border border-border-subtle bg-elevated px-3 py-2">
+                  <p className="text-[10px] font-semibold text-fg-disabled uppercase tracking-wide mb-0.5">Expired</p>
+                  <p className="text-[12px] font-medium text-fg-muted">{topExpired.label}{topExpired.preview ? ` · ${topExpired.preview}` : ''}</p>
+                  <p className="text-[11px] text-fg-disabled mt-0.5">State lost — re-initialise required</p>
+                </div>
+              )}
+            </div>
+          </>
+        )
+      })()}
+
       {/* ── Count cards ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <CountCard
