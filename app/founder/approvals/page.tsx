@@ -284,6 +284,7 @@ export default async function FounderPermissionsPage() {
     getActivation(),
     getQueue(),
     getExecutor(),
+    getRoadmap(),
   ])
 
   // Build a lookup: operation_id → ScheduleEntry
