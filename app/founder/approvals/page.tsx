@@ -54,19 +54,41 @@ async function getSchedule(): Promise<ScheduleEntry[]> {
   } catch { return [] }
 }
 
+async function getGovernance(): Promise<{ evaluations: GovernanceEvaluation[]; policies: Policy[] }> {
+  try {
+    const j = await fetchFromBase('/api/founder/governance')
+    return {
+      evaluations: (j?.evaluations ?? []) as GovernanceEvaluation[],
+      policies:    (j?.policies    ?? []) as Policy[],
+    }
+  } catch { return { evaluations: [], policies: [] } }
+}
+
 export default async function FounderPermissionsPage() {
-  const [{ pending, active, history }, agentInbox, recommendations, ops, scheduleEntries] =
-    await Promise.all([
-      getPermissionInbox(150),
-      getAgentTaskInbox(),
-      getRecommendations(),
-      getOperations(),
-      getSchedule(),
-    ])
+  const [
+    { pending, active, history },
+    agentInbox,
+    recommendations,
+    ops,
+    scheduleEntries,
+    governanceData,
+  ] = await Promise.all([
+    getPermissionInbox(150),
+    getAgentTaskInbox(),
+    getRecommendations(),
+    getOperations(),
+    getSchedule(),
+    getGovernance(),
+  ])
 
   // Build a lookup: operation_id → ScheduleEntry
   const scheduleMap = new Map<string, ScheduleEntry>(
     scheduleEntries.map(e => [e.operation_id, e])
+  )
+
+  // Build a lookup: operation_id → GovernanceEvaluation
+  const govMap = new Map<string, GovernanceEvaluation>(
+    governanceData.evaluations.map(e => [e.operation_id, e])
   )
 
   const pendingRecs   = recommendations.filter((r: Recommendation) => r.status === 'pending')
