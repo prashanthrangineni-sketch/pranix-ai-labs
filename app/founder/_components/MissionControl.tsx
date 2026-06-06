@@ -1203,6 +1203,80 @@ export function MissionControl() {
         )
       })()}
 
+      {/* ── S5: Execution Queue ── */}
+      {queue.records.length > 0 && (() => {
+        const total = queue.queued + queue.leased + queue.executing + queue.completed + queue.failed + queue.dead_letter
+        if (total === 0) return null
+        return (
+          <div className="rounded-xl border border-border-subtle bg-surface px-4 py-3 space-y-3">
+            {/* Header */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <ListChecks className="h-3.5 w-3.5 text-accent shrink-0" />
+                <span className="text-[11px] font-semibold text-fg-primary uppercase tracking-wide">Execution Queue</span>
+              </div>
+              <Link href="/founder/approvals#queue" className="text-[10px] text-accent hover:underline">
+                Review →
+              </Link>
+            </div>
+
+            {/* Pills */}
+            <div className="flex flex-wrap gap-2">
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                queue.queued > 0 ? 'bg-accent/10 text-accent' : 'bg-elevated text-fg-muted'
+              }`}>
+                <Clock className="h-3 w-3" />
+                Queued: {queue.queued}
+              </span>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                queue.executing > 0 ? 'bg-severity-warn/10 text-severity-warn' : 'bg-elevated text-fg-muted'
+              }`}>
+                <Activity className="h-3 w-3" />
+                Executing: {queue.executing}
+              </span>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                queue.completed > 0 ? 'bg-severity-success/10 text-severity-success' : 'bg-elevated text-fg-muted'
+              }`}>
+                <CheckCircle2 className="h-3 w-3" />
+                Completed: {queue.completed}
+              </span>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                queue.dead_letter > 0 ? 'bg-severity-critical/10 text-severity-critical' : 'bg-elevated text-fg-muted'
+              }`}>
+                <AlertOctagon className="h-3 w-3" />
+                Dead Letter: {queue.dead_letter}
+              </span>
+            </div>
+
+            {/* Top Queue Item */}
+            {queue.top_item && (
+              <div className="rounded-lg border border-accent/20 bg-accent/[0.03] px-3 py-2.5 space-y-1">
+                <p className="text-[10px] font-semibold text-fg-disabled uppercase tracking-wide">Top Queue Item</p>
+                <p className="text-[13px] font-semibold text-fg-primary leading-snug">{queue.top_item.operation_title}</p>
+                <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-fg-muted">
+                  <span>Mode: <span className="font-medium text-fg-secondary">{queue.top_item.founder_mode}</span></span>
+                  <span className="tabular-nums">
+                    Retry: <span className="font-medium text-fg-secondary">{queue.top_item.retry_count}/{queue.top_item.max_retries}</span>
+                  </span>
+                  <span className={`font-medium ${
+                    queue.top_item.queue_status === 'queued'   ? 'text-accent'
+                    : queue.top_item.queue_status === 'leased'   ? 'text-severity-warn'
+                    : queue.top_item.queue_status === 'completed' ? 'text-severity-success'
+                    : queue.top_item.queue_status === 'dead_letter' ? 'text-severity-critical'
+                    : 'text-fg-muted'
+                  }`}>
+                    {queue.top_item.queue_status.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                  </span>
+                  {queue.top_item.leased_by && (
+                    <span className="text-fg-disabled">Leased by: {queue.top_item.leased_by}</span>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )
+      })()}
+
       {/* ── Count cards ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <CountCard
