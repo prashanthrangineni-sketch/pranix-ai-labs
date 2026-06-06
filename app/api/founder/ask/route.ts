@@ -16,6 +16,12 @@ import {
 
 export const dynamic = 'force-dynamic'
 
+// ─── Agent Engine URL ─────────────────────────────────────────────
+// All inference is delegated to pranix-agent-engine /api/ask
+// PRANIX_AGENT_ENGINE_URL must be set in Vercel env vars (no trailing slash)
+// e.g. https://pranix-agent-engine.vercel.app
+const ENGINE_URL = process.env.PRANIX_AGENT_ENGINE_URL ?? 'https://pranix-agent-engine.vercel.app'
+
 // ─── Reply shape the chat UI renders ─────────────────────────────
 type Reply = {
   kind: 'info' | 'approval_routed' | 'console' | 'help' | 'error'
