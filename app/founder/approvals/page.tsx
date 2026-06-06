@@ -465,9 +465,15 @@ function ExecReadinessBadge({ entry }: { entry: ScheduleEntry | undefined }) {
   )
 }
 
-function OpCard({ op, schedule }: { op: Operation; schedule?: ScheduleEntry }) {
+function OpCard({ op, schedule, governance }: { op: Operation; schedule?: ScheduleEntry; governance?: GovernanceEvaluation }) {
+  const cardBorderCls = governance?.verdict === 'blocked'
+    ? 'border-severity-critical/25 bg-severity-critical/[0.02]'
+    : governance?.verdict === 'needs_approval'
+    ? 'border-severity-warn/25 bg-severity-warn/[0.02]'
+    : 'border-severity-success/20 bg-severity-success/[0.02]'
+
   return (
-    <div className="rounded-xl border border-severity-success/20 bg-severity-success/[0.02] p-4 space-y-3">
+    <div className={`rounded-xl border p-4 space-y-3 ${cardBorderCls}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2 min-w-0">
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-elevated">
@@ -481,6 +487,7 @@ function OpCard({ op, schedule }: { op: Operation; schedule?: ScheduleEntry }) {
         <div className="flex flex-col items-end gap-1">
           {opStatusBadge(op.status)}
           <ExecReadinessBadge entry={schedule} />
+          <GovBadge ev={governance} />
         </div>
       </div>
 
