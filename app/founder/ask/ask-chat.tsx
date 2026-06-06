@@ -676,7 +676,12 @@ function PlanView({
 
       {phase === 'completed' && (
         <div className="flex items-center gap-2 rounded-xl border border-accent/20 bg-accent/[0.06] px-3 py-2 text-[13px] font-medium text-accent">
-          <CheckCircle2 className="h-4 w-4" /> All steps completed — read-only run finished.
+          <CheckCircle2 className="h-4 w-4" /> Execution complete — {steps.filter(s => s.status === 'completed').length}/{steps.length} steps finished.
+        </div>
+      )}
+      {phase === 'failed' && (
+        <div className="flex items-center gap-2 rounded-xl border border-severity-critical/20 bg-severity-critical/[0.05] px-3 py-2 text-[13px] font-medium text-severity-critical">
+          <AlertCircle className="h-4 w-4" /> Execution stopped — {steps.filter(s => s.status === 'completed').length}/{steps.length} steps completed before failure.
         </div>
       )}
 
