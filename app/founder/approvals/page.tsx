@@ -107,6 +107,13 @@ async function getLearning(): Promise<{
   } catch { return empty }
 }
 
+async function getAutonomy(): Promise<AutonomyEngine | null> {
+  try {
+    const j = await fetchFromBase('/api/founder/autonomy')
+    return j as AutonomyEngine | null
+  } catch { return null }
+}
+
 async function getExecution(): Promise<{
   queued: ExecutionRecord[]; eligible: ExecutionRecord[]; executing: ExecutionRecord[];
   completed: ExecutionRecord[]; failed: ExecutionRecord[]; blocked: ExecutionRecord[]
