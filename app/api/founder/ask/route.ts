@@ -258,6 +258,12 @@ export async function POST(req: Request) {
     }
 
     // ── Agent Mode: derive plan[] from engine or from the answer text ──
+    // Generate a stable task_id for agent plans so the client can persist under a fixed key.
+    // Re-use engineData.task_id if the engine already minted one; otherwise mint here.
+    const agentTaskId: string | undefined = agentMode
+      ? (taskId || crypto.randomUUID())
+      : (taskId || undefined)
+
     let plan: PlanStep[] | undefined
     let execution_mode: ExecutionMode = 'chat'
 
