@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { ShieldCheck, Shield, Bot, User, Clock, History as HistoryIcon, AlertTriangle, BrainCircuit, LayoutList,
          Inbox, FlameKindling, AlertCircle, Info, CheckCircle2, XCircle, ExternalLink, ListChecks,
-         PlayCircle, CheckSquare, AlertOctagon, Ban } from 'lucide-react'
+         PlayCircle, CheckSquare, AlertOctagon, Ban, Sparkles, TrendingUp, TrendingDown } from 'lucide-react'
 import { getPermissionInbox, type PermissionRequest } from '@/lib/permissions'
 import { DecisionControls } from './decision-controls'
 import { getAgentTaskInbox } from './agent-task-actions'
