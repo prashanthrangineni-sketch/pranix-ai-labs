@@ -15,6 +15,7 @@ import type { GovernanceEvaluation, Policy } from '@/app/api/founder/governance/
 import type { AuthorityRecord }               from '@/app/api/founder/authority/route'
 import type { ExecutionRecord }               from '@/app/api/founder/execution/route'
 import type { LearningRecord, LearningEngine } from '@/app/api/founder/learning/route'
+import type { StateRecord }                      from '@/app/api/founder/state/route'
 import type { AutonomyEngine, AutonomyStatus } from '@/app/api/founder/autonomy/route'
 import { RecDecisionControls }            from './rec-decision-controls'
 
