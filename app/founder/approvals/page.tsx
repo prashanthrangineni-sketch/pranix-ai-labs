@@ -10,33 +10,79 @@ export const metadata: Metadata = { title: 'Permissions' }
 export const revalidate = 15
 
 export default async function FounderPermissionsPage() {
-  const { pending, active, history } = await getPermissionInbox(150)
+  const [{ pending, active, history }, agentInbox] = await Promise.all([
+    getPermissionInbox(150),
+    getAgentTaskInbox(),
+  ])
+
+  const totalPending = pending.length + agentInbox.pending.length
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-6 space-y-7">
       <header className="space-y-1">
         <div className="flex items-center gap-2">
           <ShieldCheck className="h-5 w-5 text-accent" />
-          <h1 className="text-lg font-semibold text-fg-primary">Permissions</h1>
+          <h1 className="text-lg font-semibold text-fg-primary">Approval Center</h1>
+          {totalPending > 0 && (
+            <span className="rounded-full bg-severity-warn/15 px-2 py-0.5 text-[11px] font-semibold text-severity-warn">
+              {totalPending} pending
+            </span>
+          )}
         </div>
         <p className="text-[13px] text-fg-muted">
-          Approve or deny what your AI, agents, tools, and connected accounts are allowed to do.
+          Approve agent task plans and AI permission requests before they execute.
         </p>
       </header>
 
-      {/* ── Waiting for you ── */}
+      {/* ── Agent Tasks waiting for approval ── */}
       <section className="space-y-3">
-        <SectionHead
-          title="Waiting for your decision"
-          count={pending.length}
-          emphasis={pending.length > 0}
-        />
+        <div className="flex items-center gap-2">
+          <BrainCircuit className="h-4 w-4 text-accent" />
+          <h2 className={`text-[13px] font-semibold ${
+            agentInbox.pending.length > 0 ? 'text-severity-warn' : 'text-fg-secondary'
+          }`}>Agent task plans</h2>
+          <span className="rounded-full bg-elevated px-2 py-0.5 text-[11px] font-medium text-fg-muted">
+            {agentInbox.pending.length}
+          </span>
+        </div>
+
+        {agentInbox.pending.length === 0 ? (
+          <Empty>No agent tasks waiting. When an agent creates a plan it appears here first.</Empty>
+        ) : (
+          agentInbox.pending.map((task) => (
+            <AgentTaskCard key={task.task_id} task={task} />
+          ))
+        )}
+      </section>
+
+      {/* ── Agent task history ── */}
+      {agentInbox.history.length > 0 && (
+        <section className="space-y-2">
+          <div className="flex items-center gap-1.5 text-[12px] font-medium text-fg-muted">
+            <LayoutList className="h-3.5 w-3.5" /> Agent task history
+          </div>
+          <div className="divide-y divide-border-subtle rounded-lg border border-border-subtle bg-surface">
+            {agentInbox.history.slice(0, 10).map((task) => (
+              <AgentTaskHistoryRow key={task.task_id} task={task} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      <div className="border-t border-border-subtle pt-6 space-y-3">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="h-4 w-4 text-fg-muted" />
+          <h2 className={`text-[13px] font-semibold ${
+            pending.length > 0 ? 'text-severity-warn' : 'text-fg-secondary'
+          }`}>Waiting for your decision</h2>
+          <span className="rounded-full bg-elevated px-2 py-0.5 text-[11px] font-medium text-fg-muted">{pending.length}</span>
+        </div>
         {pending.length === 0 ? (
           <Empty>Nothing is waiting. When something asks for access, it shows up here.</Empty>
         ) : (
           pending.map((r) => <PendingCard key={r.id} r={r} />)
         )}
-      </section>
+      </div>
 
       {/* ── Currently allowed ── */}
       <section className="space-y-3">
