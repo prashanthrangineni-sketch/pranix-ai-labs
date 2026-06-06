@@ -367,6 +367,32 @@ export function MissionControl() {
     } catch { /* non-fatal */ }
   }, [])
 
+  // S3 — Dispatch
+  const [dispatch, setDispatch] = useState<{
+    queued:        number
+    dispatched:    number
+    blocked:       number
+    eligible:      number
+    top_candidate: DispatchRecord | null
+    records:       DispatchRecord[]
+  }>({ queued: 0, dispatched: 0, blocked: 0, eligible: 0, top_candidate: null, records: [] })
+
+  const loadDispatch = useCallback(async () => {
+    try {
+      const res = await fetch('/api/founder/dispatch', { cache: 'no-store' })
+      if (!res.ok) return
+      const j = await res.json()
+      setDispatch({
+        queued:        j.queued        ?? 0,
+        dispatched:    j.dispatched    ?? 0,
+        blocked:       j.blocked       ?? 0,
+        eligible:      j.eligible      ?? 0,
+        top_candidate: j.top_candidate ?? null,
+        records:       j.records       ?? [],
+      })
+    } catch { /* non-fatal */ }
+  }, [])
+
   // P8 — Governance
   const [governance, setGovernance] = useState<{
     evaluations:             GovernanceEvaluation[]
