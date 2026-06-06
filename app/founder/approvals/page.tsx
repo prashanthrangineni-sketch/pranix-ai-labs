@@ -115,6 +115,84 @@ export default async function FounderPermissionsPage() {
   )
 }
 
+// ─── Agent Task sub-components ─────────────────────────────────────────
+
+function taskStatusBadge(status: string) {
+  const map: Record<string, string> = {
+    planned:   'bg-severity-warn/10 text-severity-warn',
+    approved:  'bg-accent/10 text-accent',
+    executing: 'bg-blue-500/10 text-blue-500',
+    completed: 'bg-severity-success/10 text-severity-success',
+    failed:    'bg-severity-critical/10 text-severity-critical',
+  }
+  return (
+    <span className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+      map[status] ?? 'bg-elevated text-fg-muted'
+    }`}>{status}</span>
+  )
+}
+
+function AgentTaskCard({ task }: { task: PersistedTask }) {
+  const planSteps = task.plan ?? []
+  const lastEvent = task.timeline?.at(-1)
+  const createdAt = task.created_at ? timeAgo(task.created_at) : 'recently'
+  return (
+    <div className="rounded-xl border border-severity-warn/30 bg-severity-warn/[0.03] p-4 space-y-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-elevated">
+            <Bot className="h-4 w-4 text-fg-muted" />
+          </span>
+          <div className="min-w-0">
+            <p className="truncate text-[13px] font-semibold text-fg-primary">{task.title || 'Agent task'}</p>
+            <p className="text-[11px] text-fg-disabled">{task.workspace_id ? `Workspace ${task.workspace_id}` : 'No workspace'}</p>
+          </div>
+        </div>
+        {taskStatusBadge(task.status)}
+      </div>
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-fg-muted">
+        {task.model && <span>Model: {task.model}</span>}
+        <span>Created {createdAt}</span>
+        <span>{planSteps.length} step{planSteps.length !== 1 ? 's' : ''}</span>
+        {task.timeline && <span>{task.timeline.length} events</span>}
+      </div>
+      {planSteps.length > 0 && (
+        <div className="space-y-1.5">
+          <p className="text-[11px] font-medium text-fg-disabled uppercase tracking-wide">Plan</p>
+          <ol className="space-y-1">
+            {planSteps.slice(0, 5).map((step: { title?: string; description?: string }, i: number) => (
+              <li key={i} className="flex gap-2 text-[12px] text-fg-secondary">
+                <span className="shrink-0 text-fg-disabled">{i + 1}.</span>
+                <span>{step.title ?? step.description ?? 'Step'}</span>
+              </li>
+            ))}
+            {planSteps.length > 5 && <li className="text-[11px] text-fg-disabled pl-4">+{planSteps.length - 5} more steps</li>}
+          </ol>
+        </div>
+      )}
+      {lastEvent && (
+        <p className="text-[11px] text-fg-muted"><span className="text-fg-disabled">Last event: </span>{lastEvent.label}</p>
+      )}
+      <AgentTaskControls taskId={task.task_id} />
+    </div>
+  )
+}
+
+function AgentTaskHistoryRow({ task }: { task: PersistedTask }) {
+  return (
+    <div className="flex items-center justify-between gap-3 px-3 py-2.5 text-[12px]">
+      <div className="min-w-0">
+        <p className="truncate text-fg-secondary">
+          <span className="font-medium text-fg-primary">{task.title || 'Agent task'}</span>
+          {task.workspace_id && <span className="text-fg-disabled"> {task.workspace_id}</span>}
+        </p>
+        <p className="truncate text-[11px] text-fg-disabled">{(task.plan ?? []).length} steps {task.created_at ? timeAgo(task.created_at) : ''}</p>
+      </div>
+      {taskStatusBadge(task.status)}
+    </div>
+  )
+}
+
 // ─── Cards ───────────────────────────────────────────────────────
 
 function PendingCard({ r }: { r: PermissionRequest }) {
