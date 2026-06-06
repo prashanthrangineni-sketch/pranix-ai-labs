@@ -198,6 +198,12 @@ function analyzeEvidence(snapshot: PersistedTask): TaskAnalysis {
   if (failed.length > 0) {
     risks.push(`${failed.length} execution failure${failed.length !== 1 ? 's' : ''} require investigation before proceeding`)
   }
+  // S1: unverified executions are a distinct risk category
+  if (hasUnverified) {
+    risks.push(
+      `${unverified.length} step${unverified.length !== 1 ? 's' : ''} executed without gateway verification — results cannot be trusted. Retry after restoring gateway connectivity.`
+    )
+  }
   if (inferred.length >= steps.length / 2) {
     risks.push('Majority of results are inferred — MCP gateway connectivity should be verified')
   }
