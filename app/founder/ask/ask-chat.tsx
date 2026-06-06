@@ -644,8 +644,8 @@ function PlanView({
       </div>
 
       <div className="space-y-1.5">
-        {steps.map((step, i) => (
-          <StepRow key={step.step_number} step={step} active={i === activeStep && phase === 'executing'} />
+        {steps.map((step) => (
+          <StepRow key={step.step_number} step={step} active={step.status === 'executing'} />
         ))}
       </div>
 
