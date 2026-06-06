@@ -592,6 +592,117 @@ export default async function FounderPermissionsPage() {
         )
       })()}
 
+      {/* ── Founder OS Roadmap Review ── */}
+      {roadmapData.roadmap.length > 0 && (() => {
+        const p = roadmapData.progress
+        const STATUS_BADGE: Record<string, string> = {
+          planned:     'bg-elevated text-fg-muted',
+          approved:    'bg-accent/10 text-accent',
+          in_progress: 'bg-accent/10 text-accent',
+          completed:   'bg-severity-success/10 text-severity-success',
+          blocked:     'bg-severity-critical/10 text-severity-critical',
+          cancelled:   'bg-elevated text-fg-disabled',
+        }
+        const PRIORITY_BADGE: Record<string, string> = {
+          critical: 'bg-severity-critical/10 text-severity-critical',
+          high:     'bg-severity-warn/10 text-severity-warn',
+          medium:   'bg-elevated text-fg-muted',
+          vision:   'bg-purple-500/10 text-purple-400',
+        }
+        return (
+          <section id="roadmap" className="space-y-3 scroll-mt-4">
+            <div className="flex items-center gap-2">
+              <Map className="h-4 w-4 text-accent" />
+              <h2 className="text-[13px] font-semibold text-fg-secondary">Founder OS Roadmap</h2>
+              <span className="rounded-full bg-severity-success/10 text-severity-success text-[10px] font-medium px-2 py-0.5">
+                P1–P13 + S1–S5 complete
+              </span>
+            </div>
+
+            {/* Progress */}
+            <div className="rounded-xl border border-border-subtle bg-surface px-4 py-3 space-y-2">
+              <div className="flex items-center justify-between text-[12px]">
+                <span className="font-semibold text-fg-primary">P14–P20 · S6–S12 — Future Phases</span>
+                <span className="tabular-nums font-bold text-fg-primary">{p.pct}%</span>
+              </div>
+              <div className="h-2 w-full rounded-full bg-elevated overflow-hidden">
+                <div className="h-full rounded-full bg-accent transition-all duration-700" style={{ width: `${p.pct}%` }} />
+              </div>
+              <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-fg-muted tabular-nums">
+                <span><span className="font-semibold text-severity-success">{p.completed}</span>/{p.total} completed</span>
+                {p.in_progress > 0 && <span className="text-accent font-medium">{p.in_progress} in progress</span>}
+                {p.blocked > 0 && <span className="text-severity-critical font-medium">{p.blocked} blocked</span>}
+                {p.current && <span>Current: <span className="font-medium text-fg-secondary">{p.current.phase_id} — {p.current.title}</span></span>}
+                {p.next    && <span>Next: <span className="font-medium text-fg-secondary">{p.next.phase_id} — {p.next.title}</span></span>}
+              </div>
+            </div>
+
+            {/* Completed phases */}
+            <div className="flex flex-wrap gap-2">
+              {roadmapData.completed_phases.map(cp => (
+                <span key={cp.phase_id} className="inline-flex items-center gap-1 rounded-full bg-severity-success/10 text-severity-success text-[11px] font-medium px-2.5 py-1">
+                  <CheckSquare className="h-3 w-3" /> {cp.phase_id}: {cp.title}
+                </span>
+              ))}
+            </div>
+
+            {/* Roadmap table */}
+            <div className="divide-y divide-border-subtle rounded-xl border border-border-subtle bg-surface overflow-hidden">
+              {roadmapData.roadmap.map(item => {
+                const isVision = item.phase_type === 'Vision'
+                return (
+                  <div
+                    key={item.roadmap_id}
+                    className={`px-3 py-3 space-y-1.5 ${
+                      isVision ? 'bg-accent/[0.015]' : ''
+                    }`}
+                  >
+                    {/* Row 1: phase + title + status + priority */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-2 flex-1 min-w-0">
+                        <span className="shrink-0 rounded bg-elevated px-1.5 py-0.5 text-[10px] font-bold text-fg-secondary tabular-nums">
+                          {item.phase_id}
+                        </span>
+                        <p className="text-[13px] font-semibold text-fg-primary leading-snug truncate">{item.title}</p>
+                      </div>
+                      <div className="flex shrink-0 gap-1.5">
+                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${STATUS_BADGE[item.status] ?? STATUS_BADGE.planned}`}>
+                          {item.status.replace('_', ' ')}
+                        </span>
+                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${PRIORITY_BADGE[item.priority] ?? PRIORITY_BADGE.medium}`}>
+                          {item.priority}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Row 2: objective */}
+                    <p className="text-[12px] text-fg-secondary leading-relaxed">{item.objective}</p>
+
+                    {/* Row 3: target state */}
+                    <p className="text-[11px] text-fg-muted font-medium">→ {item.target_state}</p>
+
+                    {/* Row 4: dependencies + notes */}
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                      {item.dependencies.length > 0 && (
+                        <div className="flex items-center gap-1 flex-wrap">
+                          <span className="text-[10px] text-fg-disabled">Depends on:</span>
+                          {item.dependencies.map(dep => (
+                            <span key={dep} className="rounded bg-elevated text-fg-muted text-[10px] font-medium px-1.5 py-0.5">{dep}</span>
+                          ))}
+                        </div>
+                      )}
+                      {item.notes && (
+                        <p className="text-[11px] text-fg-disabled italic w-full">{item.notes}</p>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+        )
+      })()}
+
       {/* ── S6: Execution Engine Review ── */}
       {executorData.records.length > 0 && (() => {
         const STATUS_ORDER: Record<string, number> = {
