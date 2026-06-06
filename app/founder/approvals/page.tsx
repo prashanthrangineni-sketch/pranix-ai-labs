@@ -83,6 +83,24 @@ async function getAuthority(): Promise<{
   } catch { return empty }
 }
 
+async function getExecution(): Promise<{
+  queued: ExecutionRecord[]; eligible: ExecutionRecord[]; executing: ExecutionRecord[];
+  completed: ExecutionRecord[]; failed: ExecutionRecord[]; blocked: ExecutionRecord[]
+}> {
+  const empty = { queued: [], eligible: [], executing: [], completed: [], failed: [], blocked: [] }
+  try {
+    const j = await fetchFromBase('/api/founder/execution')
+    return j ? {
+      queued:    (j.queued    ?? []) as ExecutionRecord[],
+      eligible:  (j.eligible  ?? []) as ExecutionRecord[],
+      executing: (j.executing ?? []) as ExecutionRecord[],
+      completed: (j.completed ?? []) as ExecutionRecord[],
+      failed:    (j.failed    ?? []) as ExecutionRecord[],
+      blocked:   (j.blocked   ?? []) as ExecutionRecord[],
+    } : empty
+  } catch { return empty }
+}
+
 export default async function FounderPermissionsPage() {
   const [
     { pending, active, history },
@@ -92,6 +110,7 @@ export default async function FounderPermissionsPage() {
     scheduleEntries,
     governanceData,
     authorityData,
+    executionData,
   ] = await Promise.all([
     getPermissionInbox(150),
     getAgentTaskInbox(),
@@ -100,6 +119,7 @@ export default async function FounderPermissionsPage() {
     getSchedule(),
     getGovernance(),
     getAuthority(),
+    getExecution(),
   ])
 
   // Build a lookup: operation_id → ScheduleEntry
