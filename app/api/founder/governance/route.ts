@@ -1,34 +1,26 @@
-// app/api/founder/governance/route.ts
-// P8 — Founder Governance Engine.
-//
-// GET  — returns all policies + governance evaluations for every queued operation
-// POST — action: 'enable_policy' | 'disable_policy'
-//
-// Storage: execution_memory only.
-// Keys:
-//   p8:policy:<id>              — individual policy (seeded from defaults)
-//   p8:governance:<operation_id>— evaluation result per op
-//
-// NO GitHub / Vercel / Supabase row writes.
-// NO execution — pure read-only governance intelligence.
+/**
+ * P8 — Founder Governance Engine
+ *
+ * GET  /api/founder/governance
+ *   → { policies, evaluations, approval_required_count, blocked_count }
+ *
+ * POST /api/founder/governance
+ *   body: { action: 'enable_policy' | 'disable_policy', policy_id: string }
+ *   → { ok, policy }
+ *
+ * Storage keys (execution_memory only — no Supabase writes, no GitHub, no Vercel):
+ *   p8:policy:<id>           — Policy override (enabled/disabled)
+ *   p8:governance:<op_id>    — Evaluation result per operation
+ *
+ * This module is READ-ONLY from the autonomous execution perspective.
+ * No operations are executed here. This layer only evaluates permission.
+ */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient }        from '@/lib/supabase'
-import { getControlPlane }          from '@/app/lib/control-plane'
-import type { Operation }           from '@/app/api/founder/operations/route'
 
-export const runtime    = 'nodejs'
-export const dynamic    = 'force-dynamic'
-export const revalidate = 0
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-const PROJECT     = 'pranix-dashboard'
-const POL_PREFIX  = 'p8:policy:'
-const GOV_PREFIX  = 'p8:governance:'
-const TTL_MS      = 90 * 24 * 3600 * 1000  // 90 days for policies
-const GOV_TTL_MS  = 30 * 24 * 3600 * 1000
-
-// ── Types ─────────────────────────────────────────────────────────────────────
-export type PolicyActionType =
+export type PolicyScope =
   | 'read_only'
   | 'external_api'
   | 'paid_model'
@@ -36,353 +28,353 @@ export type PolicyActionType =
   | 'database_mutation'
   | 'production_deployment'
 
+export type GovernanceVerdict = 'allowed' | 'needs_approval' | 'blocked'
+
 export interface Policy {
   policy_id:         string
   name:              string
-  scope:             string
-  action_type:       PolicyActionType
+  description:       string
+  scope:             PolicyScope
+  action_type:       string
   approval_required: boolean
   max_risk:          'low' | 'medium' | 'high' | 'critical'
-  max_cost:          number          // 0 = unlimited
-  allowed_providers: string[]        // [] = all
-  allowed_projects:  string[]        // [] = all
+  max_cost:          number         // USD ceiling per operation, 0 = no limit
+  allowed_providers: string[]       // empty = all allowed
+  allowed_projects:  string[]       // empty = all allowed
   enabled:           boolean
-  description:       string
 }
 
 export interface GovernanceEvaluation {
-  operation_id:     string
-  operation_title:  string
-  allowed:          boolean
-  approval_required:boolean
+  operation_id:    string
+  operation_title: string
+  verdict:         GovernanceVerdict
+  approval_required: boolean
   governing_policy: string          // policy_id
-  policy_name:      string
-  reason:           string
-  verdict:          'allowed' | 'needs_approval' | 'blocked'
-  evaluated_at:     string
+  policy_name:     string
+  reason:          string
+  evaluated_at:    string
 }
 
-export interface GovernanceResponse {
-  policies:               Policy[]
-  evaluations:            GovernanceEvaluation[]
-  violations:             GovernanceEvaluation[]
-  approval_required_count:number
-  blocked_count:          number
-  generated_at:           string
-}
+// ─── Default Policies (A-F, spec-compliant) ───────────────────────────────────
 
-// ── Default policies ─────────────────────────────────────────────────────────
 const DEFAULT_POLICIES: Policy[] = [
   {
-    policy_id:         'policy_a',
+    policy_id:         'pol_A',
     name:              'Read Only',
-    scope:             'global',
-    action_type:       'read_only',
+    description:       'Operations that only read data require no approval.',
+    scope:             'read_only',
+    action_type:       'read',
     approval_required: false,
     max_risk:          'low',
     max_cost:          0,
     allowed_providers: [],
     allowed_projects:  [],
     enabled:           true,
-    description:       'Read-only operations require no approval and are always permitted.',
   },
   {
-    policy_id:         'policy_b',
+    policy_id:         'pol_B',
     name:              'External API Usage',
-    scope:             'global',
-    action_type:       'external_api',
+    description:       'Calling any third-party or external API requires founder approval.',
+    scope:             'external_api',
+    action_type:       'api_call',
     approval_required: true,
     max_risk:          'medium',
-    max_cost:          0,
+    max_cost:          10,
     allowed_providers: [],
     allowed_projects:  [],
     enabled:           true,
-    description:       'Any operation that calls an external API requires Founder approval.',
   },
   {
-    policy_id:         'policy_c',
+    policy_id:         'pol_C',
     name:              'Paid Model Usage',
-    scope:             'global',
-    action_type:       'paid_model',
+    description:       'Using a paid inference model (e.g. Anthropic, OpenAI) requires approval.',
+    scope:             'paid_model',
+    action_type:       'inference',
     approval_required: true,
     max_risk:          'medium',
-    max_cost:          0,
-    allowed_providers: [],
+    max_cost:          5,
+    allowed_providers: ['ollama'],
     allowed_projects:  [],
     enabled:           true,
-    description:       'Operations that use paid AI models must be approved first.',
   },
   {
-    policy_id:         'policy_d',
+    policy_id:         'pol_D',
     name:              'Repository Modification',
-    scope:             'global',
-    action_type:       'repo_modification',
+    description:       'Any write to a GitHub repository requires founder approval.',
+    scope:             'repo_modification',
+    action_type:       'github_write',
     approval_required: true,
     max_risk:          'high',
     max_cost:          0,
     allowed_providers: [],
     allowed_projects:  [],
     enabled:           true,
-    description:       'Any write to a GitHub repository requires explicit Founder approval.',
   },
   {
-    policy_id:         'policy_e',
+    policy_id:         'pol_E',
     name:              'Database Mutation',
-    scope:             'global',
-    action_type:       'database_mutation',
+    description:       'Writes, inserts, or deletes against any Supabase project require approval.',
+    scope:             'database_mutation',
+    action_type:       'supabase_write',
     approval_required: true,
     max_risk:          'high',
     max_cost:          0,
     allowed_providers: [],
     allowed_projects:  [],
     enabled:           true,
-    description:       'Any database mutation outside execution_memory requires Founder approval.',
   },
   {
-    policy_id:         'policy_f',
+    policy_id:         'pol_F',
     name:              'Production Deployment',
-    scope:             'global',
-    action_type:       'production_deployment',
+    description:       'Any Vercel deployment to production requires founder approval.',
+    scope:             'production_deployment',
+    action_type:       'vercel_deploy',
     approval_required: true,
     max_risk:          'critical',
     max_cost:          0,
     allowed_providers: [],
     allowed_projects:  [],
     enabled:           true,
-    description:       'Production deployments are always gated by Founder approval.',
   },
 ]
 
-// ── Auth ──────────────────────────────────────────────────────────────────────
-async function assertFounder(): Promise<boolean> {
-  try {
-    const supa = createServerClient()
-    const { data: { user } } = await supa.auth.getUser()
-    const email = user?.email?.toLowerCase()
-    if (!email) return false
-    const { data } = await getControlPlane()
-      .from('dashboard_founders').select('email').eq('email', email).maybeSingle()
-    return !!data
-  } catch { return false }
-}
+// ─── Scope classifier: maps operation keywords → PolicyScope ─────────────────
 
-// ── Load (or seed) policies ────────────────────────────────────────────────────
-async function loadPolicies(): Promise<Policy[]> {
-  const cp = getControlPlane()
-  const { data } = await cp
-    .from('execution_memory')
-    .select('key, value')
-    .eq('project', PROJECT)
-    .like('key', `${POL_PREFIX}%`)
-    .gt('expires_at', new Date().toISOString())
-    .limit(20)
+const SCOPE_KEYWORDS: { scope: PolicyScope; keywords: string[] }[] = [
+  {
+    scope:    'production_deployment',
+    keywords: ['deploy', 'deployment', 'production', 'vercel', 'release', 'go live'],
+  },
+  {
+    scope:    'repo_modification',
+    keywords: ['github', 'commit', 'push', 'pull request', 'patch', 'branch', 'repository', 'repo write', 'apply patch'],
+  },
+  {
+    scope:    'database_mutation',
+    keywords: ['supabase', 'database', 'insert', 'delete', 'update row', 'migration', 'db write', 'sql write'],
+  },
+  {
+    scope:    'paid_model',
+    keywords: ['anthropic', 'claude', 'openai', 'gpt', 'gemini', 'paid model', 'premium model'],
+  },
+  {
+    scope:    'external_api',
+    keywords: ['api', 'doppler', 'provider', 'enable provider', 'enable anthropic', 'external', 'webhook', 'integration'],
+  },
+  {
+    scope:    'read_only',
+    keywords: ['read', 'list', 'fetch', 'get', 'view', 'inspect', 'query', 'search', 'scan', 'check', 'status'],
+  },
+]
 
-  if (!data || data.length === 0) {
-    // First run — seed defaults into execution_memory
-    const expires = new Date(Date.now() + TTL_MS).toISOString()
-    for (const pol of DEFAULT_POLICIES) {
-      await cp.from('execution_memory').upsert(
-        { project: PROJECT, key: `${POL_PREFIX}${pol.policy_id}`, value: pol, expires_at: expires },
-        { onConflict: 'project,key', ignoreDuplicates: true },
-      )
-    }
-    return DEFAULT_POLICIES
+function classifyScope(title: string, category?: string): PolicyScope {
+  const text = `${title} ${category ?? ''}`.toLowerCase()
+  for (const { scope, keywords } of SCOPE_KEYWORDS) {
+    if (keywords.some(k => text.includes(k))) return scope
   }
-
-  // Merge stored with defaults (new defaults not yet in storage get added)
-  const stored = new Map(data.map(r => [(r.value as Policy).policy_id, r.value as Policy]))
-  const merged: Policy[] = DEFAULT_POLICIES.map(d => stored.get(d.policy_id) ?? d)
-  return merged
-}
-
-// ── Classify operation to policy action_type ──────────────────────────────────────
-function classifyOperation(op: Operation): PolicyActionType {
-  const t = op.title.toLowerCase()
-  const c = op.category
-
-  // Production deployment signals
-  if (t.includes('deploy') || t.includes('vercel') || t.includes('production') || t.includes('release'))
-    return 'production_deployment'
-
-  // Database mutation signals
-  if (t.includes('database') || t.includes('schema') || t.includes('migrate') || t.includes('supabase'))
-    return 'database_mutation'
-
-  // Repository modification signals
-  if (t.includes('github') || t.includes('commit') || t.includes('push') || t.includes('pr') ||
-      t.includes('branch') || t.includes('repo') || t.includes('rotate') || t.includes('credential'))
-    return 'repo_modification'
-
-  // Paid model / provider signals
-  if (t.includes('anthropic') || t.includes('openai') || t.includes('gemini') || t.includes('grok') ||
-      t.includes('paid model') || c === 'provider')
-    return 'paid_model'
-
-  // External API signals
-  if (t.includes('api key') || t.includes('enable') || t.includes('configure') ||
-      t.includes('ollama') || t.includes('openrouter') || c === 'infrastructure')
-    return 'external_api'
-
-  // Audit, monitor, review — read-only
-  if (t.includes('audit') || t.includes('monitor') || t.includes('verify') ||
-      t.includes('check') || t.includes('review') || t.includes('replay') ||
-      t.includes('read') || t.includes('inspect') || c === 'monitoring')
-    return 'read_only'
-
-  // Cleanup / workflow — external API (light touch)
-  if (c === 'workflow' || c === 'cost' || t.includes('cleanup') || t.includes('stale'))
-    return 'external_api'
-
-  // Founder-scoped: treat as read-only
-  if (c === 'founder') return 'read_only'
-
-  // Default: external API (conservative)
+  // Default: treat unknowns as external_api (approval_required = true — safer)
   return 'external_api'
 }
 
-// ── Evaluate one operation against policies ─────────────────────────────────────
-function evaluateOperation(op: Operation, policies: Policy[]): GovernanceEvaluation {
-  const now = new Date().toISOString()
-  const actionType = classifyOperation(op)
+function findGoverningPolicy(scope: PolicyScope, policies: Policy[]): Policy {
+  const match = policies.find(p => p.scope === scope && p.enabled)
+  // If the matching policy is disabled, fall back to strictest default
+  return match ?? DEFAULT_POLICIES.find(p => p.scope === scope) ?? DEFAULT_POLICIES[1]
+}
 
-  // Find governing policy (first enabled policy matching action_type)
-  const governing = policies.find(p => p.enabled && p.action_type === actionType)
-    ?? policies.find(p => p.enabled && p.action_type === 'external_api')  // fallback
-    ?? DEFAULT_POLICIES[1]  // Policy B hardcoded fallback
+// ─── Execution-memory helpers (no Supabase, no GitHub) ───────────────────────
 
-  // Risk gate: if op.risk_level exceeds policy.max_risk, block it
-  const riskOrder = { low: 0, medium: 1, high: 2, critical: 3 }
-  const opRisk  = riskOrder[op.risk_level] ?? 1
-  const polRisk = riskOrder[governing.max_risk] ?? 1
-  const riskBlocked = opRisk > polRisk
+const BASE = process.env.NEXT_PUBLIC_APP_URL ?? process.env.VERCEL_URL
+
+function baseUrl(): string {
+  if (!BASE) return ''
+  return BASE.startsWith('http') ? BASE : `https://${BASE}`
+}
+
+async function memRead(key: string): Promise<Record<string, unknown> | null> {
+  try {
+    const url = `${baseUrl()}/api/founder/execution-memory?key=${encodeURIComponent(key)}`
+    const res = await fetch(url, { cache: 'no-store' })
+    if (!res.ok) return null
+    const j = await res.json()
+    return (j?.value ?? null) as Record<string, unknown> | null
+  } catch {
+    return null
+  }
+}
+
+async function memWrite(key: string, value: Record<string, unknown>): Promise<void> {
+  try {
+    const url = `${baseUrl()}/api/founder/execution-memory`
+    await fetch(url, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ key, value }),
+    })
+  } catch {
+    // non-fatal
+  }
+}
+
+// ─── Load policies (merge defaults + any founder overrides in exec-memory) ────
+
+async function loadPolicies(): Promise<Policy[]> {
+  const policies = structuredClone(DEFAULT_POLICIES)
+  await Promise.all(
+    policies.map(async (pol) => {
+      const override = await memRead(`p8:policy:${pol.policy_id}`)
+      if (override && typeof override.enabled === 'boolean') {
+        pol.enabled = override.enabled
+      }
+    })
+  )
+  return policies
+}
+
+// ─── Evaluate a single operation ─────────────────────────────────────────────
+
+interface OperationInput {
+  operation_id: string
+  title:        string
+  category?:    string
+  risk_level?:  string
+  provider?:    string
+  project?:     string
+}
+
+function evaluateOperation(
+  op: OperationInput,
+  policies: Policy[],
+): GovernanceEvaluation {
+  const scope   = classifyScope(op.title, op.category)
+  const policy  = findGoverningPolicy(scope, policies)
 
   // Determine verdict
-  let allowed           = true
-  let approval_required = governing.approval_required
-  let reason            = ''
-  let verdict: GovernanceEvaluation['verdict'] = 'allowed'
+  let verdict: GovernanceVerdict = 'allowed'
+  let reason = `Operation falls under the "${policy.name}" policy. No approval required.`
 
-  if (!governing.enabled) {
-    allowed           = false
-    approval_required = true
-    verdict           = 'blocked'
-    reason            = `Governing policy "${governing.name}" is disabled. Operation cannot proceed.`
-  } else if (riskBlocked) {
-    allowed           = false
-    approval_required = true
-    verdict           = 'blocked'
-    reason            = `Operation risk (${op.risk_level}) exceeds policy maximum (${governing.max_risk}) under "${governing.name}".`
-  } else if (approval_required) {
+  if (!policy.enabled) {
+    verdict = 'blocked'
+    reason  = `Policy "${policy.name}" is currently disabled. Operation cannot proceed.`
+  } else if (policy.approval_required) {
     verdict = 'needs_approval'
-    reason  = `"${governing.name}" requires Founder approval before execution. No code or infra changes are made until approved.`
-  } else {
-    verdict = 'allowed'
-    reason  = `"${governing.name}" permits this read-only operation without additional approval.`
+    reason  = `Policy "${policy.name}" requires founder approval before this operation can execute.`
+  } else if (op.risk_level === 'critical' || op.risk_level === 'high') {
+    verdict = 'needs_approval'
+    reason  = `Risk level is ${op.risk_level}. Elevated risk triggers approval requirement regardless of policy defaults.`
+  }
+
+  // Provider restriction check
+  if (
+    policy.allowed_providers.length > 0 &&
+    op.provider &&
+    !policy.allowed_providers.includes(op.provider.toLowerCase())
+  ) {
+    verdict = 'blocked'
+    reason  = `Provider "${op.provider}" is not in the allowed list for policy "${policy.name}".`
   }
 
   return {
     operation_id:      op.operation_id,
     operation_title:   op.title,
-    allowed,
-    approval_required,
-    governing_policy:  governing.policy_id,
-    policy_name:       governing.name,
-    reason,
     verdict,
-    evaluated_at:      now,
+    approval_required: policy.approval_required,
+    governing_policy:  policy.policy_id,
+    policy_name:       policy.name,
+    reason,
+    evaluated_at:      new Date().toISOString(),
   }
 }
 
-// ── Load all operations (ready + queued) ─────────────────────────────────────────
-async function loadActiveOps(): Promise<Operation[]> {
-  const cp = getControlPlane()
-  const { data } = await cp
-    .from('execution_memory')
-    .select('key, value')
-    .eq('project', PROJECT)
-    .like('key', 'p6:operation:%')
-    .gt('expires_at', new Date().toISOString())
-    .order('created_at', { ascending: false })
-    .limit(100)
-  return (data ?? [])
-    .map(r => r.value as Operation)
-    .filter(o => o.status === 'ready' || o.status === 'queued')
+// ─── Pull live operations from the operations API ────────────────────────────
+
+async function fetchActiveOperations(): Promise<OperationInput[]> {
+  try {
+    const url = `${baseUrl()}/api/founder/operations`
+    const res = await fetch(url, { cache: 'no-store' })
+    if (!res.ok) return []
+    const j = await res.json()
+    const ops = [
+      ...(j?.queued    ?? []),
+      ...(j?.ready     ?? []),
+      ...(j?.executing ?? []),
+    ] as Array<{
+      operation_id: string
+      title: string
+      category?: string
+      risk_level?: string
+      provider?: string
+      project?: string
+    }>
+    return ops
+  } catch {
+    return []
+  }
 }
 
-// ── GET ───────────────────────────────────────────────────────────────────────
-export async function GET() {
-  if (!await assertFounder())
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+// ─── GET ──────────────────────────────────────────────────────────────────────
 
-  const [policies, ops] = await Promise.all([
+export async function GET() {
+  const [policies, operations] = await Promise.all([
     loadPolicies(),
-    loadActiveOps(),
+    fetchActiveOperations(),
   ])
 
-  const evaluations: GovernanceEvaluation[] = []
-  const cp      = getControlPlane()
-  const expires = new Date(Date.now() + GOV_TTL_MS).toISOString()
+  const evaluations: GovernanceEvaluation[] = await Promise.all(
+    operations.map(async (op) => {
+      const cached = await memRead(`p8:governance:${op.operation_id}`)
+      if (cached && (cached as GovernanceEvaluation).verdict) {
+        return cached as unknown as GovernanceEvaluation
+      }
+      const ev = evaluateOperation(op, policies)
+      await memWrite(`p8:governance:${op.operation_id}`, ev as unknown as Record<string, unknown>)
+      return ev
+    })
+  )
 
-  for (const op of ops) {
-    const ev = evaluateOperation(op, policies)
-    evaluations.push(ev)
-    // Persist evaluation to execution_memory
-    await cp.from('execution_memory').upsert(
-      { project: PROJECT, key: `${GOV_PREFIX}${op.operation_id}`, value: ev, expires_at: expires },
-      { onConflict: 'project,key', ignoreDuplicates: false },
-    )
-  }
+  const approval_required_count = evaluations.filter(e => e.verdict === 'needs_approval').length
+  const blocked_count           = evaluations.filter(e => e.verdict === 'blocked').length
 
-  const violations = evaluations.filter(e => e.verdict === 'blocked')
+  // Violations = blocked + needs_approval
+  const violations = evaluations.filter(e => e.verdict !== 'allowed')
 
-  const response: GovernanceResponse = {
+  return NextResponse.json({
     policies,
     evaluations,
     violations,
-    approval_required_count: evaluations.filter(e => e.verdict === 'needs_approval').length,
-    blocked_count:           violations.length,
-    generated_at:            new Date().toISOString(),
-  }
-
-  return NextResponse.json(response)
+    approval_required_count,
+    blocked_count,
+  })
 }
 
-// ── POST ──────────────────────────────────────────────────────────────────────
+// ─── POST ─────────────────────────────────────────────────────────────────────
+
 export async function POST(req: NextRequest) {
-  if (!await assertFounder())
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  let body: { action?: string; policy_id?: string }
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
+  }
 
-  const body = await req.json().catch(() => null)
-  const { action, policy_id } = body ?? {}
+  const { action, policy_id } = body
 
-  if (!policy_id)
-    return NextResponse.json({ error: 'policy_id required' }, { status: 400 })
+  if (!action || !policy_id) {
+    return NextResponse.json({ error: 'action and policy_id are required' }, { status: 400 })
+  }
 
-  if (action !== 'enable_policy' && action !== 'disable_policy')
-    return NextResponse.json({ error: 'action must be enable_policy or disable_policy' }, { status: 400 })
+  const validPolicyId = DEFAULT_POLICIES.find(p => p.policy_id === policy_id)
+  if (!validPolicyId) {
+    return NextResponse.json({ error: `Unknown policy_id: ${policy_id}` }, { status: 404 })
+  }
 
-  const cp  = getControlPlane()
-  const key = `${POL_PREFIX}${policy_id}`
+  if (action !== 'enable_policy' && action !== 'disable_policy') {
+    return NextResponse.json({ error: `Unknown action: ${action}` }, { status: 400 })
+  }
 
-  // Load current policy (stored or default)
-  const { data: row } = await cp
-    .from('execution_memory')
-    .select('value')
-    .eq('project', PROJECT)
-    .eq('key', key)
-    .maybeSingle()
+  const enabled = action === 'enable_policy'
+  await memWrite(`p8:policy:${policy_id}`, { enabled, updated_at: new Date().toISOString() })
 
-  const base: Policy =
-    (row?.value as Policy) ?? DEFAULT_POLICIES.find(p => p.policy_id === policy_id) ?? null
-  if (!base)
-    return NextResponse.json({ error: 'Policy not found' }, { status: 404 })
-
-  const updated: Policy = { ...base, enabled: action === 'enable_policy' }
-  await cp.from('execution_memory').upsert(
-    { project: PROJECT, key, value: updated,
-      expires_at: new Date(Date.now() + TTL_MS).toISOString() },
-    { onConflict: 'project,key', ignoreDuplicates: false },
-  )
-
-  return NextResponse.json({ ok: true, policy_id, enabled: updated.enabled })
+  const updatedPolicy = { ...validPolicyId, enabled }
+  return NextResponse.json({ ok: true, policy: updatedPolicy })
 }
