@@ -585,7 +585,10 @@ function PlanView({
     label:     `Plan created — ${plan.length} step${plan.length === 1 ? '' : 's'}`,
     timestamp: new Date().toISOString(),
   }])
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [analysis, setAnalysis]           = useState<TaskAnalysis | null>(null)
+  const [analysisLoading, setAnalysisLoading] = useState(false)
+  const pollRef     = useRef<ReturnType<typeof setInterval> | null>(null)
+  const analysisPollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const persist = useCallback((overridePhase?: ExecPhase, overrideSteps?: RichPlanStep[], overrideTimeline?: TimelineEvent[]) => {
     const s  = overrideSteps    ?? steps
