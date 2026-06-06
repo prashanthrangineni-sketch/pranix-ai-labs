@@ -180,14 +180,20 @@ function AgentTaskCard({ task }: { task: PersistedTask }) {
 }
 
 function AgentTaskHistoryRow({ task }: { task: PersistedTask }) {
+  const isDone = task.status === 'completed' || task.status === 'failed'
   return (
-    <div className="flex items-center justify-between gap-3 px-3 py-2.5 text-[12px]">
-      <div className="min-w-0">
+    <div className="flex items-start justify-between gap-3 px-3 py-2.5 text-[12px]">
+      <div className="min-w-0 flex-1">
         <p className="truncate text-fg-secondary">
-          <span className="font-medium text-fg-primary">{task.title || 'Agent task'}</span>
+          <span className="font-medium text-fg-primary">{task.title || task.goal || 'Agent task'}</span>
           {task.workspace_id && <span className="text-fg-disabled"> {task.workspace_id}</span>}
         </p>
         <p className="truncate text-[11px] text-fg-disabled">{(task.plan ?? []).length} steps {task.created_at ? timeAgo(task.created_at) : ''}</p>
+        {isDone && (
+          <div className="mt-1.5">
+            <ViewReplayButton taskId={task.task_id} />
+          </div>
+        )}
       </div>
       {taskStatusBadge(task.status)}
     </div>
