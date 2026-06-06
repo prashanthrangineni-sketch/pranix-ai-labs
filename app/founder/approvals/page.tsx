@@ -573,6 +573,97 @@ export default async function FounderPermissionsPage() {
         )
       })()}
 
+      {/* ── S6: Execution Engine Review ── */}
+      {executorData.records.length > 0 && (() => {
+        const STATUS_ORDER: Record<string, number> = {
+          unverified: 0, failed: 1, blocked: 2, running: 3, pending: 4, completed: 5
+        }
+        const sorted = [...executorData.records].sort((a, b) =>
+          (STATUS_ORDER[a.execution_status] ?? 9) - (STATUS_ORDER[b.execution_status] ?? 9)
+        )
+        const exStatusMeta: Record<string, { badge: string; label: string }> = {
+          pending:    { badge: 'bg-elevated text-fg-muted',                     label: 'Pending' },
+          running:    { badge: 'bg-accent/10 text-accent',                      label: 'Running' },
+          completed:  { badge: 'bg-severity-success/10 text-severity-success',  label: 'Completed' },
+          failed:     { badge: 'bg-severity-critical/10 text-severity-critical',label: 'Failed' },
+          blocked:    { badge: 'bg-severity-critical/10 text-severity-critical',label: 'Blocked' },
+          unverified: { badge: 'bg-severity-warn/10 text-severity-warn',        label: 'Unverified' },
+        }
+        const verMeta: Record<string, { cls: string; label: string }> = {
+          pending:    { cls: 'text-fg-muted',           label: 'Pending' },
+          verified:   { cls: 'text-severity-success',   label: 'Verified' },
+          unverified: { cls: 'text-severity-warn',      label: 'Unverified' },
+          failed:     { cls: 'text-severity-critical',  label: 'Failed' },
+        }
+        return (
+          <section id="executor" className="space-y-3 scroll-mt-4 border-t border-border-subtle pt-6">
+            <div className="flex items-center gap-2">
+              <Zap className="h-4 w-4 text-severity-success" />
+              <h2 className="text-[13px] font-semibold text-fg-secondary">Execution Engine Review</h2>
+              <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                executorData.gateway_live
+                  ? 'bg-severity-success/10 text-severity-success'
+                  : 'bg-severity-critical/10 text-severity-critical'
+              }`}>
+                {executorData.gateway_live ? 'Gateway Live' : 'Gateway Offline'}
+              </span>
+            </div>
+
+            <div className="divide-y divide-border-subtle rounded-xl border border-border-subtle bg-surface overflow-hidden">
+              {sorted.map(rec => {
+                const exMeta  = exStatusMeta[rec.execution_status]  ?? exStatusMeta.pending
+                const verInfo = verMeta[rec.verification_status] ?? verMeta.pending
+                return (
+                  <div key={rec.execution_id} className="px-3 py-3 space-y-1.5">
+
+                    {/* Row 1: title + execution status badge */}
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-[13px] font-medium text-fg-primary truncate flex-1">{rec.operation_title}</p>
+                      <span className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${exMeta.badge}`}>
+                        {exMeta.label}
+                      </span>
+                    </div>
+
+                    {/* Row 2: execution reason */}
+                    <p className="text-[12px] text-fg-secondary leading-relaxed">{rec.execution_reason}</p>
+
+                    {/* Row 3: mode + verification + duration */}
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-fg-muted">
+                      <span>Mode: <span className="font-medium text-fg-secondary">{rec.founder_mode}</span></span>
+                      <span>Verification: <span className={`font-medium ${verInfo.cls}`}>{verInfo.label}</span></span>
+                      {rec.duration_ms !== null && (
+                        <span className="tabular-nums text-fg-disabled">{rec.duration_ms}ms</span>
+                      )}
+                      {rec.verification_notes && (
+                        <span className="text-fg-disabled truncate max-w-[48ch]" title={rec.verification_notes}>
+                          {rec.verification_notes}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Row 4: replay / analysis links + timestamps */}
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-fg-disabled tabular-nums">
+                      {rec.replay_available && (
+                        <a href={`/founder/approvals#replay-${rec.operation_id}`} className="text-accent underline">View Replay</a>
+                      )}
+                      {rec.analysis_available && (
+                        <a href={`/founder/approvals#analysis-${rec.operation_id}`} className="text-accent underline">View Analysis</a>
+                      )}
+                      {rec.started_at && (
+                        <span>Started: {new Date(rec.started_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                      )}
+                      {rec.completed_at && (
+                        <span>Completed: {new Date(rec.completed_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+        )
+      })()}
+
       {/* ── S5: Queue Review ── */}
       {queueData.records.length > 0 && (() => {
         const STATUS_ORDER: Record<string, number> = {
