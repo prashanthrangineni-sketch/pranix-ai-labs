@@ -118,6 +118,32 @@ async function getAutonomy(): Promise<AutonomyEngine | null> {
   } catch { return null }
 }
 
+async function getExecutor(): Promise<{
+  records: ExecutorRecord[]
+  running: number
+  completed: number
+  failed: number
+  blocked: number
+  unverified: number
+  gateway_live: boolean
+  top_running: ExecutorRecord | null
+}> {
+  const empty = { records: [], running: 0, completed: 0, failed: 0, blocked: 0, unverified: 0, gateway_live: false, top_running: null }
+  try {
+    const j = await fetchFromBase('/api/founder/executor')
+    return j ? {
+      records:      (j.records ?? []) as ExecutorRecord[],
+      running:       j.running      ?? 0,
+      completed:     j.completed    ?? 0,
+      failed:        j.failed       ?? 0,
+      blocked:       j.blocked      ?? 0,
+      unverified:    j.unverified   ?? 0,
+      gateway_live:  j.gateway_live ?? false,
+      top_running:   j.top_running  ?? null,
+    } : empty
+  } catch { return empty }
+}
+
 async function getQueue(): Promise<{
   records: QueueRecord[]
   queued: number
