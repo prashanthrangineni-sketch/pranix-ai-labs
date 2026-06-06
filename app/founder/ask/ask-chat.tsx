@@ -663,6 +663,15 @@ function PlanView({
           setPhase(s)
           clearInterval(pollRef.current!)
           pollRef.current = null
+          const richTask = task as PersistedTask & { analysis?: TaskAnalysis }
+          // Restore analysis immediately if it's already there
+          if (richTask.analysis) {
+            setAnalysis(richTask.analysis)
+            setAnalysisLoading(false)
+          } else {
+            // Otherwise start polling for it (analyze API runs shortly after execute)
+            startAnalysisPoll()
+          }
           persistTask({
             task_id: task.task_id, workspace_id: task.workspace_id,
             goal: task.goal, execution_mode: task.execution_mode,
