@@ -25,6 +25,7 @@ import type { ExecutionRecord }               from '@/app/api/founder/execution/
 import type { LearningEngine }                from '@/app/api/founder/learning/route'
 import type { AutonomyEngine }                from '@/app/api/founder/autonomy/route'
 import type { DispatchRecord }                from '@/app/api/founder/dispatch/route'
+import type { ActivationRecord }              from '@/app/api/founder/activation/route'
 import { Key, PlayCircle, Sparkles, CheckCircle2, Ban, Activity, Zap, AlertOctagon, Loader2, Send } from 'lucide-react'
 
 // ── Types ────────────────────────────────────────────────────────────────
