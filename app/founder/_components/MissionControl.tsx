@@ -9,10 +9,11 @@
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import {
-  ShieldCheck, Loader2, RefreshCw, AlertOctagon, CheckCircle2,
+  ShieldCheck, Shield, Loader2, RefreshCw, AlertOctagon, CheckCircle2,
   Zap, Activity, ListChecks, ClipboardList, ChevronRight,
   AlertTriangle, Lightbulb, BrainCircuit, Sunrise, Circle,
   Inbox, FlameKindling, AlertCircle, Info,
+  Eye, Clock, Ban,
 } from 'lucide-react'
 import type { Recommendation, RiskLevel } from '@/app/api/founder/recommendations/route'
 import type { Operation as OpItem }    from '@/app/api/founder/operations/route'
