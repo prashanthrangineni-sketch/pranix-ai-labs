@@ -420,6 +420,96 @@ export function MissionControl() {
         )
       })()}
 
+      {/* ── P8: Governance Status ── */}
+      {(() => {
+        const { approval_required_count, blocked_count, violations, policies, evaluations } = governance
+        const enabledPolicies  = policies.filter(p => p.enabled).length
+        const disabledPolicies = policies.filter(p => !p.enabled).length
+        const readOnlyMode     = evaluations.length > 0 && evaluations.every(e => e.governing_policy === 'policy_a')
+        const hasIssues        = blocked_count > 0 || approval_required_count > 0
+
+        if (policies.length === 0) return null
+
+        return (
+          <div className="rounded-xl border border-border-subtle bg-surface px-4 py-3 space-y-3">
+            {/* Header */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Shield className="h-3.5 w-3.5 text-accent shrink-0" />
+                <span className="text-[11px] font-semibold text-fg-primary uppercase tracking-wide">Governance Status</span>
+              </div>
+              <Link
+                href="/founder/approvals#governance"
+                className="text-[10px] text-accent hover:underline"
+              >
+                View policies
+              </Link>
+            </div>
+
+            {/* Status pills row */}
+            <div className="flex flex-wrap gap-2">
+              {/* Read-only mode pill */}
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                readOnlyMode
+                  ? 'bg-severity-success/10 text-severity-success'
+                  : 'bg-elevated text-fg-muted'
+              }`}>
+                <Eye className="h-3 w-3" />
+                Read Only Mode: {readOnlyMode ? 'Active' : 'Off'}
+              </span>
+
+              {/* Approval required pill */}
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                approval_required_count > 0
+                  ? 'bg-severity-warn/10 text-severity-warn'
+                  : 'bg-elevated text-fg-muted'
+              }`}>
+                <Clock className="h-3 w-3" />
+                Approval Required: {approval_required_count}
+              </span>
+
+              {/* Blocked pill */}
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                blocked_count > 0
+                  ? 'bg-severity-critical/10 text-severity-critical'
+                  : 'bg-elevated text-fg-muted'
+              }`}>
+                <Ban className="h-3 w-3" />
+                Execution Blocked: {blocked_count}
+              </span>
+
+              {/* Policy violations */}
+              {violations.length > 0 && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-severity-critical/10 px-2.5 py-1 text-[11px] font-medium text-severity-critical">
+                  <AlertTriangle className="h-3 w-3" />
+                  {violations.length} Policy Violation{violations.length !== 1 ? 's' : ''}
+                </span>
+              )}
+            </div>
+
+            {/* Policy health row */}
+            <div className="flex items-center gap-3 text-[11px] text-fg-muted">
+              <span>{enabledPolicies} of {policies.length} policies active</span>
+              {disabledPolicies > 0 && (
+                <span className="text-severity-warn">{disabledPolicies} disabled</span>
+              )}
+              {!hasIssues && evaluations.length > 0 && (
+                <span className="text-severity-success">All operations governed ✔</span>
+              )}
+            </div>
+
+            {/* Top violation (if any) */}
+            {violations.length > 0 && (
+              <div className="rounded-lg bg-severity-critical/[0.04] border border-severity-critical/15 px-3 py-2">
+                <p className="text-[11px] font-semibold text-severity-critical mb-0.5">Top Violation</p>
+                <p className="text-[12px] text-fg-primary font-medium">{violations[0].operation_title}</p>
+                <p className="text-[11px] text-fg-secondary mt-0.5">{violations[0].reason}</p>
+              </div>
+            )}
+          </div>
+        )
+      })()}
+
       {/* ── Count cards ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <CountCard
