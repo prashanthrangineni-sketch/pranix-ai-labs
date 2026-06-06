@@ -21,7 +21,8 @@ import type { ScheduleEntry }           from '@/app/api/founder/scheduler/route'
 import type { GovernanceEvaluation, Policy } from '@/app/api/founder/governance/route'
 import type { FounderMode }                   from '@/app/api/founder/modes/route'
 import type { AuthorityRecord }               from '@/app/api/founder/authority/route'
-import { Key } from 'lucide-react'
+import type { ExecutionRecord }               from '@/app/api/founder/execution/route'
+import { Key, PlayCircle } from 'lucide-react'
 
 // ── Types ────────────────────────────────────────────────────────────────
 interface ApprovalItem  { task_id: string; title: string; goal: string; created_at: string }
