@@ -156,18 +156,20 @@ export async function POST(req: Request) {
     }
 
     // ─── FORWARD TO AGENT ENGINE ────────────────────────────────────
-    // Build enriched prompt: original message + live context lines
     const enrichedPrompt = contextLines.length > 0
       ? `${message}\n\nLive system context:\n${contextLines.join('\n')}`
       : message
+
+    // In agent mode ask the engine to produce a plan instead of an answer
+    const enginePayload: Record<string, unknown> = { prompt: enrichedPrompt }
+    if (agentMode) enginePayload['mode'] = 'plan'
 
     let engineData: Record<string, unknown> = {}
     try {
       const engineRes = await fetch(`${ENGINE_URL}/api/ask`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: enrichedPrompt }),
-        // Vercel hobby timeout safety — engine has its own 60s limit
+        body: JSON.stringify(enginePayload),
         signal: AbortSignal.timeout(55_000),
       })
       if (engineRes.ok) {
@@ -180,61 +182,93 @@ export async function POST(req: Request) {
       console.error('[ask-adapter] fetch failed', fetchErr)
     }
 
-    // ─── BUILD REPLY FROM ENGINE RESPONSE ───────────────────────────
+    // ─── BUILD REPLY ─────────────────────────────────────────────────
     const answer = typeof engineData.answer === 'string' && engineData.answer.trim()
-      ? engineData.answer
-      : null
+      ? engineData.answer : null
 
-    if (!answer) {
-      // Engine unreachable or returned empty — fall back to live-data summary
+    if (!answer && !agentMode) {
       return NextResponse.json({ reply: await liveDataFallback(q) })
     }
 
-    // Split answer into display lines (paragraph breaks → separate bubbles)
-    const answerLines = answer
-      .split(/\n{2,}/)
-      .map((l: string) => l.replace(/\n/g, ' ').trim())
-      .filter(Boolean)
-      .slice(0, 20)
-
-    const modelUsed  = typeof engineData.model_used  === 'string'  ? engineData.model_used  : ''
-    const taskId      = typeof engineData.task_id      === 'string'  ? engineData.task_id      : ''
-    const confidence  = typeof engineData.confidence   === 'number'  ? engineData.confidence   : undefined
+    const modelUsed   = typeof engineData.model_used  === 'string'  ? engineData.model_used  : ''
+    const taskId      = typeof engineData.task_id     === 'string'  ? engineData.task_id     : ''
+    const confidence  = typeof engineData.confidence  === 'number'  ? engineData.confidence  : undefined
     const specFlag    = typeof engineData.speculation_flag === 'boolean' ? engineData.speculation_flag : false
-    // evidence_used — passthrough if engine returns it; otherwise build a minimal summary from context
+
+    // ── evidence_used passthrough / derivation (unchanged logic) ──
     const evidenceUsed: Record<string, unknown> = {}
     if (engineData.evidence_used && typeof engineData.evidence_used === 'object') {
       Object.assign(evidenceUsed, engineData.evidence_used)
     } else {
-      // Derive minimal evidence from context lines gathered above
-      if (contextLines.some(l => l.toLowerCase().includes('product'))) {
+      if (contextLines.some(l => l.toLowerCase().includes('product')))
         evidenceUsed['supabase'] = { summary: 'Product health and metadata queried from control plane.' }
-      }
-      if (contextLines.some(l => l.toLowerCase().includes('task') || l.toLowerCase().includes('failed'))) {
-        evidenceUsed['tasks'] = { count: 1, summary: 'Task queue stats read from control plane.' }
-      }
-      if (contextLines.some(l => l.toLowerCase().includes('approval') || l.toLowerCase().includes('pending'))) {
-        evidenceUsed['memory'] = { count: 1, summary: 'Permission inbox read.' }
-      }
-      if (contextLines.some(l => l.toLowerCase().includes('alert'))) {
+      if (contextLines.some(l => l.toLowerCase().includes('task') || l.toLowerCase().includes('failed')))
+        evidenceUsed['tasks']    = { count: 1, summary: 'Task queue stats read from control plane.' }
+      if (contextLines.some(l => l.toLowerCase().includes('approval') || l.toLowerCase().includes('pending')))
+        evidenceUsed['memory']   = { count: 1, summary: 'Permission inbox read.' }
+      if (contextLines.some(l => l.toLowerCase().includes('alert')))
         evidenceUsed['supabase'] = { summary: 'Alert counts queried from control plane.' }
+    }
+
+    // ── Agent Mode: derive plan[] from engine or from the answer text ──
+    let plan: PlanStep[] | undefined
+    let execution_mode: ExecutionMode = 'chat'
+
+    if (agentMode) {
+      execution_mode = 'plan'
+      // Engine may return plan[] directly
+      if (Array.isArray(engineData.plan)) {
+        plan = (engineData.plan as unknown[]).map((s, i) => {
+          if (typeof s === 'object' && s !== null) {
+            const step = s as Record<string, unknown>
+            return {
+              step_number: typeof step.step_number === 'number' ? step.step_number : i + 1,
+              title:       typeof step.title       === 'string' ? step.title       : `Step ${i + 1}`,
+              description: typeof step.description === 'string' ? step.description : '',
+              tool:        typeof step.tool        === 'string' ? step.tool        : undefined,
+              status:      'planned',
+            } satisfies PlanStep
+          }
+          return { step_number: i + 1, title: String(s), description: '', status: 'planned' } satisfies PlanStep
+        })
+      }
+
+      // Fallback: parse numbered list out of the answer text
+      if (!plan || plan.length === 0) {
+        const src = answer ?? ''
+        const numbered = src.match(/(?:^|\n)\s*(?:step\s*)?([0-9]+)[.)\s]+([^\n]+)/gi) ?? []
+        if (numbered.length >= 2) {
+          plan = numbered.map((raw, i) => {
+            const clean = raw.replace(/^\s*(?:step\s*)?[0-9]+[.)\s]+/i, '').trim()
+            return { step_number: i + 1, title: clean.slice(0, 80), description: '', status: 'planned' } satisfies PlanStep
+          })
+        }
+      }
+
+      // Last resort: synthesise a generic plan from the goal
+      if (!plan || plan.length === 0) {
+        plan = generateFallbackPlan(message)
       }
     }
 
-    const body = await req.json().catch(() => ({}))
-    const workspaceId = typeof body?.workspace_id === 'string' ? body.workspace_id : undefined
+    const answerLines = answer
+      ? answer.split(/\n{2,}/).map((l: string) => l.replace(/\n/g, ' ').trim()).filter(Boolean).slice(0, 20)
+      : []
 
     const reply = {
-      kind: 'info' as const,
-      title: typeof engineData.title === 'string' ? engineData.title : message.slice(0, 60),
-      lines: answerLines,
-      model_used:       modelUsed || undefined,
-      confidence:       confidence,
-      task_id:          taskId   || undefined,
+      kind:             'info' as const,
+      title:            typeof engineData.title === 'string' ? engineData.title : message.slice(0, 60),
+      lines:            agentMode ? [] : answerLines,
+      model_used:       modelUsed  || undefined,
+      confidence,
+      task_id:          taskId     || undefined,
       workspace_id:     workspaceId,
       gathered_at:      new Date().toISOString(),
       speculation_flag: specFlag,
       evidence_used:    Object.keys(evidenceUsed).length > 0 ? evidenceUsed : undefined,
+      // Agent Mode fields
+      execution_mode,
+      plan,
     }
 
     return NextResponse.json({ reply })
