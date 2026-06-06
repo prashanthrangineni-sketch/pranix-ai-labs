@@ -5,6 +5,7 @@ import {
   Send, Loader2, Sparkles, ShieldAlert, ArrowUpRight, ExternalLink, User,
   PanelLeftOpen, Bot, Info, Zap, MessageSquare, CheckCircle2, Circle,
   Clock, AlertCircle, ChevronRight, PlayCircle, History, RotateCcw,
+  TrendingUp, Shield, Lightbulb, Target, BarChart3,
 } from 'lucide-react'
 import { WorkspaceSidebar } from './_components/WorkspaceSidebar'
 import { ModelSelector, useModelSelector, type ModelOption } from './_components/ModelSelector'
