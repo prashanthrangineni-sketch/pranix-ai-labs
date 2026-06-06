@@ -609,10 +609,27 @@ function PlanView({
     label:     `Plan created — ${plan.length} step${plan.length === 1 ? '' : 's'}`,
     timestamp: new Date().toISOString(),
   }])
-  const [analysis, setAnalysis]           = useState<TaskAnalysis | null>(null)
-  const [analysisLoading, setAnalysisLoading] = useState(false)
-  const pollRef     = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [analysis, setAnalysis]               = useState<TaskAnalysis | null>(null)
+  const [analysisLoading, setAnalysisLoading]   = useState(false)
+  const [replay, setReplay]                     = useState<ReplayData | null>(null)
+  const [replayLoading, setReplayLoading]       = useState(false)
+  const [replayOpen, setReplayOpen]             = useState(false)
+  const pollRef         = useRef<ReturnType<typeof setInterval> | null>(null)
   const analysisPollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  async function fetchReplay() {
+    if (replay || replayLoading) return
+    setReplayLoading(true)
+    try {
+      const res = await fetch(`/api/founder/replay?task_id=${encodeURIComponent(taskId)}`)
+      if (res.ok) {
+        const data = await res.json() as ReplayData
+        setReplay(data)
+        setReplayOpen(true)
+      }
+    } catch { /* non-fatal */ }
+    finally { setReplayLoading(false) }
+  }
 
   const persist = useCallback((overridePhase?: ExecPhase, overrideSteps?: RichPlanStep[], overrideTimeline?: TimelineEvent[]) => {
     const s  = overrideSteps    ?? steps
