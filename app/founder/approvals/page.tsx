@@ -1418,6 +1418,81 @@ function AutonomyStat({ label, value, cls }: { label: string; value: number; cls
 
 // ─── Plain-language helpers ──────────────────────────────────────
 
+// ─── S2: State Health sub-components ───────────────────────────────────────────────
+
+type StatHealthVariant = 'healthy' | 'warning' | 'critical' | 'expired'
+
+const STAT_HEALTH_PILL_CLS: Record<StatHealthVariant, string> = {
+  healthy:  'bg-severity-success/10 text-severity-success',
+  warning:  'bg-severity-warn/10 text-severity-warn',
+  critical: 'bg-severity-critical/10 text-severity-critical',
+  expired:  'bg-elevated text-fg-disabled',
+}
+
+function StatHealthPill({
+  count, label, variant,
+}: { count: number; label: string; variant: StatHealthVariant }) {
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+      count > 0 ? STAT_HEALTH_PILL_CLS[variant] : 'bg-elevated text-fg-muted'
+    }`}>
+      {label}: {count}
+    </span>
+  )
+}
+
+const STATE_HEALTH_BADGE: Record<StatHealthVariant, { badge: string; label: string }> = {
+  healthy:  { badge: 'bg-severity-success/10 text-severity-success',   label: 'Healthy'  },
+  warning:  { badge: 'bg-severity-warn/10 text-severity-warn',         label: 'Warning'  },
+  critical: { badge: 'bg-severity-critical/10 text-severity-critical', label: 'Critical' },
+  expired:  { badge: 'bg-elevated text-fg-disabled',                   label: 'Expired'  },
+}
+
+function StateRecordRow({ rec }: { rec: StateRecord }) {
+  const meta = STATE_HEALTH_BADGE[rec.health_status] ?? STATE_HEALTH_BADGE.healthy
+  const expiresAt = new Date(rec.expires_at)
+  const expiresLabel = rec.health_status === 'expired'
+    ? `Expired ${timeAgo(rec.expires_at)}`
+    : rec.health_status === 'critical'
+    ? `Expires in ${rec.hours_remaining.toFixed(1)}h`
+    : rec.hours_remaining > 24
+    ? `Expires in ${Math.round(rec.hours_remaining / 24)}d`
+    : `Expires in ${rec.hours_remaining.toFixed(1)}h`
+
+  return (
+    <div className="flex items-start gap-3 px-3 py-3">
+      <div className="flex-1 min-w-0 space-y-0.5">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-[10px] font-semibold text-fg-disabled uppercase tracking-wide">{rec.category.replace('_', ' ')}</span>
+          <span className="text-[12px] font-medium text-fg-primary">{rec.label}</span>
+          {rec.preview && <span className="text-[11px] text-fg-muted truncate max-w-[180px]">&middot; {rec.preview}</span>}
+        </div>
+        <p className={`text-[11px] ${
+          rec.health_status === 'critical' ? 'text-severity-critical' :
+          rec.health_status === 'warning'  ? 'text-severity-warn' :
+          rec.health_status === 'expired'  ? 'text-fg-disabled' :
+          'text-fg-muted'
+        }`}>
+          {expiresLabel}
+          {rec.health_status !== 'expired' && (
+            <span className="text-fg-disabled">
+              {' '}&middot; {expiresAt.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+            </span>
+          )}
+        </p>
+        {rec.refresh_recommended && (
+          <p className="text-[11px] font-semibold text-severity-critical">
+            ⚠ Refresh {rec.health_status === 'expired' ? 'required' : 'immediately'}
+          </p>
+        )}
+      </div>
+      <span className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${meta.badge}`}>
+        {meta.label}
+      </span>
+    </div>
+  )
+}
+
 function accessVerb(scope: string): string {
   switch (scope) {
     case 'admin': return 'Take full control'
