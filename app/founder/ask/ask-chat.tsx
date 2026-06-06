@@ -915,6 +915,107 @@ function StepRow({ step, active }: { step: RichPlanStep; active: boolean }) {
 }
 
 // ── TimelineIcon ──────────────────────────────────────────────────────────────
+// ── ReplayView ────────────────────────────────────────────────────────────────
+function ReplayView({ data }: { data: ReplayData }) {
+  const [openStep, setOpenStep] = useState<string | null>(null)
+  const v = data.verification
+
+  const integrityStyle: Record<IntegrityStatus, { icon: React.ReactNode; text: string; cls: string }> = {
+    verified: {
+      icon: <BadgeCheck className="h-3.5 w-3.5 text-accent" />,
+      text: 'verified',
+      cls:  'text-accent bg-accent/[0.07] border-accent/20',
+    },
+    partial: {
+      icon: <MinusCircle className="h-3.5 w-3.5 text-severity-warn" />,
+      text: 'partial',
+      cls:  'text-severity-warn bg-severity-warn/[0.08] border-severity-warn/20',
+    },
+    failed: {
+      icon: <AlertOctagon className="h-3.5 w-3.5 text-severity-critical" />,
+      text: 'failed',
+      cls:  'text-severity-critical bg-severity-critical/[0.08] border-severity-critical/20',
+    },
+  }
+  const iv = integrityStyle[v.integrity_status]
+
+  return (
+    <div className="space-y-0 divide-y divide-border-subtle">
+      {/* Verification header */}
+      <div className="flex items-center justify-between px-3 py-2">
+        <span className="text-[11px] text-fg-muted">
+          {v.verified_steps}/{v.total_steps} steps verified
+        </span>
+        <span className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${iv.cls}`}>
+          {iv.icon}
+          Integrity: {iv.text}
+        </span>
+      </div>
+
+      {/* Per-step rows */}
+      {data.replay.map((step, idx) => {
+        const isOpen    = openStep === step.step_id
+        const hasResult = step.raw_result !== null
+        return (
+          <div key={step.step_id}>
+            <button
+              onClick={() => setOpenStep(isOpen ? null : step.step_id)}
+              className="flex w-full items-center gap-2 px-3 py-2 text-left active:bg-elevated"
+              aria-expanded={isOpen}
+            >
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-elevated text-[10px] font-semibold text-fg-muted">
+                {idx + 1}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="flex items-center gap-1 text-[11px] font-medium text-fg-primary">
+                  <Wrench className="h-3 w-3 shrink-0 text-fg-muted" />
+                  <span className="truncate font-mono">{step.tool}</span>
+                </p>
+                <p className="truncate text-[10px] text-fg-muted">{step.result_summary.slice(0, 80)}</p>
+              </div>
+              <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-medium ${
+                hasResult ? 'bg-accent/10 text-accent' : 'bg-elevated text-fg-disabled'
+              }`}>
+                {hasResult ? 'evidence' : 'inferred'}
+              </span>
+              <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-fg-muted transition-transform duration-150 ${isOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {isOpen && (
+              <div className="space-y-2 bg-elevated px-3 pb-3 pt-1">
+                <div className="flex items-start gap-2">
+                  <span className="mt-0.5 w-14 shrink-0 text-[10px] font-semibold uppercase tracking-wide text-fg-disabled">Tool</span>
+                  <span className="break-all font-mono text-[11px] text-fg-primary">{step.tool}</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="mt-0.5 w-14 shrink-0 text-[10px] font-semibold uppercase tracking-wide text-fg-disabled">
+                    <Calendar className="inline h-2.5 w-2.5" /> Time
+                  </span>
+                  <span className="text-[11px] text-fg-secondary">{new Date(step.executed_at).toLocaleString()}</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="mt-0.5 w-14 shrink-0 text-[10px] font-semibold uppercase tracking-wide text-fg-disabled">
+                    <Hash className="inline h-2.5 w-2.5" /> Hash
+                  </span>
+                  <span className="break-all font-mono text-[10px] text-fg-muted">
+                    {step.evidence_hash.slice(0, 12)}…{step.evidence_hash.slice(-8)}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-semibold uppercase tracking-wide text-fg-disabled">Result</span>
+                  <pre className="mt-1 max-h-24 overflow-auto whitespace-pre-wrap break-all rounded-md bg-canvas px-2 py-1.5 text-[10px] leading-relaxed text-fg-secondary">
+                    {step.result_summary}
+                  </pre>
+                </div>
+              </div>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 function AnalysisView({ analysis }: { analysis: TaskAnalysis }) {
   const decisionConfig: Record<string, { label: string; color: string; bg: string }> = {
     approve_next_step:    { label: 'Approve Next Step',      color: 'text-accent',              bg: 'bg-accent/[0.07] border-accent/20' },
