@@ -17,6 +17,7 @@ import {
 import type { Recommendation, RiskLevel } from '@/app/api/founder/recommendations/route'
 import type { Operation as OpItem }    from '@/app/api/founder/operations/route'
 import type { ScheduleEntry }           from '@/app/api/founder/scheduler/route'
+import type { GovernanceEvaluation, Policy } from '@/app/api/founder/governance/route'
 
 // ── Types ────────────────────────────────────────────────────────────────
 interface ApprovalItem  { task_id: string; title: string; goal: string; created_at: string }
