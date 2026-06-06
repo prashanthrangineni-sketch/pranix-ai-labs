@@ -84,6 +84,28 @@ async function getAuthority(): Promise<{
   } catch { return empty }
 }
 
+async function getLearning(): Promise<{
+  records: LearningRecord[]
+  success_patterns: string[]
+  failure_patterns: string[]
+  top_insights: string[]
+  recommendation_quality: number
+  learning_count: number
+}> {
+  const empty = { records: [], success_patterns: [], failure_patterns: [], top_insights: [], recommendation_quality: 0, learning_count: 0 }
+  try {
+    const j = await fetchFromBase('/api/founder/learning')
+    return j ? {
+      records:                (j.records                ?? []) as LearningRecord[],
+      success_patterns:       (j.success_patterns       ?? []) as string[],
+      failure_patterns:       (j.failure_patterns       ?? []) as string[],
+      top_insights:           (j.top_insights           ?? []) as string[],
+      recommendation_quality:  j.recommendation_quality ?? 0,
+      learning_count:          j.learning_count         ?? 0,
+    } : empty
+  } catch { return empty }
+}
+
 async function getExecution(): Promise<{
   queued: ExecutionRecord[]; eligible: ExecutionRecord[]; executing: ExecutionRecord[];
   completed: ExecutionRecord[]; failed: ExecutionRecord[]; blocked: ExecutionRecord[]
