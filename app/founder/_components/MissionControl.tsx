@@ -23,7 +23,7 @@ import type { FounderMode }                   from '@/app/api/founder/modes/rout
 import type { AuthorityRecord }               from '@/app/api/founder/authority/route'
 import type { ExecutionRecord }               from '@/app/api/founder/execution/route'
 import type { LearningEngine }                from '@/app/api/founder/learning/route'
-import { Key, PlayCircle, Sparkles } from 'lucide-react'
+import { Key, PlayCircle, Sparkles, CheckCircle2, Ban } from 'lucide-react'
 
 // ── Types ────────────────────────────────────────────────────────────────
 interface ApprovalItem  { task_id: string; title: string; goal: string; created_at: string }
