@@ -83,9 +83,21 @@ async function applyDecision(
 
   if (writeErr) return { ok: false, message: writeErr.message, task_id: taskId }
 
+  // Fire execution immediately after approval (fire-and-forget, does not block response)
+  if (newStatus === 'approved') {
+    const base = process.env.NEXT_PUBLIC_APP_URL ??
+      process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'
+    fetch(`${base}/api/founder/execute`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      // Pass the cookie header so the execute route can assertFounder()
+      body: JSON.stringify({ task_id: taskId, workspace_id: snapshot.workspace_id }),
+    }).catch(() => { /* fire-and-forget — polling will surface state */ })
+  }
+
   revalidatePath('/founder/approvals')
   revalidatePath('/founder')
-  return { ok: true, message: newStatus === 'approved' ? 'Task approved' : 'Task rejected', task_id: taskId }
+  return { ok: true, message: newStatus === 'approved' ? 'Task approved — execution started' : 'Task rejected', task_id: taskId }
 }
 
 // ── Public server actions ───────────────────────────────────────────────────────
