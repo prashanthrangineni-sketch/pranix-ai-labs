@@ -533,6 +533,109 @@ export default async function FounderPermissionsPage() {
         )
       })()}
 
+      {/* ── P12: Learning Review ── */}
+      {learningData.records.length > 0 && (
+        <section id="learning" className="space-y-3 scroll-mt-4">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-accent" />
+            <h2 className="text-[13px] font-semibold text-fg-secondary">Learning Review</h2>
+            <span className="rounded-full bg-elevated px-2 py-0.5 text-[11px] font-medium text-fg-muted">
+              {learningData.learning_count} learnings
+              &nbsp;&middot;&nbsp;
+              Rec Quality: {learningData.recommendation_quality}%
+            </span>
+          </div>
+
+          {/* Engine summary bar */}
+          <div className="rounded-xl border border-border-subtle bg-surface overflow-hidden">
+            <div className="px-3 py-2 border-b border-border-subtle flex flex-wrap gap-x-4 gap-y-1">
+              <span className="text-[11px] font-semibold text-fg-secondary uppercase tracking-wide">Engine Summary</span>
+              <span className="text-[11px] text-severity-success flex items-center gap-1">
+                <TrendingUp className="h-3 w-3" />
+                {learningData.success_patterns.length} success pattern{learningData.success_patterns.length !== 1 ? 's' : ''}
+              </span>
+              <span className="text-[11px] text-severity-critical flex items-center gap-1">
+                <TrendingDown className="h-3 w-3" />
+                {learningData.failure_patterns.length} failure pattern{learningData.failure_patterns.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+            {learningData.top_insights.length > 0 && (
+              <div className="divide-y divide-border-subtle">
+                {learningData.top_insights.slice(0, 3).map((ins, i) => (
+                  <div key={i} className="px-3 py-2 flex items-start gap-2">
+                    <Sparkles className="h-3 w-3 mt-0.5 text-accent shrink-0" />
+                    <p className="text-[12px] text-fg-secondary">{ins}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Per-learning rows */}
+          <div className="divide-y divide-border-subtle rounded-xl border border-border-subtle bg-surface overflow-hidden">
+            {learningData.records
+              .slice()
+              .sort((a: LearningRecord, b: LearningRecord) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+              .map((rec: LearningRecord) => {
+                const outcomeMeta: Record<string, { badge: string; label: string }> = {
+                  success:         { badge: 'bg-severity-success/10 text-severity-success',   label: 'Success' },
+                  partial_success: { badge: 'bg-severity-warn/10 text-severity-warn',         label: 'Partial' },
+                  failure:         { badge: 'bg-severity-critical/10 text-severity-critical', label: 'Failure' },
+                  blocked:         { badge: 'bg-severity-critical/10 text-severity-critical', label: 'Blocked' },
+                  cancelled:       { badge: 'bg-elevated text-fg-disabled',                   label: 'Cancelled' },
+                }
+                const meta = outcomeMeta[rec.outcome] ?? outcomeMeta.cancelled
+
+                return (
+                  <div key={rec.learning_id} className="px-3 py-3 space-y-1.5">
+                    {/* Row 1: title + outcome badge */}
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-[13px] font-medium text-fg-primary truncate flex-1">
+                        {rec.operation_title}
+                      </p>
+                      <span className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${meta.badge}`}>
+                        {meta.label}
+                      </span>
+                    </div>
+
+                    {/* Row 2: learning type + confidence */}
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-fg-muted">
+                      <span>Type: <span className="text-fg-secondary font-medium capitalize">{rec.learning_type}</span></span>
+                      <span>Confidence: <span className="text-fg-secondary tabular-nums">{rec.confidence}%</span></span>
+                      <span>Success: <span className="text-severity-success tabular-nums">{rec.success_score}</span></span>
+                      <span>Failure: <span className="text-severity-critical tabular-nums">{rec.failure_score}</span></span>
+                    </div>
+
+                    {/* Row 3: insight */}
+                    <p className="text-[12px] text-fg-secondary leading-relaxed">{rec.insight}</p>
+
+                    {/* Row 4: recommendation */}
+                    {rec.recommendation && (
+                      <div className="rounded-md bg-accent/[0.04] border border-accent/10 px-2.5 py-1.5">
+                        <p className="text-[11px] text-fg-secondary">
+                          <span className="font-semibold text-accent">Rec: </span>
+                          {rec.recommendation}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Row 5: contributing factors + timestamp */}
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-fg-disabled">
+                      {rec.contributing_factors.slice(0, 3).map((f, i) => (
+                        <span key={i}>{f}</span>
+                      ))}
+                      <span className="tabular-nums ml-auto">
+                        {new Date(rec.created_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })
+            }
+          </div>
+        </section>
+      )}
+
       {/* ── P6: Operation History ── */}
       {ops.history.length > 0 && (
         <section className="space-y-2">
