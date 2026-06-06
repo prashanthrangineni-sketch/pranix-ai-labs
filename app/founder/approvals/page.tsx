@@ -4,6 +4,7 @@ import { getPermissionInbox, type PermissionRequest } from '@/lib/permissions'
 import { DecisionControls } from './decision-controls'
 import { getAgentTaskInbox } from './agent-task-actions'
 import { AgentTaskControls } from './agent-task-controls'
+import { ViewReplayButton } from './view-replay-button'
 import type { PersistedTask } from '../ask/ask-chat'
 
 export const metadata: Metadata = { title: 'Permissions' }
