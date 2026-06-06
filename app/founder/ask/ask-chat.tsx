@@ -704,8 +704,9 @@ function PlanView({
       task_id:        taskId,
       workspace_id:   workspaceId,
       goal,
-      execution_mode: (ph === 'completed' || ph === 'failed') ? 'completed' : ph === 'executing' ? 'executing' : 'plan',
-      status:         ph === 'failed' ? 'failed' : ph === 'completed' ? 'completed' : ph === 'executing' ? 'executing' : 'planned',
+      execution_mode: (ph === 'completed' || ph === 'failed' || ph === 'unverified') ? 'completed' : ph === 'executing' ? 'executing' : 'plan',
+      // S1: persist 'unverified' terminal status to execution_memory
+      status:         ph === 'failed' ? 'failed' : ph === 'unverified' ? 'unverified' : ph === 'completed' ? 'completed' : ph === 'executing' ? 'executing' : 'planned',
       plan:           s as PlanStep[],
       timeline:       t,
       updated_at:     new Date().toISOString(),
