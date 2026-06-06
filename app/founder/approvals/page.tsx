@@ -323,6 +323,86 @@ export default async function FounderPermissionsPage() {
         </section>
       )}
 
+      {/* ── P10: Authority Review ── */}
+      {(() => {
+        const allRecords: AuthorityRecord[] = [
+          ...authorityData.blocked,
+          ...authorityData.pending,
+          ...authorityData.authorized,
+          ...authorityData.expired,
+          ...authorityData.revoked,
+        ]
+        if (allRecords.length === 0) return null
+
+        return (
+          <section id="authority" className="space-y-3 scroll-mt-4">
+            <div className="flex items-center gap-2">
+              <Shield className="h-4 w-4 text-accent" />
+              <h2 className="text-[13px] font-semibold text-fg-secondary">Authority Review</h2>
+              <span className="rounded-full bg-elevated px-2 py-0.5 text-[11px] font-medium text-fg-muted">
+                {authorityData.authorized.length} authorized
+                &nbsp;&middot;&nbsp;
+                {authorityData.pending.length} pending
+                &nbsp;&middot;&nbsp;
+                {authorityData.blocked.length} blocked
+              </span>
+            </div>
+
+            <div className="divide-y divide-border-subtle rounded-xl border border-border-subtle bg-surface overflow-hidden">
+              {allRecords.map(rec => {
+                const statusMeta: Record<string, { badge: string; label: string }> = {
+                  authorized: { badge: 'bg-severity-success/10 text-severity-success', label: 'Authorized' },
+                  pending:    { badge: 'bg-severity-warn/10 text-severity-warn',       label: 'Pending Approval' },
+                  blocked:    { badge: 'bg-severity-critical/10 text-severity-critical', label: 'Blocked' },
+                  expired:    { badge: 'bg-elevated text-fg-disabled',                 label: 'Expired' },
+                  revoked:    { badge: 'bg-elevated text-fg-disabled',                 label: 'Revoked' },
+                }
+                const meta = statusMeta[rec.authorization_status] ?? statusMeta.expired
+
+                return (
+                  <div key={rec.authority_id} className="px-3 py-3 space-y-1.5">
+                    {/* Row 1: title + badge */}
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-[13px] font-medium text-fg-primary truncate flex-1">{rec.operation_title}</p>
+                      <span className={`shrink-0 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${meta.badge}`}>
+                        {meta.label}
+                      </span>
+                    </div>
+
+                    {/* Row 2: mode + governance + authorized_by */}
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-fg-muted">
+                      <span>Mode: <span className="text-fg-secondary font-medium">{rec.mode_id}</span></span>
+                      <span>Policy: <span className="text-fg-secondary">{rec.governance_policy}</span></span>
+                      {rec.authorized_by && (
+                        <span>By: <span className="text-fg-secondary capitalize">{rec.authorized_by}</span></span>
+                      )}
+                    </div>
+
+                    {/* Row 3: reason */}
+                    <p className="text-[11px] text-fg-secondary">{rec.reason}</p>
+
+                    {/* Row 4: expiry time */}
+                    {rec.expires_at && rec.authorization_status === 'authorized' && (
+                      <p className="text-[11px] text-fg-muted">
+                        Expires:{' '}
+                        <span className="text-fg-secondary tabular-nums">
+                          {new Date(rec.expires_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                        </span>
+                      </p>
+                    )}
+                    {rec.authorization_status === 'expired' && rec.expires_at && (
+                      <p className="text-[11px] text-severity-critical">
+                        Expired at {new Date(rec.expires_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                      </p>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+        )
+      })()}
+
       {/* ── P6: Operation History ── */}
       {ops.history.length > 0 && (
         <section className="space-y-2">
