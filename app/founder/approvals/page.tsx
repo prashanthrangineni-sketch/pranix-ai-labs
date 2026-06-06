@@ -143,6 +143,7 @@ export default async function FounderPermissionsPage() {
     authorityData,
     executionData,
     learningData,
+    autonomyData,
   ] = await Promise.all([
     getPermissionInbox(150),
     getAgentTaskInbox(),
@@ -153,6 +154,7 @@ export default async function FounderPermissionsPage() {
     getAuthority(),
     getExecution(),
     getLearning(),
+    getAutonomy(),
   ])
 
   // Build a lookup: operation_id → ScheduleEntry
