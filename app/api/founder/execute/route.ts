@@ -419,6 +419,16 @@ export async function POST(req: NextRequest) {
   }
   await saveSnapshot(final)
 
+  // Auto-trigger analysis immediately after execution (fire-and-forget)
+  // analyze/ reads from execution_memory so no race condition — we saved final state above
+  const base = process.env.NEXT_PUBLIC_APP_URL ??
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
+  fetch(`${base}/api/founder/analyze`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ task_id: taskId }),
+  }).catch(() => { /* analysis failure does not block execute response */ })
+
   return NextResponse.json({
     ok:      !failed,
     task_id: taskId,
