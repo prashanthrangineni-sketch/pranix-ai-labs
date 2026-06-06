@@ -15,6 +15,7 @@ import type { GovernanceEvaluation, Policy } from '@/app/api/founder/governance/
 import type { DispatchRecord }                from '@/app/api/founder/dispatch/route'
 import type { ActivationRecord }              from '@/app/api/founder/activation/route'
 import type { QueueRecord }                   from '@/app/api/founder/queue/route'
+import type { ExecutorRecord }                from '@/app/api/founder/executor/route'
 import type { AuthorityRecord }               from '@/app/api/founder/authority/route'
 import type { ExecutionRecord }               from '@/app/api/founder/execution/route'
 import type { LearningRecord, LearningEngine } from '@/app/api/founder/learning/route'
