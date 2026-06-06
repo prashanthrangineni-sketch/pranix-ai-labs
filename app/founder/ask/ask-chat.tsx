@@ -3,9 +3,10 @@
 import { useRef, useState, useEffect, useCallback } from 'react'
 import {
   Send, Loader2, Sparkles, ShieldAlert, ArrowUpRight, ExternalLink, User,
-  PanelLeftOpen,
+  PanelLeftOpen, Bot,
 } from 'lucide-react'
 import { WorkspaceSidebar } from './_components/WorkspaceSidebar'
+import { ModelSelector, useModelSelector, type ModelOption } from './_components/ModelSelector'
 
 type Reply = {
   kind: 'info' | 'approval_routed' | 'console' | 'help' | 'error'
@@ -13,9 +14,11 @@ type Reply = {
   lines: string[]
   link?: string
   link_label?: string
+  // Engine fields surfaced in the reply for display
+  model_used?: string
 }
 type Msg =
-  | { role: 'founder'; text: string }
+  | { role: 'founder'; text: string; model_label: string }
   | { role: 'pranix'; reply: Reply }
 
 const SUGGESTIONS = [
@@ -29,29 +32,34 @@ const SUGGESTIONS = [
   'Open Supabase.',
 ]
 
-const LS_KEY = 'pranix_active_workspace'
+const LS_WS_KEY = 'pranix_active_workspace'
 
 export function AskChat() {
-  const [messages, setMessages]         = useState<Msg[]>([])
-  const [input, setInput]               = useState('')
-  const [sending, setSending]           = useState(false)
-  const [sidebarOpen, setSidebarOpen]   = useState(false)
+  const [messages, setMessages]               = useState<Msg[]>([])
+  const [input, setInput]                     = useState('')
+  const [sending, setSending]                 = useState(false)
+  const [sidebarOpen, setSidebarOpen]         = useState(false)
   const [activeWorkspace, setActiveWorkspace] = useState<string | null>(null)
+  // Last model_used echoed by the engine (shown in header after first reply)
+  const [lastModelUsed, setLastModelUsed]     = useState<string | null>(null)
   const endRef = useRef<HTMLDivElement>(null)
 
-  // Restore last active workspace from localStorage on mount
+  // Model selector state
+  const { selectedModel, setSelectedModel } = useModelSelector()
+
+  // Restore workspace from localStorage
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(LS_KEY)
+      const stored = localStorage.getItem(LS_WS_KEY)
       if (stored) setActiveWorkspace(stored)
-    } catch { /* localStorage blocked in some contexts */ }
+    } catch { }
   }, [])
 
-  // Persist active workspace to localStorage whenever it changes
   const handleSelectWorkspace = useCallback((id: string) => {
     setActiveWorkspace(id)
-    setMessages([]) // clear messages when switching workspace
-    try { localStorage.setItem(LS_KEY, id) } catch { }
+    setMessages([])
+    setLastModelUsed(null)
+    try { localStorage.setItem(LS_WS_KEY, id) } catch { }
   }, [])
 
   useEffect(() => {
@@ -62,7 +70,11 @@ export function AskChat() {
     const msg = text.trim()
     if (!msg || sending) return
     setInput('')
-    setMessages((m) => [...m, { role: 'founder', text: msg }])
+    setMessages((m) => [...m, {
+      role: 'founder',
+      text: msg,
+      model_label: selectedModel.display_name,
+    }])
     setSending(true)
     try {
       const res = await fetch('/api/founder/ask', {
@@ -70,14 +82,19 @@ export function AskChat() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: msg,
-          // P1: pass active workspace so the backend can load/persist thread history
-          workspace_id: activeWorkspace ?? undefined,
+          workspace_id:     activeWorkspace ?? undefined,
+          // ── Model routing fields — survive the full ask → engine path ──
+          model:            selectedModel.engine_model_id,     // raw id forwarded to engine
+          model_display:    selectedModel.display_name,        // human label echoed in reply
+          provider:         selectedModel.provider,            // provider hint for engine routing
         }),
       })
       const data = await res.json()
       const reply: Reply = data?.reply ?? {
         kind: 'error', title: 'No response', lines: ['Please try again.'],
       }
+      // Capture model_used from engine response for header display
+      if (reply.model_used) setLastModelUsed(reply.model_used)
       setMessages((m) => [...m, { role: 'pranix', reply }])
     } catch {
       setMessages((m) => [...m, {
@@ -105,18 +122,32 @@ export function AskChat() {
       {/* Chat column */}
       <div className="flex flex-1 flex-col overflow-hidden">
 
-        {/* Chat topbar — mobile sidebar toggle + active workspace name */}
-        <div className="flex items-center gap-2 border-b border-border-subtle bg-surface px-3 py-2 lg:hidden">
+        {/* ── Chat topbar — mobile workspace toggle + active model indicator ── */}
+        <div className="flex items-center gap-2 border-b border-border-subtle bg-surface px-3 py-2">
+          {/* Mobile: open workspace drawer */}
           <button
             onClick={() => setSidebarOpen(true)}
-            className="flex h-8 w-8 items-center justify-center rounded-md text-fg-muted hover:bg-elevated hover:text-fg-primary transition-colors"
+            className="lg:hidden flex h-8 w-8 items-center justify-center rounded-md text-fg-muted hover:bg-elevated hover:text-fg-primary transition-colors"
             aria-label="Open workspaces"
           >
             <PanelLeftOpen className="h-4 w-4" />
           </button>
-          <span className="text-[13px] font-medium text-fg-primary truncate">
-            {activeWorkspace ? 'Workspace active' : 'Ask Pranix'}
-          </span>
+
+          {/* Active model display — shows engine-confirmed model after first reply */}
+          <div className="flex flex-1 items-center gap-2 min-w-0">
+            <Bot className="h-4 w-4 shrink-0 text-fg-muted" />
+            <span className="truncate text-[12px] font-medium text-fg-muted">
+              {lastModelUsed
+                ? <>
+                    <span className="text-fg-disabled">Using </span>
+                    <span className="text-accent">{lastModelUsed}</span>
+                  </>
+                : <>
+                    <span className="text-fg-disabled">Model: </span>
+                    <span className="text-fg-secondary">{selectedModel.display_name}</span>
+                  </>}
+            </span>
+          </div>
         </div>
 
         {/* Conversation */}
@@ -137,10 +168,14 @@ export function AskChat() {
             m.role === 'founder' ? (
               <div key={i} className="flex justify-end">
                 <div className="flex items-end gap-2">
-                  <div className="max-w-[80%] rounded-2xl rounded-br-md bg-accent px-3.5 py-2 text-[14px] text-canvas">
-                    {m.text}
+                  <div className="flex flex-col items-end gap-0.5">
+                    {/* Model label on founder bubble */}
+                    <span className="text-[10px] text-fg-disabled px-1">{m.model_label}</span>
+                    <div className="max-w-[80%] rounded-2xl rounded-br-md bg-accent px-3.5 py-2 text-[14px] text-canvas">
+                      {m.text}
+                    </div>
                   </div>
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-elevated">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-elevated mb-5">
                     <User className="h-3.5 w-3.5 text-fg-muted" />
                   </span>
                 </div>
@@ -176,8 +211,20 @@ export function AskChat() {
           <div ref={endRef} />
         </div>
 
-        {/* Composer */}
+        {/* ── Composer ── */}
         <div className="border-t border-border-subtle bg-surface px-3 py-3 safe-bottom">
+          {/* Model selector row — sits above textarea */}
+          <div className="mb-2 flex items-center gap-2">
+            <span className="text-[11px] text-fg-disabled">Model</span>
+            <ModelSelector
+              selectedModel={selectedModel}
+              onSelect={(m: ModelOption) => {
+                setSelectedModel(m)
+                setLastModelUsed(null) // clear confirmed label on manual change
+              }}
+            />
+          </div>
+
           <div className="flex items-end gap-2 rounded-2xl border border-border-subtle bg-canvas px-3 py-2 focus-within:border-accent/50">
             <textarea
               value={input}
@@ -228,6 +275,14 @@ function PranixBubble({ reply }: { reply: Reply }) {
             <p key={i} className="text-[13px] leading-relaxed text-fg-secondary">{l}</p>
           ))}
         </div>
+        {/* model_used badge — shown when engine confirms which model answered */}
+        {reply.model_used && (
+          <p className="text-[11px] text-fg-disabled">
+            <span className="inline-flex items-center gap-1">
+              <Bot className="h-3 w-3" /> {reply.model_used}
+            </span>
+          </p>
+        )}
         {reply.link && reply.link_label && (
           <a
             href={reply.link}
