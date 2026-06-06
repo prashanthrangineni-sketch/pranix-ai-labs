@@ -852,7 +852,7 @@ function PlanView({
 
       {phase === 'completed' && (
         <div className="flex items-center gap-2 rounded-xl border border-accent/20 bg-accent/[0.06] px-3 py-2 text-[13px] font-medium text-accent">
-          <CheckCircle2 className="h-4 w-4" /> Execution complete — {steps.filter(s => s.status === 'completed').length}/{steps.length} steps finished.
+          <CheckCircle2 className="h-4 w-4" /> Execution complete — {steps.filter(s => s.status === 'completed').length}/{steps.length} steps verified.
         </div>
       )}
       {phase === 'failed' && (
@@ -860,9 +860,21 @@ function PlanView({
           <AlertCircle className="h-4 w-4" /> Execution stopped — {steps.filter(s => s.status === 'completed').length}/{steps.length} steps completed before failure.
         </div>
       )}
+      {/* S1: Unverified execution terminal banner */}
+      {phase === 'unverified' && (
+        <div className="flex items-center gap-2 rounded-xl border border-severity-warn/30 bg-severity-warn/[0.06] px-3 py-2 text-[13px] font-medium text-severity-warn">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          ⚠ Unverified Execution — gateway was offline, {steps.filter(s => s.status === 'unverified').length} step{steps.filter(s => s.status === 'unverified').length === 1 ? '' : 's'} not confirmed.
+        </div>
+      )}
 
-      {/* Analysis section — appears after execution completes */}
-      {(phase === 'completed' || phase === 'failed') && (
+      {/* S1: Execution Summary — verified/unverified/failed counts */}
+      {(phase === 'completed' || phase === 'failed' || phase === 'unverified') && (
+        <ExecutionSummary plan={steps} />
+      )}
+
+      {/* Analysis section — appears after execution completes or is unverified */}
+      {(phase === 'completed' || phase === 'failed' || phase === 'unverified') && (
         analysisLoading ? (
           <div className="flex items-center gap-2 rounded-xl border border-border-subtle bg-elevated px-3 py-2.5 text-[12px] text-fg-muted">
             <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />
