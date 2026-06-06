@@ -5,6 +5,7 @@ import {
   Circle, Activity, ChevronRight, CheckCircle2, AlertCircle,
   Clock, Zap, RefreshCw,
 } from 'lucide-react'
+import { MissionControl } from './_components/MissionControl'
 import {
   getSystemPulse,
   getCriticalAlerts,
