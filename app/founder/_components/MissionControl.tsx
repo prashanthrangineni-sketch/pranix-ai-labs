@@ -401,6 +401,41 @@ export function MissionControl() {
     } catch { /* non-fatal */ }
   }, [])
 
+  // Roadmap
+  const [roadmap, setRoadmap] = useState<{
+    pct:          number
+    total:        number
+    completed:    number
+    in_progress:  number
+    blocked:      number
+    current:      RoadmapItem | null
+    next:         RoadmapItem | null
+    blocked_items: RoadmapItem[]
+    milestones:   RoadmapItem[]
+    items:        RoadmapItem[]
+  }>({ pct: 0, total: 14, completed: 0, in_progress: 0, blocked: 0, current: null, next: null, blocked_items: [], milestones: [], items: [] })
+
+  const loadRoadmap = useCallback(async () => {
+    try {
+      const res = await fetch('/api/founder/roadmap', { cache: 'no-store' })
+      if (!res.ok) return
+      const j = await res.json()
+      const p = j.progress ?? {}
+      setRoadmap({
+        pct:           p.pct          ?? 0,
+        total:         p.total        ?? 14,
+        completed:     p.completed    ?? 0,
+        in_progress:   p.in_progress  ?? 0,
+        blocked:       p.blocked      ?? 0,
+        current:       p.current      ?? null,
+        next:          p.next         ?? null,
+        blocked_items: p.blocked_items ?? [],
+        milestones:    p.milestones   ?? [],
+        items:         j.roadmap      ?? [],
+      })
+    } catch { /* non-fatal */ }
+  }, [])
+
   // S6 — Executor
   const [executor, setExecutor] = useState<{
     running:     number
