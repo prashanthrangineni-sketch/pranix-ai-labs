@@ -400,6 +400,36 @@ export function MissionControl() {
     } catch { /* non-fatal */ }
   }, [])
 
+  // S6 — Executor
+  const [executor, setExecutor] = useState<{
+    running:     number
+    completed:   number
+    failed:      number
+    blocked:     number
+    unverified:  number
+    gateway_live: boolean
+    top_running: ExecutorRecord | null
+    records:     ExecutorRecord[]
+  }>({ running: 0, completed: 0, failed: 0, blocked: 0, unverified: 0, gateway_live: false, top_running: null, records: [] })
+
+  const loadExecutor = useCallback(async () => {
+    try {
+      const res = await fetch('/api/founder/executor', { cache: 'no-store' })
+      if (!res.ok) return
+      const j = await res.json()
+      setExecutor({
+        running:      j.running      ?? 0,
+        completed:    j.completed    ?? 0,
+        failed:       j.failed       ?? 0,
+        blocked:      j.blocked      ?? 0,
+        unverified:   j.unverified   ?? 0,
+        gateway_live: j.gateway_live ?? false,
+        top_running:  j.top_running  ?? null,
+        records:      j.records      ?? [],
+      })
+    } catch { /* non-fatal */ }
+  }, [])
+
   // S5 — Queue
   const [queue, setQueue] = useState<{
     queued:      number
