@@ -373,6 +373,65 @@ export function MissionControl() {
         </ul>
       </div>
 
+      {/* ── P9: Operating Mode card ── */}
+      {activeMode && (() => {
+        const modeColorMap: Record<string, { ring: string; iconCls: string; badgeCls: string }> = {
+          MODE_A: { ring: 'border-fg-disabled/30',     iconCls: 'text-fg-muted',           badgeCls: 'bg-elevated text-fg-muted' },
+          MODE_B: { ring: 'border-accent/30',          iconCls: 'text-accent',              badgeCls: 'bg-accent/10 text-accent' },
+          MODE_C: { ring: 'border-severity-warn/30',   iconCls: 'text-severity-warn',       badgeCls: 'bg-severity-warn/10 text-severity-warn' },
+          MODE_D: { ring: 'border-severity-success/30',iconCls: 'text-severity-success',    badgeCls: 'bg-severity-success/10 text-severity-success' },
+        }
+        const mc = modeColorMap[activeMode.mode_id] ?? modeColorMap.MODE_A
+        return (
+          <div className={`rounded-xl border ${mc.ring} bg-surface px-4 py-3 space-y-3`}>
+            {/* Header */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Shield className={`h-3.5 w-3.5 shrink-0 ${mc.iconCls}`} />
+                <span className="text-[11px] font-semibold text-fg-primary uppercase tracking-wide">Operating Mode</span>
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${mc.badgeCls}`}>
+                  {activeMode.mode_id}
+                </span>
+              </div>
+              <Link
+                href="/founder/settings"
+                className="text-[10px] text-accent hover:underline flex items-center gap-0.5"
+              >
+                Change <ChevronRight className="h-3 w-3" />
+              </Link>
+            </div>
+
+            {/* Mode name + description */}
+            <div>
+              <p className={`text-[14px] font-semibold leading-snug ${mc.iconCls}`}>{activeMode.name}</p>
+              <p className="text-[12px] text-fg-secondary mt-0.5">{activeMode.description}</p>
+            </div>
+
+            {/* Capabilities + Restrictions in 2-col on sm+ */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
+              <div className="space-y-0.5">
+                <p className="text-[10px] font-semibold text-fg-disabled uppercase tracking-wide mb-1">Capabilities</p>
+                {activeMode.capabilities.map((cap, i) => (
+                  <p key={i} className="flex items-center gap-1.5 text-[11px]">
+                    <span className="text-severity-success text-[10px]">✓</span>
+                    <span className="text-fg-secondary">{cap}</span>
+                  </p>
+                ))}
+              </div>
+              <div className="space-y-0.5">
+                <p className="text-[10px] font-semibold text-fg-disabled uppercase tracking-wide mb-1">Restrictions</p>
+                {activeMode.restrictions.map((r, i) => (
+                  <p key={i} className="flex items-center gap-1.5 text-[11px]">
+                    <span className="text-severity-critical text-[10px]">✗</span>
+                    <span className="text-fg-muted">{r}</span>
+                  </p>
+                ))}
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
       {/* ── P7: Next Best Action ── */}
       {schedule.next_best_action && (() => {
         const nba = schedule.next_best_action
