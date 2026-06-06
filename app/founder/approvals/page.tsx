@@ -1,21 +1,41 @@
 import type { Metadata } from 'next'
-import { ShieldCheck, Bot, User, Clock, History as HistoryIcon, AlertTriangle, BrainCircuit, LayoutList } from 'lucide-react'
+import { ShieldCheck, Bot, User, Clock, History as HistoryIcon, AlertTriangle, BrainCircuit, LayoutList,
+         Inbox, FlameKindling, AlertCircle, Info, CheckCircle2, XCircle, ExternalLink } from 'lucide-react'
 import { getPermissionInbox, type PermissionRequest } from '@/lib/permissions'
 import { DecisionControls } from './decision-controls'
 import { getAgentTaskInbox } from './agent-task-actions'
 import { AgentTaskControls } from './agent-task-controls'
 import { ViewReplayButton } from './view-replay-button'
 import type { PersistedTask } from '../ask/ask-chat'
+import type { Recommendation, RiskLevel } from '@/app/api/founder/recommendations/route'
+import { RecDecisionControls } from './rec-decision-controls'
 
 export const metadata: Metadata = { title: 'Permissions' }
-export const revalidate = 15
+export const revalidate = 0
+
+async function getRecommendations(): Promise<Recommendation[]> {
+  try {
+    // Same process — call the route handler directly via relative URL won't work
+    // in RSC without an absolute URL, so we re-use the logic by dynamic import.
+    // Use absolute URL only if NEXT_PUBLIC_APP_URL is set, else fallback to [].
+    const base = process.env.NEXT_PUBLIC_APP_URL ?? process.env.VERCEL_URL
+    if (!base) return []
+    const url = `${base.startsWith('http') ? base : `https://${base}`}/api/founder/recommendations`
+    const res = await fetch(url, { cache: 'no-store' })
+    if (!res.ok) return []
+    const j = await res.json()
+    return j.recommendations ?? []
+  } catch { return [] }
+}
 
 export default async function FounderPermissionsPage() {
-  const [{ pending, active, history }, agentInbox] = await Promise.all([
+  const [{ pending, active, history }, agentInbox, recommendations] = await Promise.all([
     getPermissionInbox(150),
     getAgentTaskInbox(),
+    getRecommendations(),
   ])
 
+  const pendingRecs  = recommendations.filter((r: Recommendation) => r.status === 'pending')
   const totalPending = pending.length + agentInbox.pending.length
 
   return (
@@ -29,11 +49,38 @@ export default async function FounderPermissionsPage() {
               {totalPending} pending
             </span>
           )}
+          {pendingRecs.length > 0 && (
+            <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[11px] font-semibold text-accent">
+              {pendingRecs.length} rec{pendingRecs.length !== 1 ? 's' : ''}
+            </span>
+          )}
         </div>
         <p className="text-[13px] text-fg-muted">
-          Approve agent task plans and AI permission requests before they execute.
+          Approve agent task plans, AI permission requests, and system recommendations.
         </p>
       </header>
+
+      {/* ── P5: Founder Recommendations ── */}
+      <section id="recommendations" className="space-y-3 scroll-mt-4">
+        <div className="flex items-center gap-2">
+          <Inbox className="h-4 w-4 text-accent" />
+          <h2 className={`text-[13px] font-semibold ${
+            pendingRecs.length > 0 ? 'text-accent' : 'text-fg-secondary'
+          }`}>Founder Recommendations</h2>
+          <span className="rounded-full bg-elevated px-2 py-0.5 text-[11px] font-medium text-fg-muted">
+            {pendingRecs.length} pending
+          </span>
+        </div>
+        {recommendations.length === 0 ? (
+          <Empty>No recommendations yet. The system scans for issues every time you open this page.</Empty>
+        ) : (
+          recommendations.map((rec: Recommendation) => (
+            <RecCard key={rec.recommendation_id} rec={rec} />
+          ))
+        )}
+      </section>
+
+      <div className="border-t border-border-subtle" />
 
       {/* ── Agent Tasks waiting for approval ── */}
       <section className="space-y-3">
