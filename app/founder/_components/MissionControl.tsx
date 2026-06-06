@@ -201,12 +201,32 @@ export function MissionControl() {
   // P5 — Recommendation Inbox
   const [recs, setRecs] = useState<Recommendation[]>([])
 
+  // P6 — Operations Queue
+  const [ops, setOps] = useState<{
+    ready: OpItem[]; executing: OpItem[]; completed: OpItem[]; blocked: OpItem[]; queued: OpItem[]
+  }>({ ready: [], executing: [], completed: [], blocked: [], queued: [] })
+
   const loadRecs = useCallback(async () => {
     try {
       const res = await fetch('/api/founder/recommendations', { cache: 'no-store' })
       if (!res.ok) return
       const j = await res.json()
       setRecs(j.recommendations ?? [])
+    } catch { /* non-fatal */ }
+  }, [])
+
+  const loadOps = useCallback(async () => {
+    try {
+      const res = await fetch('/api/founder/operations', { cache: 'no-store' })
+      if (!res.ok) return
+      const j = await res.json()
+      setOps({
+        ready:     j.ready     ?? [],
+        executing: j.executing ?? [],
+        completed: j.completed ?? [],
+        blocked:   j.blocked   ?? [],
+        queued:    j.queued    ?? [],
+      })
     } catch { /* non-fatal */ }
   }, [])
 
