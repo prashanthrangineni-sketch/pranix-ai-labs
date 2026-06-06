@@ -43,13 +43,30 @@ async function getOperations(): Promise<{
   } catch { return empty }
 }
 
+async function getSchedule(): Promise<ScheduleEntry[]> {
+  try {
+    const j = await fetchFromBase('/api/founder/scheduler')
+    return [
+      ...(j?.ready_now  ?? []),
+      ...(j?.blocked    ?? []),
+    ] as ScheduleEntry[]
+  } catch { return [] }
+}
+
 export default async function FounderPermissionsPage() {
-  const [{ pending, active, history }, agentInbox, recommendations, ops] = await Promise.all([
-    getPermissionInbox(150),
-    getAgentTaskInbox(),
-    getRecommendations(),
-    getOperations(),
-  ])
+  const [{ pending, active, history }, agentInbox, recommendations, ops, scheduleEntries] =
+    await Promise.all([
+      getPermissionInbox(150),
+      getAgentTaskInbox(),
+      getRecommendations(),
+      getOperations(),
+      getSchedule(),
+    ])
+
+  // Build a lookup: operation_id → ScheduleEntry
+  const scheduleMap = new Map<string, ScheduleEntry>(
+    scheduleEntries.map(e => [e.operation_id, e])
+  )
 
   const pendingRecs   = recommendations.filter((r: Recommendation) => r.status === 'pending')
   const activeOps     = [...ops.queued, ...ops.ready, ...ops.executing]
