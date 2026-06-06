@@ -885,8 +885,8 @@ function PlanView({
         ) : null
       )}
 
-      {/* Replay Evidence accordion — available once task is done */}
-      {(phase === 'completed' || phase === 'failed') && (
+      {/* Replay Evidence accordion — available once task is done or unverified */}
+      {(phase === 'completed' || phase === 'failed' || phase === 'unverified') && (
         <div className="rounded-xl border border-border-subtle bg-canvas overflow-hidden">
           <button
             onClick={() => {
