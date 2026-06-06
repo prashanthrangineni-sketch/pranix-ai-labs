@@ -257,6 +257,18 @@ export function MissionControl() {
     } catch { /* non-fatal */ }
   }, [])
 
+  // P9 — Founder Mode
+  const [activeMode, setActiveMode] = useState<FounderMode | null>(null)
+
+  const loadModes = useCallback(async () => {
+    try {
+      const res = await fetch('/api/founder/modes', { cache: 'no-store' })
+      if (!res.ok) return
+      const j = await res.json()
+      setActiveMode(j.active_mode ?? null)
+    } catch { /* non-fatal */ }
+  }, [])
+
   // P8 — Governance
   const [governance, setGovernance] = useState<{
     evaluations:             GovernanceEvaluation[]
