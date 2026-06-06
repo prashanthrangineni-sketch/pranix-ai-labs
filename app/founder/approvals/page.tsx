@@ -14,6 +14,7 @@ import type { ScheduleEntry }              from '@/app/api/founder/scheduler/rou
 import type { GovernanceEvaluation, Policy } from '@/app/api/founder/governance/route'
 import type { AuthorityRecord }               from '@/app/api/founder/authority/route'
 import type { ExecutionRecord }               from '@/app/api/founder/execution/route'
+import type { LearningRecord, LearningEngine } from '@/app/api/founder/learning/route'
 import { RecDecisionControls }            from './rec-decision-controls'
 
 export const metadata: Metadata = { title: 'Permissions' }
