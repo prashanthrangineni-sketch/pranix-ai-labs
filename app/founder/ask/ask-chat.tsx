@@ -607,7 +607,45 @@ function PlanView({
   }, [taskId, workspaceId, goal, phase, steps, timeline, persistTask])
 
   useEffect(() => { persist('idle', steps, timeline) }, []) // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current) }, [])
+  useEffect(() => () => {
+    if (pollRef.current) clearInterval(pollRef.current)
+    if (analysisPollRef.current) clearInterval(analysisPollRef.current)
+  }, [])
+
+  // Fetch analysis from execution_memory (included in timeline API response)
+  async function fetchAnalysis(): Promise<TaskAnalysis | null> {
+    try {
+      const res  = await fetch(`/api/founder/timeline?limit=20`)
+      if (!res.ok) return null
+      const data = await res.json()
+      const task = (data?.tasks as (PersistedTask & { analysis?: TaskAnalysis })[] | undefined)
+        ?.find(t => t.task_id === taskId)
+      return task?.analysis ?? null
+    } catch { return null }
+  }
+
+  // Poll until analysis appears in execution_memory (analyze API runs ~1-2s after execute)
+  function startAnalysisPoll() {
+    if (analysisPollRef.current) return
+    setAnalysisLoading(true)
+    analysisPollRef.current = setInterval(async () => {
+      const a = await fetchAnalysis()
+      if (a) {
+        setAnalysis(a)
+        setAnalysisLoading(false)
+        clearInterval(analysisPollRef.current!)
+        analysisPollRef.current = null
+      }
+    }, 2500)
+    // Stop polling after 60s regardless (analysis may have been skipped)
+    setTimeout(() => {
+      if (analysisPollRef.current) {
+        clearInterval(analysisPollRef.current)
+        analysisPollRef.current = null
+        setAnalysisLoading(false)
+      }
+    }, 60_000)
+  }
 
   function startPolling() {
     if (pollRef.current) return
