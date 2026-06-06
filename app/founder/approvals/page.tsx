@@ -134,10 +134,64 @@ export default async function FounderPermissionsPage() {
           <Empty>No operations queued. Approve a recommendation above to create one.</Empty>
         ) : (
           activeOps.map((op: Operation) => (
-            <OpCard key={op.operation_id} op={op} />
+            <OpCard key={op.operation_id} op={op} schedule={scheduleMap.get(op.operation_id)} />
           ))
         )}
       </section>
+
+      {/* ── P7: Execution Readiness panel ── */}
+      {scheduleEntries.length > 0 && (
+        <section id="execution-readiness" className="space-y-3 scroll-mt-4">
+          <div className="flex items-center gap-2">
+            <CheckSquare className="h-4 w-4 text-accent" />
+            <h2 className="text-[13px] font-semibold text-fg-secondary">Execution Readiness</h2>
+            <span className="rounded-full bg-elevated px-2 py-0.5 text-[11px] font-medium text-fg-muted">
+              {scheduleEntries.filter(e => e.can_run_now).length} ready · {scheduleEntries.filter(e => !e.can_run_now).length} blocked
+            </span>
+          </div>
+
+          <div className="divide-y divide-border-subtle rounded-xl border border-border-subtle bg-surface overflow-hidden">
+            {scheduleEntries
+              .sort((a, b) => b.priority_score - a.priority_score)
+              .map((entry, idx) => {
+                const readyCls = entry.can_run_now
+                  ? 'text-severity-success'
+                  : 'text-fg-disabled'
+                const tierCls  = entry.tier === 'critical' ? 'text-severity-critical'
+                  : entry.tier === 'high' ? 'text-severity-warn'
+                  : entry.tier === 'medium' ? 'text-accent'
+                  : 'text-fg-disabled'
+                return (
+                  <div key={entry.operation_id} className="flex items-start gap-3 px-3 py-3">
+                    <span className="shrink-0 w-5 text-center text-[11px] font-semibold text-fg-disabled tabular-nums mt-0.5">
+                      #{idx + 1}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-medium text-fg-primary truncate">{entry.title}</p>
+                      <p className="text-[11px] text-fg-muted mt-0.5">{entry.reason}</p>
+                      <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-[10px]">
+                        <span className={tierCls}>{entry.tier.toUpperCase()}</span>
+                        <span className="text-fg-disabled">Priority {entry.priority_score}/100</span>
+                        <span className="text-fg-disabled">Value {entry.founder_value_score}/100</span>
+                        <span className="text-fg-disabled">Risk {entry.risk_score}/100</span>
+                      </div>
+                    </div>
+                    <div className="shrink-0 flex flex-col items-end gap-1">
+                      <span className={`text-[11px] font-semibold ${readyCls}`}>
+                        {entry.can_run_now ? 'Ready' : 'Blocked'}
+                      </span>
+                      {!entry.can_run_now && entry.blocked_by.length > 0 &&
+                        entry.blocked_by[0] !== 'cancelled' && (
+                        <span className="text-[10px] text-fg-disabled">dep: {entry.blocked_by.length}</span>
+                      )}
+                    </div>
+                  </div>
+                )
+              })
+            }
+          </div>
+        </section>
+      )}
 
       {/* ── P6: Operation History ── */}
       {ops.history.length > 0 && (
