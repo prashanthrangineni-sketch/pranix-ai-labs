@@ -73,15 +73,29 @@ export type TaskAnalysis = {
   analyzed_at:       string
 }
 
+// S1: ExecutionVerification is written by execute/route.ts and read here
+export type ExecutionVerification = {
+  gateway_live:       boolean
+  execution_verified: boolean
+  verified_steps:     number
+  unverified_steps:   number
+  failed_steps:       number
+  total_steps:        number
+  has_unverified:     boolean
+}
+
 export type PersistedTask = {
   task_id:        string
   workspace_id:   string | null
   goal:           string
   execution_mode: ExecutionMode
-  status:         'planned' | 'approved' | 'executing' | 'completed' | 'failed'
+  // S1: 'unverified' is terminal — gateway was offline, results not confirmed
+  status:         'planned' | 'approved' | 'executing' | 'completed' | 'failed' | 'unverified'
   plan:           PlanStep[]
   timeline:       TimelineEvent[]
   analysis?:      TaskAnalysis
+  // S1: attached by execute/route.ts post-run
+  verification?:  ExecutionVerification
   updated_at:     string
   persisted_at?:  string
 }
