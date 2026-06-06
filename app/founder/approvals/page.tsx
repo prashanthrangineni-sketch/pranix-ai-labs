@@ -195,6 +195,7 @@ export default async function FounderPermissionsPage() {
     learningData,
     autonomyData,
     dispatchData,
+    activationData,
   ] = await Promise.all([
     getPermissionInbox(150),
     getAgentTaskInbox(),
