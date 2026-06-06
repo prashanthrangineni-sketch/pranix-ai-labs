@@ -754,6 +754,18 @@ function PlanView({
         </div>
       )}
 
+      {/* Analysis section — appears after execution completes */}
+      {(phase === 'completed' || phase === 'failed') && (
+        analysisLoading ? (
+          <div className="flex items-center gap-2 rounded-xl border border-border-subtle bg-elevated px-3 py-2.5 text-[12px] text-fg-muted">
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />
+            Analyzing evidence…
+          </div>
+        ) : analysis ? (
+          <AnalysisView analysis={analysis} />
+        ) : null
+      )}
+
       {timeline.length > 0 && (
         <details className="group" open={phase !== 'idle'}>
           <summary className="flex cursor-pointer list-none items-center gap-1 text-[11px] text-fg-disabled hover:text-fg-muted">
