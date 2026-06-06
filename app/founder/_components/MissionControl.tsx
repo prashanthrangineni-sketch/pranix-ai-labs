@@ -232,6 +232,28 @@ export function MissionControl() {
     } catch { /* non-fatal */ }
   }, [])
 
+  // P7 — Scheduler
+  const [schedule, setSchedule] = useState<{
+    next_best_action:  ScheduleEntry | null
+    ready_now:         ScheduleEntry[]
+    workload_score:    number
+    system_risk_score: number
+  }>({ next_best_action: null, ready_now: [], workload_score: 0, system_risk_score: 0 })
+
+  const loadSchedule = useCallback(async () => {
+    try {
+      const res = await fetch('/api/founder/scheduler', { cache: 'no-store' })
+      if (!res.ok) return
+      const j = await res.json()
+      setSchedule({
+        next_best_action:  j.next_best_action  ?? null,
+        ready_now:         j.ready_now         ?? [],
+        workload_score:    j.workload_score     ?? 0,
+        system_risk_score: j.system_risk_score  ?? 0,
+      })
+    } catch { /* non-fatal */ }
+  }, [])
+
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true)
     setError(null)
