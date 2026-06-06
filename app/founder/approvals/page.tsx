@@ -404,6 +404,88 @@ export default async function FounderPermissionsPage() {
         </section>
       )}
 
+      {/* ── S3: Dispatch Review ── */}
+      {dispatchData.records.length > 0 && (() => {
+        const STATUS_ORDER: Record<string, number> = {
+          blocked: 0, queued: 1, dispatched: 2, executing: 3, completed: 4, failed: 5
+        }
+        const sorted = [...dispatchData.records].sort((a, b) =>
+          (STATUS_ORDER[a.dispatch_status] ?? 9) - (STATUS_ORDER[b.dispatch_status] ?? 9)
+        )
+        return (
+          <section id="dispatch" className="space-y-3 scroll-mt-4 border-t border-border-subtle pt-6">
+            <div className="flex items-center gap-2">
+              <Send className="h-4 w-4 text-accent" />
+              <h2 className="text-[13px] font-semibold text-fg-secondary">Dispatch Review</h2>
+              <span className="rounded-full bg-elevated px-2 py-0.5 text-[11px] font-medium text-fg-muted">
+                {dispatchData.eligible} eligible
+                &nbsp;&middot;&nbsp;
+                {dispatchData.queued} queued
+                &nbsp;&middot;&nbsp;
+                {dispatchData.blocked} blocked
+              </span>
+            </div>
+
+            <div className="divide-y divide-border-subtle rounded-xl border border-border-subtle bg-surface overflow-hidden">
+              {sorted.map(rec => {
+                const statusMeta: Record<string, { badge: string; label: string }> = {
+                  dispatched: { badge: 'bg-severity-success/10 text-severity-success', label: 'Dispatched' },
+                  queued:     { badge: 'bg-accent/10 text-accent',                    label: 'Queued' },
+                  executing:  { badge: 'bg-severity-warn/10 text-severity-warn',      label: 'Executing' },
+                  completed:  { badge: 'bg-severity-success/10 text-severity-success', label: 'Completed' },
+                  failed:     { badge: 'bg-severity-critical/10 text-severity-critical', label: 'Failed' },
+                  blocked:    { badge: 'bg-severity-critical/10 text-severity-critical', label: 'Blocked' },
+                }
+                const meta = statusMeta[rec.dispatch_status] ?? statusMeta.blocked
+
+                return (
+                  <div key={rec.dispatch_id} className="px-3 py-3 space-y-1.5">
+                    {/* Row 1: title + status badge */}
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-[13px] font-medium text-fg-primary truncate flex-1">
+                        {rec.operation_title}
+                      </p>
+                      <span className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${meta.badge}`}>
+                        {meta.label}
+                      </span>
+                    </div>
+
+                    {/* Row 2: dispatch reason */}
+                    <p className="text-[12px] text-fg-secondary leading-relaxed">{rec.dispatch_reason}</p>
+
+                    {/* Row 3: mode + authority + governance */}
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-fg-muted">
+                      <span>Mode: <span className="text-fg-secondary font-medium">{rec.founder_mode}</span></span>
+                      <span>Authority: <span className={`font-medium ${
+                        rec.authority_status === 'authorized' ? 'text-severity-success'
+                        : rec.authority_status === 'blocked'  ? 'text-severity-critical'
+                        : 'text-severity-warn'
+                      }`}>{rec.authority_status}</span></span>
+                      <span>Governance: <span className={`font-medium ${
+                        rec.governance_status === 'allowed'       ? 'text-severity-success'
+                        : rec.governance_status === 'needs_approval' ? 'text-severity-warn'
+                        : 'text-severity-critical'
+                      }`}>{rec.governance_status}</span></span>
+                      <span className="text-fg-disabled tabular-nums">
+                        Priority {rec.priority_score} · Risk {rec.risk_score}
+                      </span>
+                    </div>
+
+                    {/* Row 4: timestamps */}
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-fg-disabled tabular-nums">
+                      <span>Created: {new Date(rec.created_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                      {rec.dispatched_at && (
+                        <span>Dispatched: {new Date(rec.dispatched_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+        )
+      })()}
+
       {/* ── P10: Authority Review ── */}
       {(() => {
         const allRecords: AuthorityRecord[] = [
