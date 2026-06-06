@@ -798,6 +798,60 @@ export function MissionControl() {
         )
       })()}
 
+      {/* ── P12: Learning Intelligence panel ── */}
+      {learning.learning_count > 0 && (
+        <div className="rounded-xl border border-border-subtle bg-surface px-4 py-3 space-y-3">
+          {/* Header */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-3.5 w-3.5 text-accent shrink-0" />
+              <span className="text-[11px] font-semibold text-fg-primary uppercase tracking-wide">Learning Intelligence</span>
+            </div>
+            <Link href="/founder/approvals#learning" className="text-[10px] text-accent hover:underline">
+              Review
+            </Link>
+          </div>
+
+          {/* 4 stat pills */}
+          <div className="flex flex-wrap gap-2">
+            <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2.5 py-1 text-[11px] font-medium text-accent">
+              <Sparkles className="h-3 w-3" />
+              {learning.learning_count} Learnings
+            </span>
+            <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+              learning.success_patterns.length > 0 ? 'bg-severity-success/10 text-severity-success' : 'bg-elevated text-fg-muted'
+            }`}>
+              <CheckCircle2 className="h-3 w-3" />
+              {learning.success_patterns.length} Success Patterns
+            </span>
+            <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+              learning.failure_patterns.length > 0 ? 'bg-severity-critical/10 text-severity-critical' : 'bg-elevated text-fg-muted'
+            }`}>
+              <Ban className="h-3 w-3" />
+              {learning.failure_patterns.length} Failure Patterns
+            </span>
+            <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+              learning.recommendation_quality >= 70 ? 'bg-severity-success/10 text-severity-success'
+              : learning.recommendation_quality >= 40 ? 'bg-severity-warn/10 text-severity-warn'
+              : 'bg-elevated text-fg-muted'
+            }`}>
+              Rec Quality: {learning.recommendation_quality}%
+            </span>
+          </div>
+
+          {/* Top insight */}
+          {learning.top_insights.length > 0 && (
+            <div className="rounded-lg border border-accent/15 bg-accent/[0.03] px-3 py-2">
+              <p className="text-[10px] font-semibold text-fg-disabled uppercase tracking-wide mb-0.5">Top Insight</p>
+              <p className="text-[12px] text-fg-secondary leading-relaxed">{learning.top_insights[0]}</p>
+              {learning.top_insights.length > 1 && (
+                <p className="text-[10px] text-fg-disabled mt-1">+{learning.top_insights.length - 1} more insights</p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── Count cards ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <CountCard
