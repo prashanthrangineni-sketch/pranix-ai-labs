@@ -151,12 +151,64 @@ function CountCard({ value, label, sub, valueClass, icon: Icon, iconBg }: {
   )
 }
 
-// ── Main export ──────────────────────────────────────────────────────────────
+// ── P5: Recommendation severity helpers ───────────────────────────────────────
+const RISK_META: Record<RiskLevel, { label: string; row: string; icon: React.ElementType }> = {
+  critical: { label: 'Critical', row: 'border-severity-critical/25 bg-severity-critical/[0.04]', icon: FlameKindling },
+  high:     { label: 'High',     row: 'border-severity-warn/25 bg-severity-warn/[0.04]',       icon: AlertTriangle   },
+  medium:   { label: 'Medium',   row: 'border-yellow-400/25 bg-yellow-400/[0.04]',             icon: AlertCircle     },
+  low:      { label: 'Low',      row: 'border-border-subtle bg-surface',                      icon: Info            },
+}
+
+function RecRow({ rec }: { rec: Recommendation }) {
+  const meta  = RISK_META[rec.risk_level] ?? RISK_META.low
+  const RIcon = meta.icon
+  const isDone = rec.status !== 'pending'
+  const iconCls = rec.risk_level === 'critical' ? 'text-severity-critical'
+    : rec.risk_level === 'high'   ? 'text-severity-warn'
+    : rec.risk_level === 'medium' ? 'text-yellow-400'
+    : 'text-fg-disabled'
+  return (
+    <Link
+      href="/founder/approvals#recommendations"
+      className={`flex items-start gap-2.5 rounded-lg border px-3 py-2.5 transition-colors hover:brightness-95 ${
+        isDone ? 'opacity-50 border-border-subtle bg-surface' : meta.row
+      }`}
+    >
+      <RIcon className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${isDone ? 'text-fg-disabled' : iconCls}`} />
+      <div className="min-w-0 flex-1">
+        <p className={`text-[12px] font-medium leading-snug ${isDone ? 'text-fg-disabled line-through' : 'text-fg-primary'}`}>
+          {rec.title}
+        </p>
+        <p className="text-[10px] text-fg-muted mt-0.5">
+          {isDone
+            ? rec.status.charAt(0).toUpperCase() + rec.status.slice(1)
+            : `Risk: ${meta.label} · ${rec.category}`
+          }
+        </p>
+      </div>
+      {!isDone && <ChevronRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-fg-disabled" />}
+    </Link>
+  )
+}
+
+// ── Main export ───────────────────────────────────────────────────────────────
 export function MissionControl() {
   const [data, setData]       = useState<OverviewData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState<string | null>(null)
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null)
+
+  // P5 — Recommendation Inbox
+  const [recs, setRecs] = useState<Recommendation[]>([])
+
+  const loadRecs = useCallback(async () => {
+    try {
+      const res = await fetch('/api/founder/recommendations', { cache: 'no-store' })
+      if (!res.ok) return
+      const j = await res.json()
+      setRecs(j.recommendations ?? [])
+    } catch { /* non-fatal */ }
+  }, [])
 
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true)
@@ -170,12 +222,16 @@ export function MissionControl() {
     finally { if (!silent) setLoading(false) }
   }, [])
 
-  useEffect(() => { load() }, [load])
-  // auto-refresh every 30s
+  useEffect(() => { load(); loadRecs() }, [load, loadRecs])
+  // auto-refresh every 30s (overview) / 60s (recs)
   useEffect(() => {
     const t = setInterval(() => load(true), 30_000)
     return () => clearInterval(t)
   }, [load])
+  useEffect(() => {
+    const t = setInterval(loadRecs, 60_000)
+    return () => clearInterval(t)
+  }, [loadRecs])
 
   if (loading) {
     return (
