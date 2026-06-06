@@ -433,16 +433,16 @@ export function MissionControl() {
     finally { if (!silent) setLoading(false) }
   }, [])
 
-  useEffect(() => { load(); loadRecs(); loadOps(); loadSchedule(); loadGovernance(); loadModes(); loadAuthority(); loadExecution(); loadLearning(); loadAutonomy() }, [load, loadRecs, loadOps, loadSchedule, loadGovernance, loadModes, loadAuthority, loadExecution, loadLearning, loadAutonomy])
-  // auto-refresh every 30s (overview + autonomy) / 60s (recs + ops + schedule + governance + modes + authority + execution + learning)
+  useEffect(() => { load(); loadRecs(); loadOps(); loadSchedule(); loadGovernance(); loadModes(); loadAuthority(); loadExecution(); loadLearning(); loadAutonomy(); loadStateHealth() }, [load, loadRecs, loadOps, loadSchedule, loadGovernance, loadModes, loadAuthority, loadExecution, loadLearning, loadAutonomy, loadStateHealth])
+  // auto-refresh every 30s (overview + autonomy) / 60s (recs + ops + schedule + governance + modes + authority + execution + learning + state)
   useEffect(() => {
     const t = setInterval(() => { load(true); loadAutonomy() }, 30_000)
     return () => clearInterval(t)
   }, [load, loadAutonomy])
   useEffect(() => {
-    const t = setInterval(() => { loadRecs(); loadOps(); loadSchedule(); loadGovernance(); loadModes(); loadAuthority(); loadExecution(); loadLearning() }, 60_000)
+    const t = setInterval(() => { loadRecs(); loadOps(); loadSchedule(); loadGovernance(); loadModes(); loadAuthority(); loadExecution(); loadLearning(); loadStateHealth() }, 60_000)
     return () => clearInterval(t)
-  }, [loadRecs, loadOps, loadSchedule, loadGovernance, loadModes, loadAuthority, loadExecution, loadLearning])
+  }, [loadRecs, loadOps, loadSchedule, loadGovernance, loadModes, loadAuthority, loadExecution, loadLearning, loadStateHealth])
 
   if (loading) {
     return (
