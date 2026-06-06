@@ -115,6 +115,28 @@ async function getAutonomy(): Promise<AutonomyEngine | null> {
   } catch { return null }
 }
 
+async function getDispatch(): Promise<{
+  records: DispatchRecord[]
+  queued: number
+  dispatched: number
+  blocked: number
+  eligible: number
+  top_candidate: DispatchRecord | null
+}> {
+  const empty = { records: [], queued: 0, dispatched: 0, blocked: 0, eligible: 0, top_candidate: null }
+  try {
+    const j = await fetchFromBase('/api/founder/dispatch')
+    return j ? {
+      records:       (j.records       ?? []) as DispatchRecord[],
+      queued:         j.queued        ?? 0,
+      dispatched:     j.dispatched    ?? 0,
+      blocked:        j.blocked       ?? 0,
+      eligible:       j.eligible      ?? 0,
+      top_candidate:  j.top_candidate ?? null,
+    } : empty
+  } catch { return empty }
+}
+
 async function getExecution(): Promise<{
   queued: ExecutionRecord[]; eligible: ExecutionRecord[]; executing: ExecutionRecord[];
   completed: ExecutionRecord[]; failed: ExecutionRecord[]; blocked: ExecutionRecord[]
