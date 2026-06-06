@@ -463,18 +463,20 @@ export function AskChat() {
 // ── RecentTasksPanel ──────────────────────────────────────────────────────────────
 function RecentTasksPanel({ tasks, onRestore }: { tasks: PersistedTask[]; onRestore: (t: PersistedTask) => void }) {
   const statusColor: Record<string, string> = {
-    planned:   'text-fg-disabled',
-    approved:  'text-accent',
-    executing: 'text-accent',
-    completed: 'text-accent',
-    failed:    'text-severity-critical',
+    planned:    'text-fg-disabled',
+    approved:   'text-accent',
+    executing:  'text-accent',
+    completed:  'text-accent',
+    failed:     'text-severity-critical',
+    unverified: 'text-severity-warn',   // S1
   }
   const statusDot: Record<string, string> = {
-    planned:   'bg-fg-disabled',
-    approved:  'bg-accent',
-    executing: 'bg-accent animate-pulse',
-    completed: 'bg-accent',
-    failed:    'bg-severity-critical',
+    planned:    'bg-fg-disabled',
+    approved:   'bg-accent',
+    executing:  'bg-accent animate-pulse',
+    completed:  'bg-accent',
+    failed:     'bg-severity-critical',
+    unverified: 'bg-severity-warn',     // S1
   }
 
   return (
