@@ -328,6 +328,67 @@ export function MissionControl() {
         </ul>
       </div>
 
+      {/* ── P7: Next Best Action ── */}
+      {schedule.next_best_action && (() => {
+        const nba = schedule.next_best_action
+        const tierCls: Record<string, string> = {
+          critical: 'border-severity-critical/30 bg-severity-critical/[0.04]',
+          high:     'border-severity-warn/30 bg-severity-warn/[0.04]',
+          medium:   'border-accent/25 bg-accent/[0.03]',
+          low:      'border-border-subtle bg-surface',
+        }
+        const tierLabel: Record<string, { txt: string; cls: string }> = {
+          critical: { txt: 'Critical',  cls: 'text-severity-critical bg-severity-critical/10' },
+          high:     { txt: 'High',      cls: 'text-severity-warn bg-severity-warn/10' },
+          medium:   { txt: 'Medium',    cls: 'text-accent bg-accent/10' },
+          low:      { txt: 'Low',       cls: 'text-fg-muted bg-elevated' },
+        }
+        const tl = tierLabel[nba.tier] ?? tierLabel.low
+        const impactCls = nba.founder_value_score >= 65 ? 'text-severity-success'
+          : nba.founder_value_score >= 50 ? 'text-accent' : 'text-fg-muted'
+        return (
+          <div className={`rounded-xl border px-4 py-3 ${tierCls[nba.tier] ?? tierCls.low}`}>
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <div className="flex items-center gap-2">
+                <Zap className="h-3.5 w-3.5 text-accent shrink-0" />
+                <span className="text-[11px] font-semibold text-fg-primary uppercase tracking-wide">Next Best Action</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${tl.cls}`}>
+                  {tl.txt}
+                </span>
+                <span className="rounded-full bg-elevated px-2 py-0.5 text-[10px] font-semibold text-fg-muted tabular-nums">
+                  #{nba.execution_order} · {nba.priority_score}/100
+                </span>
+              </div>
+            </div>
+
+            <p className="text-[14px] font-semibold text-fg-primary leading-snug mb-1">{nba.title}</p>
+            <p className="text-[12px] text-fg-secondary mb-2">{nba.reason}</p>
+
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px]">
+              <span>Impact: <span className={`font-medium ${impactCls}`}>{nba.expected_impact.split('—')[0].trim()}</span></span>
+              <span>Risk: <span className="font-medium text-fg-secondary capitalize">{nba.risk_level}</span></span>
+              <span>Urgency: <span className="font-medium text-fg-secondary tabular-nums">{nba.urgency_score}/100</span></span>
+            </div>
+
+            <div className="mt-2.5 flex items-center gap-1.5">
+              <Link
+                href="/founder/approvals#operations"
+                className="inline-flex items-center gap-1 rounded-lg border border-accent/30 bg-accent/10 px-3 py-1 text-[11px] font-medium text-accent hover:bg-accent/20 transition-colors"
+              >
+                View in queue <ChevronRight className="h-3 w-3" />
+              </Link>
+              {schedule.ready_now.length > 1 && (
+                <span className="text-[11px] text-fg-disabled">
+                  +{schedule.ready_now.length - 1} more ready
+                </span>
+              )}
+            </div>
+          </div>
+        )
+      })()}
+
       {/* ── Count cards ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <CountCard
