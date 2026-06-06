@@ -936,11 +936,13 @@ function PlanView({
 // ── StepRow ───────────────────────────────────────────────────────────────────
 function StepRow({ step, active }: { step: RichPlanStep; active: boolean }) {
   const statusIcon = {
-    planned:   <Circle       className="h-3.5 w-3.5 text-fg-disabled" />,
-    approved:  <Circle       className="h-3.5 w-3.5 text-accent" />,
-    executing: <Loader2      className="h-3.5 w-3.5 text-accent animate-spin" />,
-    completed: <CheckCircle2 className="h-3.5 w-3.5 text-accent" />,
-    failed:    <AlertCircle  className="h-3.5 w-3.5 text-severity-critical" />,
+    planned:    <Circle       className="h-3.5 w-3.5 text-fg-disabled" />,
+    approved:   <Circle       className="h-3.5 w-3.5 text-accent" />,
+    executing:  <Loader2      className="h-3.5 w-3.5 text-accent animate-spin" />,
+    completed:  <CheckCircle2 className="h-3.5 w-3.5 text-accent" />,
+    failed:     <AlertCircle  className="h-3.5 w-3.5 text-severity-critical" />,
+    // S1: amber warning for unverified
+    unverified: <AlertCircle  className="h-3.5 w-3.5 text-severity-warn" />,
   }[step.status]
 
   return (
