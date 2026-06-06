@@ -1,28 +1,37 @@
-/**
- * app/api/founder/autonomy/route.ts
- * P13 — Autonomous Operating Loop
- *
- * Orchestration-only. Continuously evaluates the full Founder OS pipeline
- * and surfaces the next best action without triggering any execution.
- *
- * Sources:
- *   • Recommendations  (P5)  — /api/founder/recommendations
- *   • Operations       (P6)  — /api/founder/operations
- *   • Scheduler        (P7)  — /api/founder/scheduler
- *   • Governance       (P8)  — /api/founder/governance
- *   • Founder Modes    (P9)  — /api/founder/modes
- *   • Authority        (P10) — /api/founder/authority
- *   • Execution        (P11) — /api/founder/execution
- *   • Learning         (P12) — /api/founder/learning
- *
- * Storage  : execution_memory only — key p13:autonomy:latest
- * NO execution. NO GitHub / Supabase / Vercel / Doppler writes.
- */
+// app/api/founder/autonomy/route.ts
+// P13 — Autonomous Operating Loop
+// Evaluates the full Founder OS stack and determines next action readiness.
+// Read-only orchestration: no GitHub / Supabase / Vercel / Doppler writes.
+// All state persisted to execution_memory under p13:autonomy:latest
 
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse }  from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 
-// ────────────────────────────── Types
+// ── Execution-memory helpers ──────────────────────────────────────────────────
+const sb = () =>
+  createClient(
+    process.env.PRANIX_SUPABASE_URL!,
+    process.env.PRANIX_SUPABASE_SERVICE_KEY!,
+    { auth: { persistSession: false } },
+  )
 
+async function memRead(key: string): Promise<unknown> {
+  const { data } = await sb()
+    .from('execution_memory')
+    .select('value')
+    .eq('key', key)
+    .maybeSingle()
+  return data?.value ?? null
+}
+
+async function memWrite(key: string, value: object, ttl_hours = 24): Promise<void> {
+  const expires_at = new Date(Date.now() + ttl_hours * 3_600_000).toISOString()
+  await sb()
+    .from('execution_memory')
+    .upsert({ key, value, expires_at, updated_at: new Date().toISOString() }, { onConflict: 'key' })
+}
+
+// ── Types ────────────────────────────────────────────────────────────────────
 export type AutonomyStatus =
   | 'idle'
   | 'monitoring'
@@ -31,386 +40,285 @@ export type AutonomyStatus =
   | 'blocked'
 
 export interface AutonomyRecord {
-  loop_id:                  string
-  cycle_id:                 string
-  active_mode:              string
-  recommendations_scanned:  number
-  operations_scanned:       number
-  authority_checked:        boolean
-  execution_checked:        boolean
-  learning_checked:         boolean
-  next_best_action:         string
-  autonomy_status:          AutonomyStatus
-  reason:                   string
-  created_at:               string
+  loop_id:                 string
+  cycle_id:                string
+  active_mode:             string
+  recommendations_scanned: number
+  operations_scanned:      number
+  authority_checked:       boolean
+  execution_checked:       boolean
+  learning_checked:        boolean
+  next_best_action:        string
+  autonomy_status:         AutonomyStatus
+  reason:                  string
+  created_at:              string
 }
 
 export interface AutonomyEngine {
   status:               AutonomyStatus
   next_best_action:     string
   blocking_reason:      string
-  ready_operations:     OperationSummary[]
-  pending_approvals:    ApprovalSummary[]
-  high_risk_operations: OperationSummary[]
+  ready_operations:     string[]
+  pending_approvals:    string[]
+  high_risk_operations: string[]
   learning_signals:     string[]
+  active_mode:          string
+  cycle_id:             string
+  generated_at:         string
   record:               AutonomyRecord
-  evaluated_at:         string
 }
 
-interface OperationSummary {
-  operation_id:  string
-  title:         string
-  risk_score:    number
-  priority:      number
-  mode_id:       string
-}
-
-interface ApprovalSummary {
-  operation_id: string
-  title:        string
-  reason:       string
-  type:         'governance' | 'authority' | 'mode'
-}
-
-// ────────────────────────────── Helpers
-
-function nowIso() { return new Date().toISOString() }
-function uid(prefix: string) {
-  return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`
-}
-
-function appBase(): string {
+// ── Internal fetch helpers (call own API routes) ─────────────────────────────
+function base(): string {
   const b = process.env.NEXT_PUBLIC_APP_URL ?? process.env.VERCEL_URL ?? ''
   return b.startsWith('http') ? b : `https://${b}`
 }
-async function fetchJson(path: string) {
+
+async function safeJson(path: string): Promise<Record<string, unknown>> {
   try {
-    const res = await fetch(`${appBase()}${path}`, { cache: 'no-store' })
-    return res.ok ? res.json() : null
-  } catch { return null }
+    const res = await fetch(`${base()}${path}`, { cache: 'no-store' })
+    if (!res.ok) return {}
+    return await res.json()
+  } catch { return {} }
 }
 
-// ────────────────────────────── Execution Memory
-
-const EM_BASE    = '/api/founder/execution-memory'
-const EM_PROJECT = 'pranix'
-const EM_KEY     = 'p13:autonomy:latest'
-
-async function readFromMemory(): Promise<AutonomyRecord | null> {
-  try {
-    const j = await fetchJson(`${EM_BASE}?project=${EM_PROJECT}&key=${EM_KEY}`)
-    return (j?.value as AutonomyRecord) ?? null
-  } catch { return null }
-}
-
-async function writeToMemory(record: AutonomyRecord): Promise<void> {
-  try {
-    await fetch(`${appBase()}${EM_BASE}`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        project:   EM_PROJECT,
-        key:       EM_KEY,
-        value:     record,
-        ttl_hours: 24,
-      }),
-    })
-  } catch { /* non-fatal */ }
-}
-
-// ────────────────────────────── Loop Evaluation
-
-type RawOp = { operation_id: string; title?: string; name?: string; risk_score?: number; priority_score?: number; mode_id?: string }
-type RawEntry = { operation_id: string; title?: string; can_run_now?: boolean; risk_score?: number; priority_score?: number; tier?: string }
-type RawGovEval = { operation_id: string; operation_title?: string; verdict?: string; reason?: string; policy_name?: string }
-type RawAuthRec = { operation_id: string; operation_title?: string; authorization_status?: string; reason?: string }
-type RawExecRec = { operation_id: string; operation_title?: string; execution_status?: string; mode_id?: string; risk_score?: number }
-type RawLearning = { insight?: string; outcome?: string; confidence?: number }
-
-interface EvalContext {
-  mode:          string
-  scheduleReady: RawEntry[]
-  scheduleAll:   RawEntry[]
-  govEvals:      RawGovEval[]
-  authPending:   RawAuthRec[]
-  authBlocked:   RawAuthRec[]
-  execEligible:  RawExecRec[]
-  execBlocked:   RawExecRec[]
-  recCount:      number
-  opCount:       number
-  learnings:     RawLearning[]
-}
-
-function determineStatus(ctx: EvalContext): {
-  status:           AutonomyStatus
-  next_best_action: string
-  reason:           string
-  blocking_reason:  string
-} {
-  const {
-    mode, scheduleReady, govEvals, authPending, authBlocked,
-    execEligible, execBlocked, recCount, opCount,
-  } = ctx
-
-  const govBlocked      = govEvals.filter(e => e.verdict === 'blocked')
-  const govNeedsApprove = govEvals.filter(e => e.verdict === 'needs_approval')
-  const highRisk        = scheduleReady.filter(e => (e.risk_score ?? 0) >= 70 || e.tier === 'critical')
-  const lowRisk         = scheduleReady.filter(e => (e.risk_score ?? 0) < 70 && e.tier !== 'critical')
-
-  // ── MODE_A: always waiting for founder
-  if (mode === 'MODE_A') {
-    const has_any = recCount > 0 || opCount > 0
-    return {
-      status:           has_any ? 'waiting_for_founder' : 'idle',
-      next_best_action: has_any
-        ? `Review ${recCount} recommendation${recCount !== 1 ? 's' : ''} and ${opCount} operation${opCount !== 1 ? 's' : ''} in Approval Center`
-        : 'No pending items. System is idle in read-only mode.',
-      reason:           'MODE_A requires all actions to be Founder-approved.',
-      blocking_reason:  'MODE_A policy: no autonomous action permitted.',
-    }
-  }
-
-  // ── MODE_B: waiting if approvals exist, ready otherwise
-  if (mode === 'MODE_B') {
-    const approvalsPending = authPending.length + govNeedsApprove.length
-    if (approvalsPending > 0) {
+// ── Mode determination ────────────────────────────────────────────────────────
+function resolveStatus(
+  modeId:             string,
+  pendingApprovals:   string[],
+  readyOps:           string[],
+  highRiskOps:        string[],
+  blockedCount:       number,
+): { status: AutonomyStatus; reason: string } {
+  switch (modeId) {
+    case 'MODE_A':
       return {
-        status:           'waiting_for_founder',
-        next_best_action: `Review ${approvalsPending} pending approval${approvalsPending !== 1 ? 's' : ''} in Approval Center`,
-        reason:           `${approvalsPending} operation${approvalsPending !== 1 ? 's' : ''} require Founder approval before proceeding.`,
-        blocking_reason:  `Pending: ${authPending.length} authority + ${govNeedsApprove.length} governance approval${govNeedsApprove.length !== 1 ? 's' : ''}.`,
+        status: 'waiting_for_founder',
+        reason: 'MODE_A (Observe Only) — all actions require Founder approval before execution.',
       }
-    }
-    if (execEligible.length > 0) {
-      return {
-        status:           'ready',
-        next_best_action: `${execEligible.length} operation${execEligible.length !== 1 ? 's are' : ' is'} eligible for execution. Awaiting Founder-confirmed execution trigger.`,
-        reason:           'All approvals cleared. Execution eligibility confirmed.',
-        blocking_reason:  '',
+
+    case 'MODE_B':
+      if (pendingApprovals.length > 0) {
+        return {
+          status: 'waiting_for_founder',
+          reason: `MODE_B — ${pendingApprovals.length} operation${pendingApprovals.length > 1 ? 's' : ''} require Founder approval before proceeding.`,
+        }
       }
-    }
-    return {
-      status:           'monitoring',
-      next_best_action: 'Monitoring for new operations. No pending approvals.',
-      reason:           'MODE_B is monitoring. No eligible operations yet.',
-      blocking_reason:  '',
-    }
-  }
-
-  // ── MODE_C: ready for low-risk, waiting for high-risk
-  if (mode === 'MODE_C') {
-    if (highRisk.length > 0) {
-      return {
-        status:           'waiting_for_founder',
-        next_best_action: `Review ${highRisk.length} high-risk operation${highRisk.length !== 1 ? 's' : ''} before proceeding`,
-        reason:           `${highRisk.length} high-risk operation${highRisk.length !== 1 ? 's' : ''} detected. Founder approval required.`,
-        blocking_reason:  `High-risk operations: ${highRisk.map(e => e.tier ?? 'critical').join(', ')}`,
+      if (readyOps.length > 0) {
+        return {
+          status: 'ready',
+          reason: `MODE_B — ${readyOps.length} operation${readyOps.length > 1 ? 's are' : ' is'} approved and ready. No approvals pending.`,
+        }
       }
-    }
-    if (lowRisk.length > 0) {
-      return {
-        status:           'ready',
-        next_best_action: `${lowRisk.length} low-risk operation${lowRisk.length !== 1 ? 's are' : ' is'} ready. Governance and authority cleared.`,
-        reason:           'Low-risk operations cleared all gates. Ready for execution trigger.',
-        blocking_reason:  '',
+      return { status: 'monitoring', reason: 'MODE_B — No operations queued. Monitoring for new work.' }
+
+    case 'MODE_C':
+      if (blockedCount > 0) {
+        return {
+          status: 'blocked',
+          reason: `MODE_C — ${blockedCount} operation${blockedCount > 1 ? 's' : ''} blocked by governance or authority layer.`,
+        }
       }
-    }
-    return {
-      status:           'monitoring',
-      next_best_action: 'Monitoring. No schedulable operations currently ready.',
-      reason:           'MODE_C monitoring — no ready operations.',
-      blocking_reason:  '',
-    }
-  }
+      if (highRiskOps.length > 0) {
+        return {
+          status: 'waiting_for_founder',
+          reason: `MODE_C — ${highRiskOps.length} high-risk operation${highRiskOps.length > 1 ? 's' : ''} detected. Founder review required.`,
+        }
+      }
+      if (readyOps.length > 0) {
+        return {
+          status: 'ready',
+          reason: `MODE_C — ${readyOps.length} low-risk operation${readyOps.length > 1 ? 's are' : ' is'} ready for autonomous execution.`,
+        }
+      }
+      return { status: 'monitoring', reason: 'MODE_C — No low-risk operations queued. Monitoring.' }
 
-  // ── MODE_D: governance determines readiness
-  if (govBlocked.length > 0 || authBlocked.length > 0 || execBlocked.length > 0) {
-    const totalBlocked = govBlocked.length + authBlocked.length + execBlocked.length
-    const firstBlocked = govBlocked[0] ?? authBlocked[0]
-    return {
-      status:           'blocked',
-      next_best_action: `Resolve ${totalBlocked} blocked operation${totalBlocked !== 1 ? 's' : ''}. Review Governance and Authority panels.`,
-      reason:           firstBlocked
-        ? `"${firstBlocked.operation_title}" blocked: ${firstBlocked.reason ?? 'governance policy'}`
-        : `${totalBlocked} operations blocked by governance or authority.`,
-      blocking_reason:  `Governance: ${govBlocked.length} blocked, Authority: ${authBlocked.length} blocked, Execution: ${execBlocked.length} blocked.`,
+    case 'MODE_D': {
+      if (blockedCount > 0) {
+        return {
+          status: 'blocked',
+          reason: `MODE_D — Governance layer has blocked ${blockedCount} operation${blockedCount > 1 ? 's' : ''}. No execution until resolved.`,
+        }
+      }
+      if (pendingApprovals.length > 0) {
+        return {
+          status: 'waiting_for_founder',
+          reason: `MODE_D — Governance requires Founder sign-off on ${pendingApprovals.length} operation${pendingApprovals.length > 1 ? 's' : ''}.`,
+        }
+      }
+      if (readyOps.length > 0) {
+        return {
+          status: 'ready',
+          reason: `MODE_D — Governance cleared ${readyOps.length} operation${readyOps.length > 1 ? 's' : ''} for execution.`,
+        }
+      }
+      return { status: 'monitoring', reason: 'MODE_D — All operations governed. System monitoring for new work.' }
     }
-  }
 
-  if (govNeedsApprove.length > 0 || authPending.length > 0) {
-    const total = govNeedsApprove.length + authPending.length
-    return {
-      status:           'waiting_for_founder',
-      next_best_action: `${total} operation${total !== 1 ? 's' : ''} await Founder decision in Approval Center`,
-      reason:           `Governance requires approval for ${govNeedsApprove.length} operations. Authority pending for ${authPending.length}.`,
-      blocking_reason:  `Approval needed: ${govNeedsApprove.map(e => e.policy_name ?? 'policy').slice(0, 3).join(', ')}`,
-    }
-  }
-
-  if (execEligible.length > 0) {
-    return {
-      status:           'ready',
-      next_best_action: `${execEligible.length} operation${execEligible.length !== 1 ? 's are' : ' is'} fully authorized and eligible for execution.`,
-      reason:           'All gates cleared: Governance ✓  Authority ✓  Execution ✓',
-      blocking_reason:  '',
-    }
-  }
-
-  if (scheduleReady.length > 0) {
-    return {
-      status:           'monitoring',
-      next_best_action: `${scheduleReady.length} operation${scheduleReady.length !== 1 ? 's' : ''} scheduled and waiting for governance / authority clearance.`,
-      reason:           'Operations are scheduled but have not cleared all governance gates yet.',
-      blocking_reason:  '',
-    }
-  }
-
-  if (recCount > 0) {
-    return {
-      status:           'monitoring',
-      next_best_action: `${recCount} pending recommendation${recCount !== 1 ? 's' : ''}. Approve to create operations.`,
-      reason:           'System has recommendations but no active operations yet.',
-      blocking_reason:  '',
-    }
-  }
-
-  return {
-    status:           'idle',
-    next_best_action: 'System is fully idle. No pending recommendations or operations.',
-    reason:           'All queues empty across all governance layers.',
-    blocking_reason:  '',
+    default:
+      return { status: 'idle', reason: 'No active Founder Mode detected. System is idle.' }
   }
 }
 
-// ────────────────────────────── GET /api/founder/autonomy
-
+// ── GET ───────────────────────────────────────────────────────────────────────
 export async function GET() {
-  const [recData, opData, schedData, govData, modesData, authData, execData, learnData] =
-    await Promise.all([
-      fetchJson('/api/founder/recommendations'),
-      fetchJson('/api/founder/operations'),
-      fetchJson('/api/founder/scheduler'),
-      fetchJson('/api/founder/governance'),
-      fetchJson('/api/founder/modes'),
-      fetchJson('/api/founder/authority'),
-      fetchJson('/api/founder/execution'),
-      fetchJson('/api/founder/learning'),
+  try {
+    // 1. Fetch all upstream layers in parallel
+    const [
+      modesJ,
+      opsJ,
+      govJ,
+      authorityJ,
+      executionJ,
+      learningJ,
+      schedulerJ,
+    ] = await Promise.all([
+      safeJson('/api/founder/modes'),
+      safeJson('/api/founder/operations'),
+      safeJson('/api/founder/governance'),
+      safeJson('/api/founder/authority'),
+      safeJson('/api/founder/execution'),
+      safeJson('/api/founder/learning'),
+      safeJson('/api/founder/scheduler'),
     ])
 
-  // Resolve active mode
-  const activeMode: string = modesData?.active_mode ?? modesData?.current_mode ?? 'MODE_A'
+    // 2. Extract key signals
+    const activeMode: string = (modesJ.active_mode as { mode_id?: string } | null)?.mode_id ?? 'MODE_A'
 
-  // Build context
-  const scheduleReady = (schedData?.ready_now ?? []) as RawEntry[]
-  const scheduleAll   = [...scheduleReady, ...(schedData?.blocked ?? [])] as RawEntry[]
+    const allOps = [
+      ...((opsJ.ready     as unknown[]) ?? []),
+      ...((opsJ.executing as unknown[]) ?? []),
+      ...((opsJ.queued    as unknown[]) ?? []),
+      ...((opsJ.blocked   as unknown[]) ?? []),
+    ] as Array<{ operation_id: string; title: string; risk_level?: string; status: string }>
 
-  const govEvals    = (govData?.evaluations ?? [])         as RawGovEval[]
-  const authPending = (authData?.pending    ?? [])         as RawAuthRec[]
-  const authBlocked = [...(authData?.blocked ?? []), ...(authData?.revoked ?? [])] as RawAuthRec[]
+    const operationsScanned = allOps.length
+    const recsScanned       = ((govJ.evaluations as unknown[]) ?? []).length
 
-  const execEligible = (execData?.eligible  ?? [])         as RawExecRec[]
-  const execBlocked  = (execData?.blocked   ?? [])         as RawExecRec[]
+    // High-risk: risk_level is 'high' or 'critical'
+    const HIGH_RISK_LEVELS = new Set(['high', 'critical'])
+    const highRiskOps = allOps
+      .filter(o => HIGH_RISK_LEVELS.has(o.risk_level ?? ''))
+      .map(o => o.title)
 
-  const recCount  = (recData?.recommendations ?? []).filter((r: { status?: string }) => r.status === 'pending').length
-  const opCount   = [
-    ...(opData?.queued    ?? []),
-    ...(opData?.ready     ?? []),
-    ...(opData?.executing ?? []),
-  ].length
+    // Ready operations: status = ready and governance = allowed
+    const govMap = new Map<string, string>(
+      ((govJ.evaluations as Array<{ operation_id: string; verdict: string }>) ?? []).map(
+        e => [e.operation_id, e.verdict],
+      ),
+    )
+    const readyOps = allOps
+      .filter(o => {
+        if (o.status !== 'ready') return false
+        const verdict = govMap.get(o.operation_id) ?? 'allowed'
+        return verdict === 'allowed'
+      })
+      .map(o => o.title)
 
-  const learnings = (learnData?.records ?? []) as RawLearning[]
+    // Pending approvals: governance needs_approval OR authority pending
+    const govPendingOps = allOps
+      .filter(o => govMap.get(o.operation_id) === 'needs_approval')
+      .map(o => o.title)
+    const authPendingOps = (
+      (authorityJ.pending as Array<{ operation_title: string }>) ?? []
+    ).map(r => r.operation_title)
+    const pendingApprovals = [...new Set([...govPendingOps, ...authPendingOps])]
 
-  const ctx: EvalContext = {
-    mode: activeMode,
-    scheduleReady, scheduleAll,
-    govEvals, authPending, authBlocked,
-    execEligible, execBlocked,
-    recCount, opCount,
-    learnings,
+    const blockedCount: number =
+      ((govJ.blocked_count as number) ?? 0) +
+      ((authorityJ.blocked as unknown[]) ?? []).length
+
+    // Learning signals
+    const learningSignals: string[] = [
+      ...((learningJ.top_insights as string[]) ?? []).slice(0, 3),
+      ...((learningJ.success_patterns as string[]) ?? []).slice(0, 2),
+    ]
+
+    // 3. Determine autonomy status
+    const { status, reason } = resolveStatus(
+      activeMode,
+      pendingApprovals,
+      readyOps,
+      highRiskOps,
+      blockedCount,
+    )
+
+    // 4. Determine Next Best Action
+    const schedulerNBA = (schedulerJ.next_best_action as { title?: string } | null)?.title ?? ''
+    let nextBestAction = schedulerNBA
+    if (!nextBestAction) {
+      if (pendingApprovals.length > 0) nextBestAction = `Review and approve: ${pendingApprovals[0]}`
+      else if (readyOps.length > 0)    nextBestAction = `Eligible for execution: ${readyOps[0]}`
+      else                              nextBestAction = 'Monitor system — no actions queued'
+    }
+
+    const blockingReason = status === 'blocked' || status === 'waiting_for_founder' ? reason : ''
+
+    // 5. Build record
+    const now      = new Date().toISOString()
+    const cycleId  = `cycle_${Date.now()}`
+    const loopId   = 'p13_main'
+
+    const record: AutonomyRecord = {
+      loop_id:                 loopId,
+      cycle_id:                cycleId,
+      active_mode:             activeMode,
+      recommendations_scanned: recsScanned,
+      operations_scanned:      operationsScanned,
+      authority_checked:       Object.keys(authorityJ).length > 0,
+      execution_checked:       Object.keys(executionJ).length > 0,
+      learning_checked:        Object.keys(learningJ).length > 0,
+      next_best_action:        nextBestAction,
+      autonomy_status:         status,
+      reason,
+      created_at:              now,
+    }
+
+    const engine: AutonomyEngine = {
+      status,
+      next_best_action:     nextBestAction,
+      blocking_reason:      blockingReason,
+      ready_operations:     readyOps,
+      pending_approvals:    pendingApprovals,
+      high_risk_operations: highRiskOps,
+      learning_signals:     learningSignals,
+      active_mode:          activeMode,
+      cycle_id:             cycleId,
+      generated_at:         now,
+      record,
+    }
+
+    // 6. Persist to execution_memory
+    await memWrite('p13:autonomy:latest', engine as unknown as object)
+
+    return NextResponse.json(engine)
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Autonomy evaluation failed'
+    console.error('[P13 autonomy GET]', msg)
+    return NextResponse.json({ error: msg }, { status: 500 })
   }
-
-  const { status, next_best_action, reason, blocking_reason } = determineStatus(ctx)
-
-  // Build rich output objects
-  const ready_operations: OperationSummary[] = execEligible.map(e => ({
-    operation_id: e.operation_id,
-    title:        e.operation_title ?? e.operation_id,
-    risk_score:   e.risk_score   ?? 0,
-    priority:     0,
-    mode_id:      e.mode_id      ?? activeMode,
-  }))
-
-  const pending_approvals: ApprovalSummary[] = [
-    ...authPending.map(r => ({
-      operation_id: r.operation_id,
-      title:        r.operation_title ?? r.operation_id,
-      reason:       r.reason          ?? 'Awaiting authority decision',
-      type:         'authority' as const,
-    })),
-    ...govEvals.filter(e => e.verdict === 'needs_approval').map(e => ({
-      operation_id: e.operation_id,
-      title:        e.operation_title ?? e.operation_id,
-      reason:       e.reason          ?? e.policy_name ?? 'Governance approval required',
-      type:         'governance' as const,
-    })),
-  ]
-
-  const high_risk_operations: OperationSummary[] = scheduleAll
-    .filter(e => (e.risk_score ?? 0) >= 70 || e.tier === 'critical')
-    .map(e => ({
-      operation_id: e.operation_id,
-      title:        e.title ?? e.operation_id,
-      risk_score:   e.risk_score   ?? 70,
-      priority:     e.priority_score ?? 0,
-      mode_id:      activeMode,
-    }))
-
-  const learning_signals: string[] = learnings
-    .filter(l => l.outcome === 'failure' || l.outcome === 'blocked')
-    .slice(0, 3)
-    .map(l => l.insight ?? '')
-    .filter(Boolean)
-
-  // Build and persist the autonomy record
-  const record: AutonomyRecord = {
-    loop_id:                  uid('loop'),
-    cycle_id:                 uid('cyc'),
-    active_mode:              activeMode,
-    recommendations_scanned:  (recData?.recommendations ?? []).length,
-    operations_scanned:       opCount,
-    authority_checked:        authData != null,
-    execution_checked:        execData != null,
-    learning_checked:         learnData != null,
-    next_best_action,
-    autonomy_status:          status,
-    reason,
-    created_at:               nowIso(),
-  }
-  await writeToMemory(record)
-
-  return NextResponse.json({
-    status,
-    next_best_action,
-    blocking_reason,
-    ready_operations,
-    pending_approvals,
-    high_risk_operations,
-    learning_signals,
-    record,
-    evaluated_at: record.created_at,
-  } as AutonomyEngine)
 }
 
-// ────────────────────────────── POST /api/founder/autonomy (read latest from memory)
-// Founder can force a re-evaluation cycle
+// ── POST ──────────────────────────────────────────────────────────────────────
+// Accepted but no-op — P13 does not trigger execution.
+// Execution remains governed by Authority (P10), Governance (P8),
+// Founder Modes (P9), and Execution Readiness (P11).
+export async function POST(req: Request) {
+  try {
+    const body = await req.json().catch(() => ({}))
+    const action = (body as { action?: string }).action ?? ''
 
-export async function POST(req: NextRequest) {
-  const body = await req.json().catch(() => ({}))
-  if (body?.action === 'read_latest') {
-    const latest = await readFromMemory()
-    return NextResponse.json({ latest })
+    // Only allowed action is a manual cycle refresh
+    if (action === 'refresh_cycle') {
+      // Trigger a fresh GET evaluation cycle internally
+      return GET()
+    }
+
+    return NextResponse.json(
+      { ok: false, error: 'P13 is read-only orchestration. No execution actions allowed.' },
+      { status: 403 },
+    )
+  } catch {
+    return NextResponse.json({ ok: false, error: 'Invalid request' }, { status: 400 })
   }
-  // Default: trigger a fresh GET evaluation via internal redirect
-  const fresh = await GET()
-  return fresh
 }
