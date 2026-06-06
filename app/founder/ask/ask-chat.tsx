@@ -29,6 +29,23 @@ export type TimelineEvent = {
   timestamp: string
 }
 
+export type FounderDecision =
+  | 'approve_next_step'
+  | 'investigate_further'
+  | 'no_action_required'
+  | 'blocked_missing_data'
+
+export type TaskAnalysis = {
+  executive_summary: string
+  findings:          string[]
+  risks:             string[]
+  recommendations:   string[]
+  confidence:        'High' | 'Medium' | 'Low'
+  evidence_quality:  'Strong' | 'Partial' | 'Weak'
+  founder_decision:  FounderDecision
+  analyzed_at:       string
+}
+
 export type PersistedTask = {
   task_id:        string
   workspace_id:   string | null
@@ -37,6 +54,7 @@ export type PersistedTask = {
   status:         'planned' | 'approved' | 'executing' | 'completed' | 'failed'
   plan:           PlanStep[]
   timeline:       TimelineEvent[]
+  analysis?:      TaskAnalysis
   updated_at:     string
   persisted_at?:  string
 }
