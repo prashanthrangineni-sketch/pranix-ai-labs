@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase'
 import { getControlPlane } from '../../../lib/control-plane'
 import type { PlanStep, TimelineEvent, PersistedTask } from '../../founder/ask/ask-chat'
+import type { VerifiedStep } from '../execute/route'
 
 export const dynamic    = 'force-dynamic'
 export const maxDuration = 30
@@ -16,6 +17,7 @@ export type FounderDecision =
   | 'investigate_further'
   | 'no_action_required'
   | 'blocked_missing_data'
+  | 'retry_unverified'     // S1: surface when steps have unverified executions
 
 export type ConfidenceLevel = 'High' | 'Medium' | 'Low'
 export type EvidenceQuality = 'Strong' | 'Partial' | 'Weak'
