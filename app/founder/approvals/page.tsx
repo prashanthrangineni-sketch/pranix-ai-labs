@@ -425,6 +425,26 @@ function opStatusBadge(status: OpStatus) {
   )
 }
 
+// P8 — Governance badge
+function GovBadge({ ev }: { ev: GovernanceEvaluation | undefined }) {
+  if (!ev) return null
+  if (ev.verdict === 'allowed') return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-severity-success/10 px-2 py-0.5 text-[10px] font-semibold text-severity-success">
+      <CheckSquare className="h-2.5 w-2.5" /> Allowed
+    </span>
+  )
+  if (ev.verdict === 'needs_approval') return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-severity-warn/10 px-2 py-0.5 text-[10px] font-semibold text-severity-warn">
+      <Clock className="h-2.5 w-2.5" /> Needs Approval
+    </span>
+  )
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-severity-critical/10 px-2 py-0.5 text-[10px] font-semibold text-severity-critical">
+      <Ban className="h-2.5 w-2.5" /> Blocked
+    </span>
+  )
+}
+
 function ExecReadinessBadge({ entry }: { entry: ScheduleEntry | undefined }) {
   if (!entry) return null
   if (!entry.can_run_now) {
