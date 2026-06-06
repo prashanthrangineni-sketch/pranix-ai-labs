@@ -367,6 +367,30 @@ export function MissionControl() {
     } catch { /* non-fatal */ }
   }, [])
 
+  // S2 — Durable State Health
+  const [stateHealth, setStateHealth] = useState<{
+    summary: { healthy: number; warning: number; critical: number; expired: number }
+    records: StateRecord[]
+    scanned_at: string
+  }>({
+    summary: { healthy: 0, warning: 0, critical: 0, expired: 0 },
+    records: [],
+    scanned_at: '',
+  })
+
+  const loadStateHealth = useCallback(async () => {
+    try {
+      const res = await fetch('/api/founder/state', { cache: 'no-store' })
+      if (!res.ok) return
+      const j = await res.json()
+      setStateHealth({
+        summary:    j.summary    ?? { healthy: 0, warning: 0, critical: 0, expired: 0 },
+        records:    j.records    ?? [],
+        scanned_at: j.scanned_at ?? '',
+      })
+    } catch { /* non-fatal */ }
+  }, [])
+
   // P8 — Governance
   const [governance, setGovernance] = useState<{
     evaluations:             GovernanceEvaluation[]
