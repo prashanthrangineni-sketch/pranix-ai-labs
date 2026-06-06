@@ -544,6 +544,90 @@ export default async function FounderPermissionsPage() {
         )
       })()}
 
+      {/* ── S5: Queue Review ── */}
+      {queueData.records.length > 0 && (() => {
+        const STATUS_ORDER: Record<string, number> = {
+          dead_letter: 0, failed: 1, queued: 2, leased: 3, executing: 4, completed: 5
+        }
+        const sorted = [...queueData.records].sort((a, b) =>
+          (STATUS_ORDER[a.queue_status] ?? 9) - (STATUS_ORDER[b.queue_status] ?? 9)
+        )
+        const statusMeta: Record<string, { badge: string; label: string }> = {
+          queued:      { badge: 'bg-accent/10 text-accent',                       label: 'Queued' },
+          leased:      { badge: 'bg-severity-warn/10 text-severity-warn',         label: 'Leased' },
+          executing:   { badge: 'bg-severity-warn/10 text-severity-warn',         label: 'Executing' },
+          completed:   { badge: 'bg-severity-success/10 text-severity-success',   label: 'Completed' },
+          failed:      { badge: 'bg-severity-critical/10 text-severity-critical', label: 'Failed' },
+          dead_letter: { badge: 'bg-severity-critical/10 text-severity-critical', label: 'Dead Letter' },
+        }
+        return (
+          <section id="queue" className="space-y-3 scroll-mt-4 border-t border-border-subtle pt-6">
+            <div className="flex items-center gap-2">
+              <ListChecks className="h-4 w-4 text-accent" />
+              <h2 className="text-[13px] font-semibold text-fg-secondary">Queue Review</h2>
+              <span className="rounded-full bg-elevated px-2 py-0.5 text-[11px] font-medium text-fg-muted">
+                {queueData.queued} queued
+                &nbsp;&middot;&nbsp;
+                {queueData.dead_letter} dead letter
+              </span>
+            </div>
+
+            <div className="divide-y divide-border-subtle rounded-xl border border-border-subtle bg-surface overflow-hidden">
+              {sorted.map(rec => {
+                const meta = statusMeta[rec.queue_status] ?? statusMeta.dead_letter
+                const isLeased = rec.queue_status === 'leased'
+                const leaseExpired = isLeased && rec.lease_expires_at && Date.now() > new Date(rec.lease_expires_at).getTime()
+                return (
+                  <div key={rec.queue_id} className="px-3 py-3 space-y-1.5">
+
+                    {/* Row 1: title + status badge */}
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-[13px] font-medium text-fg-primary truncate flex-1">{rec.operation_title}</p>
+                      <span className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${meta.badge}`}>
+                        {meta.label}
+                      </span>
+                    </div>
+
+                    {/* Row 2: retry count + lease state */}
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-fg-muted">
+                      <span>Mode: <span className="font-medium text-fg-secondary">{rec.founder_mode}</span></span>
+                      <span className="tabular-nums">
+                        Retry: <span className={`font-medium ${
+                          rec.retry_count >= rec.max_retries ? 'text-severity-critical'
+                          : rec.retry_count > 0 ? 'text-severity-warn'
+                          : 'text-fg-secondary'
+                        }`}>{rec.retry_count}/{rec.max_retries}</span>
+                      </span>
+                      {isLeased && (
+                        <span className={leaseExpired ? 'text-severity-critical font-medium' : 'text-severity-warn'}>
+                          {leaseExpired ? 'Lease expired' : `Leased by: ${rec.leased_by ?? 'system'}`}
+                        </span>
+                      )}
+                      {rec.failure_reason && (
+                        <span className="text-severity-critical truncate max-w-[40ch]" title={rec.failure_reason}>
+                          {rec.failure_reason}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Row 3: timestamps */}
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-fg-disabled tabular-nums">
+                      <span>Queued: {new Date(rec.queued_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                      {rec.started_at && (
+                        <span>Started: {new Date(rec.started_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                      )}
+                      {rec.completed_at && (
+                        <span>Completed: {new Date(rec.completed_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+        )
+      })()}
+
       {/* ── S4: Activation Review ── */}
       {activationData.records.length > 0 && (() => {
         const STATUS_ORDER: Record<string, number> = {
