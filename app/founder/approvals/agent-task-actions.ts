@@ -148,7 +148,7 @@ export async function getAgentTaskInbox(): Promise<{
     }))
 
     const pending = tasks.filter(t =>
-      t.status === 'planned' || t.status === 'approved' ||
+      t.status === 'planned' || t.status === 'approved' || t.status === 'executing' ||
       (t.execution_mode === 'plan' && t.status !== 'failed' && t.status !== 'completed')
     )
     const history = tasks.filter(t =>
