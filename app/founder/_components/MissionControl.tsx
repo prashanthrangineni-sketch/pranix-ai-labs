@@ -1344,6 +1344,98 @@ export function MissionControl() {
         )
       })()}
 
+      {/* ── Founder Roadmap ── */}
+      {roadmap.total > 0 && (
+        <div className="rounded-xl border border-border-subtle bg-surface px-4 py-3 space-y-3">
+          {/* Header */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Map className="h-3.5 w-3.5 text-accent shrink-0" />
+              <span className="text-[11px] font-semibold text-fg-primary uppercase tracking-wide">Founder Roadmap</span>
+              <span className="inline-flex items-center rounded-full bg-elevated px-2 py-0.5 text-[10px] font-medium text-fg-muted">
+                P1–P13 + S1–S5 completed
+              </span>
+            </div>
+            <Link href="/founder/approvals#roadmap" className="text-[10px] text-accent hover:underline">
+              Full map →
+            </Link>
+          </div>
+
+          {/* Progress bar */}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="text-fg-muted">Future Phases (P14–P20 · S6–S12)</span>
+              <span className="tabular-nums font-semibold text-fg-primary">{roadmap.pct}%</span>
+            </div>
+            <div className="h-1.5 w-full rounded-full bg-elevated overflow-hidden">
+              <div
+                className="h-full rounded-full bg-accent transition-all duration-700"
+                style={{ width: `${roadmap.pct}%` }}
+              />
+            </div>
+            <div className="flex gap-3 text-[10px] text-fg-disabled tabular-nums">
+              <span>{roadmap.completed}/{roadmap.total} done</span>
+              {roadmap.in_progress > 0 && <span className="text-accent">{roadmap.in_progress} in progress</span>}
+              {roadmap.blocked > 0 && <span className="text-severity-critical">{roadmap.blocked} blocked</span>}
+            </div>
+          </div>
+
+          {/* Current + Next phase */}
+          {roadmap.current && (
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-lg bg-accent/[0.04] border border-accent/15 px-3 py-2 space-y-0.5">
+                <p className="text-[9px] font-semibold text-accent uppercase tracking-wide">Current</p>
+                <p className="text-[12px] font-semibold text-fg-primary leading-snug">{roadmap.current.phase_id}</p>
+                <p className="text-[11px] text-fg-muted leading-snug">{roadmap.current.title}</p>
+              </div>
+              {roadmap.next && (
+                <div className="rounded-lg bg-elevated border border-border-subtle px-3 py-2 space-y-0.5">
+                  <p className="text-[9px] font-semibold text-fg-disabled uppercase tracking-wide">Next</p>
+                  <p className="text-[12px] font-semibold text-fg-secondary leading-snug">{roadmap.next.phase_id}</p>
+                  <p className="text-[11px] text-fg-muted leading-snug">{roadmap.next.title}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Blocked phases */}
+          {roadmap.blocked_items.length > 0 && (
+            <div className="rounded-lg bg-severity-critical/[0.04] border border-severity-critical/15 px-3 py-2">
+              <p className="text-[9px] font-semibold text-severity-critical uppercase tracking-wide mb-1">Blocked</p>
+              <div className="flex flex-wrap gap-1">
+                {roadmap.blocked_items.map(b => (
+                  <span key={b.roadmap_id} className="rounded-full bg-severity-critical/10 text-severity-critical text-[10px] font-medium px-2 py-0.5">
+                    {b.phase_id}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Strategic milestones */}
+          {roadmap.milestones.length > 0 && (
+            <div className="space-y-1">
+              <p className="text-[9px] font-semibold text-fg-disabled uppercase tracking-wide">Strategic Milestones</p>
+              <div className="flex flex-wrap gap-1">
+                {roadmap.milestones.map(m => (
+                  <span
+                    key={m.roadmap_id}
+                    className={`rounded-full text-[10px] font-medium px-2 py-0.5 ${
+                      m.status === 'completed'  ? 'bg-severity-success/10 text-severity-success'
+                      : m.status === 'in_progress' ? 'bg-accent/10 text-accent'
+                      : m.status === 'blocked'     ? 'bg-severity-critical/10 text-severity-critical'
+                      : 'bg-elevated text-fg-muted'
+                    }`}
+                  >
+                    {m.phase_id}: {m.title.length > 22 ? m.title.slice(0, 22) + '…' : m.title}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── S6: Execution Engine ── */}
       {executor.records.length > 0 && (() => {
         const total = executor.running + executor.completed + executor.failed + executor.unverified
