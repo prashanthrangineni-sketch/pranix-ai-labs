@@ -399,6 +399,36 @@ export function MissionControl() {
     } catch { /* non-fatal */ }
   }, [])
 
+  // S5 — Queue
+  const [queue, setQueue] = useState<{
+    queued:      number
+    leased:      number
+    executing:   number
+    completed:   number
+    failed:      number
+    dead_letter: number
+    top_item:    QueueRecord | null
+    records:     QueueRecord[]
+  }>({ queued: 0, leased: 0, executing: 0, completed: 0, failed: 0, dead_letter: 0, top_item: null, records: [] })
+
+  const loadQueue = useCallback(async () => {
+    try {
+      const res = await fetch('/api/founder/queue', { cache: 'no-store' })
+      if (!res.ok) return
+      const j = await res.json()
+      setQueue({
+        queued:      j.queued      ?? 0,
+        leased:      j.leased      ?? 0,
+        executing:   j.executing   ?? 0,
+        completed:   j.completed   ?? 0,
+        failed:      j.failed      ?? 0,
+        dead_letter: j.dead_letter ?? 0,
+        top_item:    j.top_item    ?? null,
+        records:     j.records     ?? [],
+      })
+    } catch { /* non-fatal */ }
+  }, [])
+
   // S3 — Dispatch
   const [dispatch, setDispatch] = useState<{
     queued:        number
