@@ -368,6 +368,36 @@ export function MissionControl() {
     } catch { /* non-fatal */ }
   }, [])
 
+  // S4 — Activation
+  const [activation, setActivation] = useState<{
+    pending:    number
+    activated:  number
+    executing:  number
+    completed:  number
+    failed:     number
+    blocked:    number
+    top_active: ActivationRecord | null
+    records:    ActivationRecord[]
+  }>({ pending: 0, activated: 0, executing: 0, completed: 0, failed: 0, blocked: 0, top_active: null, records: [] })
+
+  const loadActivation = useCallback(async () => {
+    try {
+      const res = await fetch('/api/founder/activation', { cache: 'no-store' })
+      if (!res.ok) return
+      const j = await res.json()
+      setActivation({
+        pending:    j.pending    ?? 0,
+        activated:  j.activated  ?? 0,
+        executing:  j.executing  ?? 0,
+        completed:  j.completed  ?? 0,
+        failed:     j.failed     ?? 0,
+        blocked:    j.blocked    ?? 0,
+        top_active: j.top_active ?? null,
+        records:    j.records    ?? [],
+      })
+    } catch { /* non-fatal */ }
+  }, [])
+
   // S3 — Dispatch
   const [dispatch, setDispatch] = useState<{
     queued:        number
