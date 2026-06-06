@@ -976,6 +976,90 @@ export function MissionControl() {
         )
       })()}
 
+      {/* ── S3: Dispatch Queue ── */}
+      {(() => {
+        if (dispatch.records.length === 0 && dispatch.eligible === 0) return null
+        return (
+          <div className="rounded-xl border border-border-subtle bg-surface px-4 py-3 space-y-3">
+            {/* Header */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Send className="h-3.5 w-3.5 text-accent shrink-0" />
+                <span className="text-[11px] font-semibold text-fg-primary uppercase tracking-wide">Dispatch Queue</span>
+              </div>
+              <Link href="/founder/approvals#dispatch" className="text-[10px] text-accent hover:underline">
+                Review →
+              </Link>
+            </div>
+
+            {/* 4 status pills */}
+            <div className="flex flex-wrap gap-2">
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                dispatch.eligible > 0 ? 'bg-severity-success/10 text-severity-success' : 'bg-elevated text-fg-muted'
+              }`}>
+                <CheckCircle2 className="h-3 w-3" />
+                Eligible: {dispatch.eligible}
+              </span>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                dispatch.queued > 0 ? 'bg-accent/10 text-accent' : 'bg-elevated text-fg-muted'
+              }`}>
+                <Clock className="h-3 w-3" />
+                Queued: {dispatch.queued}
+              </span>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                dispatch.dispatched > 0 ? 'bg-severity-success/10 text-severity-success' : 'bg-elevated text-fg-muted'
+              }`}>
+                <Send className="h-3 w-3" />
+                Dispatched: {dispatch.dispatched}
+              </span>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                dispatch.blocked > 0 ? 'bg-severity-critical/10 text-severity-critical' : 'bg-elevated text-fg-muted'
+              }`}>
+                <Ban className="h-3 w-3" />
+                Blocked: {dispatch.blocked}
+              </span>
+            </div>
+
+            {/* Top Candidate */}
+            {dispatch.top_candidate && (
+              <div className="rounded-lg border border-severity-success/20 bg-severity-success/[0.03] px-3 py-2.5 space-y-1">
+                <p className="text-[10px] font-semibold text-fg-disabled uppercase tracking-wide">Top Candidate</p>
+                <p className="text-[13px] font-semibold text-fg-primary leading-snug">
+                  {dispatch.top_candidate.operation_title}
+                </p>
+                <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px]">
+                  <span className="text-fg-muted">
+                    Priority{' '}
+                    <span className="text-fg-secondary font-medium tabular-nums">
+                      {dispatch.top_candidate.priority_score}
+                    </span>
+                  </span>
+                  <span className={`font-medium ${
+                    dispatch.top_candidate.authority_status === 'authorized'
+                      ? 'text-severity-success'
+                      : 'text-severity-warn'
+                  }`}>
+                    Authority {dispatch.top_candidate.authority_status === 'authorized' ? 'Authorized' : dispatch.top_candidate.authority_status}
+                  </span>
+                  <span className={`font-medium ${
+                    dispatch.top_candidate.governance_status === 'allowed'
+                      ? 'text-severity-success'
+                      : dispatch.top_candidate.governance_status === 'needs_approval'
+                      ? 'text-severity-warn'
+                      : 'text-severity-critical'
+                  }`}>
+                    Governance {dispatch.top_candidate.governance_status === 'allowed' ? 'Approved' : dispatch.top_candidate.governance_status === 'needs_approval' ? 'Needs Review' : 'Blocked'}
+                  </span>
+                  <span className="text-fg-disabled">
+                    {dispatch.top_candidate.founder_mode}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        )
+      })()}
+
       {/* ── Count cards ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <CountCard
