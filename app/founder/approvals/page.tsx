@@ -165,6 +165,89 @@ export default async function FounderPermissionsPage() {
 
 // ─── Agent Task sub-components ─────────────────────────────────────────
 
+// ─── P5: RecCard ──────────────────────────────────────────────────────
+
+const RISK_BORDER: Record<RiskLevel, string> = {
+  critical: 'border-severity-critical/30 bg-severity-critical/[0.03]',
+  high:     'border-severity-warn/30 bg-severity-warn/[0.03]',
+  medium:   'border-yellow-400/25 bg-yellow-400/[0.02]',
+  low:      'border-border-subtle bg-surface',
+}
+
+const RISK_BADGE: Record<RiskLevel, string> = {
+  critical: 'bg-severity-critical/10 text-severity-critical',
+  high:     'bg-severity-warn/10 text-severity-warn',
+  medium:   'bg-yellow-400/10 text-yellow-600',
+  low:      'bg-elevated text-fg-muted',
+}
+
+function RiskIcon({ level }: { level: RiskLevel }) {
+  if (level === 'critical') return <FlameKindling className="h-3 w-3" />
+  if (level === 'high')     return <AlertTriangle  className="h-3 w-3" />
+  if (level === 'medium')   return <AlertCircle    className="h-3 w-3" />
+  return                           <Info            className="h-3 w-3" />
+}
+
+function RecCard({ rec }: { rec: Recommendation }) {
+  const isDone = rec.status !== 'pending'
+  return (
+    <div className={`rounded-xl border p-4 space-y-3 ${
+      isDone ? 'opacity-60 border-border-subtle bg-surface' : (RISK_BORDER[rec.risk_level] ?? RISK_BORDER.low)
+    }`}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-elevated">
+            <Inbox className="h-4 w-4 text-fg-muted" />
+          </span>
+          <div className="min-w-0">
+            <p className={`text-[13px] font-semibold truncate ${
+              isDone ? 'text-fg-disabled line-through' : 'text-fg-primary'
+            }`}>{rec.title}</p>
+            <p className="text-[11px] text-fg-disabled capitalize">{rec.category}</p>
+          </div>
+        </div>
+        <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+          RISK_BADGE[rec.risk_level] ?? RISK_BADGE.low
+        }`}>
+          <RiskIcon level={rec.risk_level} />
+          {rec.risk_level} risk
+        </span>
+      </div>
+
+      <div className="space-y-1.5 text-[13px]">
+        <p className="text-fg-secondary">{rec.summary}</p>
+        <p className="text-fg-muted"><span className="text-fg-disabled">Action: </span>{rec.recommended_action}</p>
+      </div>
+
+      <div className="rounded-lg bg-elevated px-3 py-2 space-y-1">
+        <p className="text-[10px] font-semibold text-fg-disabled uppercase tracking-wide">Evidence</p>
+        <p className="text-[11px] text-fg-secondary"><span className="text-fg-disabled">Source: </span>{rec.evidence.source}</p>
+        <p className="text-[11px] text-fg-secondary"><span className="text-fg-disabled">Detail: </span>{rec.evidence.detail}</p>
+        {rec.evidence.confidence  && <p className="text-[11px] text-fg-secondary"><span className="text-fg-disabled">Confidence: </span>{rec.evidence.confidence}</p>}
+        {rec.evidence.hash_status && <p className="text-[11px] text-fg-secondary"><span className="text-fg-disabled">Integrity: </span>{rec.evidence.hash_status}</p>}
+        {rec.source_task_id && (
+          <p className="mt-1">
+            <a href={`/founder/replay?task_id=${rec.source_task_id}`} target="_blank" rel="noopener noreferrer"
+               className="inline-flex items-center gap-1 text-[11px] text-accent hover:underline">
+              View Replay <ExternalLink className="h-3 w-3" />
+            </a>
+          </p>
+        )}
+      </div>
+
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-fg-muted">
+        <span>Confidence: {rec.confidence}%</span>
+        <span>Generated: {new Date(rec.generated_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+        {isDone && <span className="font-medium text-fg-secondary capitalize">{rec.status}</span>}
+      </div>
+
+      {!isDone && <RecDecisionControls recommendationId={rec.recommendation_id} />}
+    </div>
+  )
+}
+
+// ─── Agent Task sub-components ─────────────────────────────────────────────────
+
 function taskStatusBadge(status: string) {
   const map: Record<string, string> = {
     planned:   'bg-severity-warn/10 text-severity-warn',
