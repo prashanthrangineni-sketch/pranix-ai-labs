@@ -515,6 +515,95 @@ export default async function FounderPermissionsPage() {
         )
       })()}
 
+      {/* ── S4: Activation Review ── */}
+      {activationData.records.length > 0 && (() => {
+        const STATUS_ORDER: Record<string, number> = {
+          blocked: 0, pending: 1, activated: 2, executing: 3, completed: 4, failed: 5
+        }
+        const sorted = [...activationData.records].sort((a, b) =>
+          (STATUS_ORDER[a.activation_status] ?? 9) - (STATUS_ORDER[b.activation_status] ?? 9)
+        )
+        const statusMeta: Record<string, { badge: string; label: string }> = {
+          pending:   { badge: 'bg-severity-warn/10 text-severity-warn',         label: 'Pending' },
+          activated: { badge: 'bg-severity-success/10 text-severity-success',   label: 'Activated' },
+          executing: { badge: 'bg-accent/10 text-accent',                       label: 'Executing' },
+          completed: { badge: 'bg-severity-success/10 text-severity-success',   label: 'Completed' },
+          failed:    { badge: 'bg-severity-critical/10 text-severity-critical', label: 'Failed' },
+          blocked:   { badge: 'bg-severity-critical/10 text-severity-critical', label: 'Blocked' },
+        }
+        return (
+          <section id="activation" className="space-y-3 scroll-mt-4 border-t border-border-subtle pt-6">
+            <div className="flex items-center gap-2">
+              <PlayCircle className="h-4 w-4 text-severity-success" />
+              <h2 className="text-[13px] font-semibold text-fg-secondary">Activation Review</h2>
+              <span className="rounded-full bg-elevated px-2 py-0.5 text-[11px] font-medium text-fg-muted">
+                {activationData.activated} activated
+                &nbsp;&middot;&nbsp;
+                {activationData.pending} pending
+                &nbsp;&middot;&nbsp;
+                {activationData.blocked} blocked
+              </span>
+            </div>
+
+            <div className="divide-y divide-border-subtle rounded-xl border border-border-subtle bg-surface overflow-hidden">
+              {sorted.map(rec => {
+                const meta = statusMeta[rec.activation_status] ?? statusMeta.blocked
+                return (
+                  <div key={rec.activation_id} className="px-3 py-3 space-y-1.5">
+
+                    {/* Row 1: title + status badge */}
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-[13px] font-medium text-fg-primary truncate flex-1">{rec.operation_title}</p>
+                      <span className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${meta.badge}`}>
+                        {meta.label}
+                      </span>
+                    </div>
+
+                    {/* Row 2: activation reason */}
+                    <p className="text-[12px] text-fg-secondary leading-relaxed">{rec.activation_reason}</p>
+
+                    {/* Row 3: mode + dispatch + governance */}
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-fg-muted">
+                      <span>Mode: <span className="text-fg-secondary font-medium">{rec.founder_mode}</span></span>
+                      <span>Dispatch: <span className={`font-medium ${
+                        rec.dispatch_status === 'dispatched' ? 'text-severity-success'
+                        : rec.dispatch_status === 'blocked'  ? 'text-severity-critical'
+                        : 'text-severity-warn'
+                      }`}>{rec.dispatch_status}</span></span>
+                      <span>Authority: <span className={`font-medium ${
+                        rec.authority_status === 'authorized' ? 'text-severity-success'
+                        : rec.authority_status === 'blocked'  ? 'text-severity-critical'
+                        : 'text-severity-warn'
+                      }`}>{rec.authority_status}</span></span>
+                      <span>Governance: <span className={`font-medium ${
+                        rec.governance_status === 'allowed'       ? 'text-severity-success'
+                        : rec.governance_status === 'needs_approval' ? 'text-severity-warn'
+                        : 'text-severity-critical'
+                      }`}>{rec.governance_status}</span></span>
+                      <span className="text-fg-disabled tabular-nums">
+                        Priority {rec.priority_score} · Risk {rec.risk_score}
+                      </span>
+                    </div>
+
+                    {/* Row 4: timestamps */}
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-fg-disabled tabular-nums">
+                      <span>Started: {rec.activated_at
+                        ? new Date(rec.activated_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
+                        : '—'}
+                      </span>
+                      <span>Completed: {rec.completed_at
+                        ? new Date(rec.completed_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
+                        : '—'}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+        )
+      })()}
+
       {/* ── P10: Authority Review ── */}
       {(() => {
         const allRecords: AuthorityRecord[] = [
