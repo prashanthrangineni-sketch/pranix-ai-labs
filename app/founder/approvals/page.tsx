@@ -115,6 +115,20 @@ async function getAutonomy(): Promise<AutonomyEngine | null> {
   } catch { return null }
 }
 
+async function getStateHealth(): Promise<{
+  summary: { healthy: number; warning: number; critical: number; expired: number }
+  records: StateRecord[]
+}> {
+  const empty = { summary: { healthy: 0, warning: 0, critical: 0, expired: 0 }, records: [] }
+  try {
+    const j = await fetchFromBase('/api/founder/state')
+    return j ? {
+      summary: j.summary ?? empty.summary,
+      records: (j.records ?? []) as StateRecord[],
+    } : empty
+  } catch { return empty }
+}
+
 async function getExecution(): Promise<{
   queued: ExecutionRecord[]; eligible: ExecutionRecord[]; executing: ExecutionRecord[];
   completed: ExecutionRecord[]; failed: ExecutionRecord[]; blocked: ExecutionRecord[]
