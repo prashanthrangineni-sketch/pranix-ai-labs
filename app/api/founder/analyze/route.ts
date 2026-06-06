@@ -131,6 +131,11 @@ function analyzeEvidence(snapshot: PersistedTask): TaskAnalysis {
   if (failed.length > 0) {
     findings.push(`${failed.length} step${failed.length !== 1 ? 's' : ''} failed: ${failed.map(s => s.title).join(', ')}`)
   }
+  // S1: surface unverified steps prominently in findings
+  if (unverified.length > 0) {
+    const reason = (unverified[0] as Partial<VerifiedStep>).verification_reason ?? 'gateway unreachable'
+    findings.push(`⚠ ${unverified.length} step${unverified.length !== 1 ? 's' : ''} unverified — ${reason}`)
+  }
 
   // Parse evidence summaries for domain-specific findings
   for (const s of completed) {
