@@ -70,6 +70,11 @@ export default async function FounderPermissionsPage() {
               {pendingRecs.length} rec{pendingRecs.length !== 1 ? 's' : ''}
             </span>
           )}
+          {activeOps.length > 0 && (
+            <span className="rounded-full bg-severity-success/15 px-2 py-0.5 text-[11px] font-semibold text-severity-success">
+              {activeOps.length} op{activeOps.length !== 1 ? 's' : ''}
+            </span>
+          )}
         </div>
         <p className="text-[13px] text-fg-muted">
           Approve agent task plans, AI permission requests, and system recommendations.
@@ -95,6 +100,40 @@ export default async function FounderPermissionsPage() {
           ))
         )}
       </section>
+
+      {/* ── P6: Operations Queue ── */}
+      <section id="operations" className="space-y-3 scroll-mt-4 border-t border-border-subtle pt-6">
+        <div className="flex items-center gap-2">
+          <ListChecks className="h-4 w-4 text-severity-success" />
+          <h2 className={`text-[13px] font-semibold ${
+            activeOps.length > 0 ? 'text-severity-success' : 'text-fg-secondary'
+          }`}>Operations Queue</h2>
+          <span className="rounded-full bg-elevated px-2 py-0.5 text-[11px] font-medium text-fg-muted">
+            {activeOps.length} active
+          </span>
+        </div>
+        {activeOps.length === 0 ? (
+          <Empty>No operations queued. Approve a recommendation above to create one.</Empty>
+        ) : (
+          activeOps.map((op: Operation) => (
+            <OpCard key={op.operation_id} op={op} />
+          ))
+        )}
+      </section>
+
+      {/* ── P6: Operation History ── */}
+      {ops.history.length > 0 && (
+        <section className="space-y-2">
+          <div className="flex items-center gap-1.5 text-[12px] font-medium text-fg-muted">
+            <HistoryIcon className="h-3.5 w-3.5" /> Operation history
+          </div>
+          <div className="divide-y divide-border-subtle rounded-lg border border-border-subtle bg-surface">
+            {ops.history.slice(0, 10).map((op: Operation) => (
+              <OpHistoryRow key={op.operation_id} op={op} />
+            ))}
+          </div>
+        </section>
+      )}
 
       <div className="border-t border-border-subtle" />
 
