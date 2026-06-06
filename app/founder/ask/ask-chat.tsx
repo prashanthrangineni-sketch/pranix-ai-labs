@@ -540,7 +540,14 @@ function PranixBubble({
 }
 
 // ── PlanView ──────────────────────────────────────────────────────────────────
-type ExecPhase = 'idle' | 'executing' | 'completed'
+type ExecPhase = 'idle' | 'executing' | 'completed' | 'failed'
+
+type RichPlanStep = PlanStep & {
+  result_summary?: string
+  raw_result?:     unknown
+  started_at?:     string
+  completed_at?:   string
+}
 
 function PlanView({
   plan, goal, taskId, workspaceId, persistTask,
@@ -552,18 +559,16 @@ function PlanView({
   persistTask: (s: Omit<PersistedTask, 'persisted_at'>) => void
 }) {
   const [phase, setPhase]       = useState<ExecPhase>('idle')
-  const [activeStep, setActive] = useState(-1)
-  const [steps, setSteps]       = useState<PlanStep[]>(plan.map(s => ({ ...s, status: 'planned' })))
+  const [steps, setSteps]       = useState<RichPlanStep[]>(plan.map(s => ({ ...s, status: 'planned' })))
   const [timeline, setTimeline] = useState<TimelineEvent[]>([{
     id:        'plan-created',
     kind:      'planned',
     label:     `Plan created — ${plan.length} step${plan.length === 1 ? '' : 's'}`,
     timestamp: new Date().toISOString(),
   }])
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // Persist current state (called after each meaningful state change)
-  const persist = useCallback((overridePhase?: ExecPhase, overrideSteps?: PlanStep[], overrideTimeline?: TimelineEvent[]) => {
+  const persist = useCallback((overridePhase?: ExecPhase, overrideSteps?: RichPlanStep[], overrideTimeline?: TimelineEvent[]) => {
     const s  = overrideSteps    ?? steps
     const t  = overrideTimeline ?? timeline
     const ph = overridePhase    ?? phase
@@ -571,75 +576,65 @@ function PlanView({
       task_id:        taskId,
       workspace_id:   workspaceId,
       goal,
-      execution_mode: ph === 'completed' ? 'completed' : ph === 'executing' ? 'executing' : 'plan',
-      status:         ph === 'completed' ? 'completed' : ph === 'executing' ? 'executing' : 'planned',
-      plan:           s,
+      execution_mode: (ph === 'completed' || ph === 'failed') ? 'completed' : ph === 'executing' ? 'executing' : 'plan',
+      status:         ph === 'failed' ? 'failed' : ph === 'completed' ? 'completed' : ph === 'executing' ? 'executing' : 'planned',
+      plan:           s as PlanStep[],
       timeline:       t,
       updated_at:     new Date().toISOString(),
     })
   }, [taskId, workspaceId, goal, phase, steps, timeline, persistTask])
 
-  // Persist on mount (initial plan-created event)
   useEffect(() => { persist('idle', steps, timeline) }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current) }, [])
 
-  function approvePlan() {
-    const approvedSteps    = steps.map(step => ({ ...step, status: 'approved' as const }))
-    const approvedTimeline = [...timeline, {
-      id:        'plan-approved',
-      kind:      'approved' as const,
-      label:     'Plan approved by founder',
-      timestamp: new Date().toISOString(),
-    }]
+  function startPolling() {
+    if (pollRef.current) return
+    pollRef.current = setInterval(async () => {
+      try {
+        const res  = await fetch(`/api/founder/timeline?limit=20`)
+        if (!res.ok) return
+        const data = await res.json()
+        const task = (data?.tasks as PersistedTask[] | undefined)?.find(t => t.task_id === taskId)
+        if (!task) return
+        setSteps(task.plan as RichPlanStep[])
+        setTimeline(task.timeline)
+        const s = task.status
+        if (s === 'completed' || s === 'failed') {
+          setPhase(s)
+          clearInterval(pollRef.current!)
+          pollRef.current = null
+          persistTask({
+            task_id: task.task_id, workspace_id: task.workspace_id,
+            goal: task.goal, execution_mode: task.execution_mode,
+            status: task.status, plan: task.plan,
+            timeline: task.timeline, updated_at: task.updated_at,
+          })
+        } else if (s === 'executing') {
+          setPhase('executing')
+        }
+      } catch { /* silent */ }
+    }, 2000)
+  }
+
+  async function approvePlan() {
+    const approvedTimeline: TimelineEvent[] = [
+      ...timeline,
+      { id: 'plan-approved', kind: 'approved', label: 'Plan approved by founder', timestamp: new Date().toISOString() },
+    ]
+    const approvedSteps = steps.map(s => ({ ...s, status: 'approved' as const }))
     setSteps(approvedSteps)
     setTimeline(approvedTimeline)
     setPhase('executing')
     persist('executing', approvedSteps, approvedTimeline)
-    runStep(0, approvedSteps, approvedTimeline)
+    try {
+      await fetch('/api/founder/execute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ task_id: taskId, workspace_id: workspaceId, plan: approvedSteps }),
+      })
+    } catch { /* server-side; polling picks up state */ }
+    startPolling()
   }
-
-  function runStep(idx: number, currentSteps: PlanStep[], currentTimeline: TimelineEvent[]) {
-    if (idx >= currentSteps.length) {
-      const finalTimeline = [...currentTimeline, {
-        id:        'plan-completed',
-        kind:      'completed' as const,
-        label:     `All ${currentSteps.length} steps completed (read-only)`,
-        timestamp: new Date().toISOString(),
-      }]
-      setPhase('completed')
-      setTimeline(finalTimeline)
-      persist('completed', currentSteps, finalTimeline)
-      return
-    }
-    setActive(idx)
-    const executingSteps = currentSteps.map((step, i) =>
-      i === idx ? { ...step, status: 'executing' as const } : step
-    )
-    const executingTimeline = [...currentTimeline, {
-      id:        `step-${idx}-executing`,
-      kind:      'executing' as const,
-      label:     `Step ${idx + 1}: ${currentSteps[idx].title}`,
-      timestamp: new Date().toISOString(),
-    }]
-    setSteps(executingSteps)
-    setTimeline(executingTimeline)
-
-    timerRef.current = setTimeout(() => {
-      const doneSteps = executingSteps.map((step, i) =>
-        i === idx ? { ...step, status: 'completed' as const } : step
-      )
-      const doneTimeline = [...executingTimeline, {
-        id:        `step-${idx}-done`,
-        kind:      'completed' as const,
-        label:     `Step ${idx + 1} completed`,
-        timestamp: new Date().toISOString(),
-      }]
-      setSteps(doneSteps)
-      setTimeline(doneTimeline)
-      runStep(idx + 1, doneSteps, doneTimeline)
-    }, 1200 + Math.random() * 800)
-  }
-
-  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
 
   return (
     <div className="space-y-3">
