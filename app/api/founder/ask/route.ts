@@ -73,12 +73,16 @@ export async function POST(req: Request) {
     )
   }
 
+  // Parse body ONCE — previous double-parse bug fixed here
+  let body: Record<string, unknown> = {}
   let message = ''
   try {
-    const body = await req.json()
+    body    = await req.json()
     message = String(body?.message ?? '').slice(0, 1000)
   } catch { /* ignore */ }
-  const q = message.toLowerCase().trim()
+  const q          = message.toLowerCase().trim()
+  const agentMode  = body?.agent_mode === true
+  const workspaceId = typeof body?.workspace_id === 'string' ? body.workspace_id : undefined
 
   if (!q) return NextResponse.json({ reply: helpReply() })
 
