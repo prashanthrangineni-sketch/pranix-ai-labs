@@ -271,6 +271,30 @@ export function MissionControl() {
     } catch { /* non-fatal */ }
   }, [])
 
+  // P10 — Execution Authority
+  const [authority, setAuthority] = useState<{
+    pending:    AuthorityRecord[]
+    authorized: AuthorityRecord[]
+    blocked:    AuthorityRecord[]
+    expired:    AuthorityRecord[]
+    revoked:    AuthorityRecord[]
+  }>({ pending: [], authorized: [], blocked: [], expired: [], revoked: [] })
+
+  const loadAuthority = useCallback(async () => {
+    try {
+      const res = await fetch('/api/founder/authority', { cache: 'no-store' })
+      if (!res.ok) return
+      const j = await res.json()
+      setAuthority({
+        pending:    j.pending    ?? [],
+        authorized: j.authorized ?? [],
+        blocked:    j.blocked    ?? [],
+        expired:    j.expired    ?? [],
+        revoked:    j.revoked    ?? [],
+      })
+    } catch { /* non-fatal */ }
+  }, [])
+
   // P8 — Governance
   const [governance, setGovernance] = useState<{
     evaluations:             GovernanceEvaluation[]
