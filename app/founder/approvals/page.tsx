@@ -1326,6 +1326,42 @@ function Empty({ children }: { children: React.ReactNode }) {
   )
 }
 
+// ── P13: Autonomy helpers ───────────────────────────────────────────────────────────────────
+
+const AUTONOMY_BADGE: Record<AutonomyStatus, { cls: string; label: string }> = {
+  ready:               { cls: 'bg-severity-success/10 text-severity-success', label: 'Ready' },
+  waiting_for_founder: { cls: 'bg-severity-warn/10 text-severity-warn',       label: 'Waiting for Founder' },
+  monitoring:          { cls: 'bg-blue-400/10 text-blue-400',                  label: 'Monitoring' },
+  blocked:             { cls: 'bg-severity-critical/10 text-severity-critical', label: 'Blocked' },
+  idle:                { cls: 'bg-elevated text-fg-muted',                      label: 'Idle' },
+}
+
+function AutonomyBadge({ status }: { status: AutonomyStatus }) {
+  const m = AUTONOMY_BADGE[status] ?? AUTONOMY_BADGE.idle
+  return (
+    <span className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${m.cls}`}>
+      {m.label}
+    </span>
+  )
+}
+
+function AutonomyIcon({ status }: { status: AutonomyStatus }) {
+  if (status === 'ready')               return <CheckCircle2 className="h-4 w-4 text-severity-success" />
+  if (status === 'waiting_for_founder') return <Clock className="h-4 w-4 text-severity-warn" />
+  if (status === 'monitoring')          return <AlertCircle className="h-4 w-4 text-blue-400" />
+  if (status === 'blocked')             return <XCircle className="h-4 w-4 text-severity-critical" />
+  return                                       <AlertCircle className="h-4 w-4 text-fg-muted" />
+}
+
+function AutonomyStat({ label, value, cls }: { label: string; value: number; cls: string }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className="text-[10px] text-fg-disabled uppercase tracking-wide">{label}</span>
+      <span className={`text-[15px] font-bold tabular-nums leading-none ${cls}`}>{value}</span>
+    </div>
+  )
+}
+
 // ─── Plain-language helpers ──────────────────────────────────────
 
 function accessVerb(scope: string): string {
