@@ -312,6 +312,44 @@ export function MissionControl() {
         />
       </div>
 
+      {/* ── P5: Recommendation Inbox ── */}
+      {recs.length > 0 && (
+        <McPanel
+          title="Recommendation Inbox"
+          icon={Inbox}
+          iconColor="text-accent"
+          link="Review all"
+          linkHref="/founder/approvals#recommendations"
+        >
+          {/* Severity header */}
+          {(() => {
+            const pending = recs.filter(r => r.status === 'pending')
+            const critical = pending.filter(r => r.risk_level === 'critical').length
+            const high     = pending.filter(r => r.risk_level === 'high').length
+            const medium   = pending.filter(r => r.risk_level === 'medium').length
+            const low      = pending.filter(r => r.risk_level === 'low').length
+            return (
+              <>
+                {pending.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {critical > 0 && <span className="inline-flex items-center gap-1 rounded-full bg-severity-critical/10 px-2 py-0.5 text-[10px] font-semibold text-severity-critical"><FlameKindling className="h-3 w-3" /> {critical} Critical</span>}
+                    {high     > 0 && <span className="inline-flex items-center gap-1 rounded-full bg-severity-warn/10 px-2 py-0.5 text-[10px] font-semibold text-severity-warn"><AlertTriangle className="h-3 w-3" /> {high} High</span>}
+                    {medium   > 0 && <span className="inline-flex items-center gap-1 rounded-full bg-yellow-400/10 px-2 py-0.5 text-[10px] font-semibold text-yellow-500"><AlertCircle className="h-3 w-3" /> {medium} Medium</span>}
+                    {low      > 0 && <span className="inline-flex items-center gap-1 rounded-full bg-elevated px-2 py-0.5 text-[10px] font-semibold text-fg-muted"><Info className="h-3 w-3" /> {low} Low</span>}
+                  </div>
+                )}
+                <div className="space-y-2">
+                  {recs.slice(0, 6).map(r => <RecRow key={r.recommendation_id} rec={r} />)}
+                  {recs.length > 6 && (
+                    <p className="text-[11px] text-fg-disabled pl-1">+{recs.length - 6} more in Approval Center</p>
+                  )}
+                </div>
+              </>
+            )
+          })()}
+        </McPanel>
+      )}
+
       {/* ── Row: Approvals + Provider Status ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
