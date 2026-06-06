@@ -706,6 +706,77 @@ export function MissionControl() {
         )
       })()}
 
+      {/* ── P11: Execution Readiness panel ── */}
+      {(() => {
+        const total = execution.queued.length + execution.eligible.length +
+                      execution.executing.length + execution.completed.length +
+                      execution.failed.length + execution.blocked.length
+        if (total === 0) return null
+        return (
+          <div className="rounded-xl border border-border-subtle bg-surface px-4 py-3 space-y-3">
+            {/* Header */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <PlayCircle className="h-3.5 w-3.5 text-accent shrink-0" />
+                <span className="text-[11px] font-semibold text-fg-primary uppercase tracking-wide">Execution Readiness</span>
+              </div>
+              <Link href="/founder/approvals#execution" className="text-[10px] text-accent hover:underline">
+                Review
+              </Link>
+            </div>
+
+            {/* 4 status pills */}
+            <div className="flex flex-wrap gap-2">
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                execution.eligible.length > 0 ? 'bg-severity-success/10 text-severity-success' : 'bg-elevated text-fg-muted'
+              }`}>
+                <CheckCircle2 className="h-3 w-3" />
+                Eligible: {execution.eligible.length}
+              </span>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                execution.executing.length > 0 ? 'bg-severity-warn/10 text-severity-warn' : 'bg-elevated text-fg-muted'
+              }`}>
+                <Clock className="h-3 w-3" />
+                Executing: {execution.executing.length}
+              </span>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                execution.completed.length > 0 ? 'bg-severity-success/10 text-severity-success' : 'bg-elevated text-fg-muted'
+              }`}>
+                <CheckCircle2 className="h-3 w-3" />
+                Completed Today: {execution.completed.length}
+              </span>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                execution.blocked.length > 0 ? 'bg-severity-critical/10 text-severity-critical' : 'bg-elevated text-fg-muted'
+              }`}>
+                <Ban className="h-3 w-3" />
+                Blocked: {execution.blocked.length}
+              </span>
+            </div>
+
+            {/* Top eligible item */}
+            {execution.eligible.length > 0 && (
+              <div className="rounded-lg border border-severity-success/20 bg-severity-success/[0.03] px-3 py-2">
+                <p className="text-[10px] font-semibold text-fg-disabled uppercase tracking-wide mb-0.5">Next Eligible</p>
+                <p className="text-[12px] font-medium text-fg-primary">{execution.eligible[0].operation_title}</p>
+                <p className="text-[11px] text-fg-secondary mt-0.5">{execution.eligible[0].execution_reason}</p>
+                {execution.eligible.length > 1 && (
+                  <p className="text-[10px] text-fg-disabled mt-1">+{execution.eligible.length - 1} more eligible</p>
+                )}
+              </div>
+            )}
+
+            {/* Top blocked item */}
+            {execution.blocked.length > 0 && (
+              <div className="rounded-lg border border-severity-critical/15 bg-severity-critical/[0.03] px-3 py-2">
+                <p className="text-[10px] font-semibold text-fg-disabled uppercase tracking-wide mb-0.5">Blocked</p>
+                <p className="text-[12px] font-medium text-fg-primary">{execution.blocked[0].operation_title}</p>
+                <p className="text-[11px] text-fg-secondary mt-0.5">{execution.blocked[0].execution_reason}</p>
+              </div>
+            )}
+          </div>
+        )
+      })()}
+
       {/* ── Count cards ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <CountCard
