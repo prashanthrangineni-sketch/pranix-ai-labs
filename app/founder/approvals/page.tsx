@@ -520,6 +520,18 @@ function OpCard({ op, schedule, governance }: { op: Operation; schedule?: Schedu
         <span className="font-mono text-fg-disabled">{op.operation_id}</span>
       </div>
 
+      {/* P8 governance reason */}
+      {governance && (
+        <div className="rounded-lg bg-elevated px-3 py-2 space-y-0.5">
+          <div className="flex items-center gap-1.5">
+            <Shield className="h-3 w-3 text-fg-disabled shrink-0" />
+            <p className="text-[10px] font-semibold text-fg-disabled uppercase tracking-wide">Governance</p>
+            <span className="ml-auto text-[10px] text-fg-muted">{governance.policy_name}</span>
+          </div>
+          <p className="text-[11px] text-fg-secondary">{governance.reason}</p>
+        </div>
+      )}
+
       {op.replay_id && (
         <a
           href={`/founder/replay?task_id=${op.replay_id}`}
