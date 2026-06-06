@@ -371,6 +371,67 @@ export function MissionControl() {
         </McPanel>
       )}
 
+      {/* ── P6: Operations Queue ── */}
+      {(() => {
+        const activeOps = [...ops.ready, ...ops.executing, ...ops.queued]
+        const allOps    = [...activeOps, ...ops.completed, ...ops.blocked]
+        if (allOps.length === 0) return null
+        return (
+          <McPanel
+            title="Operations Queue"
+            icon={ListChecks}
+            iconColor="text-severity-success"
+            link="View all"
+            linkHref="/founder/approvals#operations"
+          >
+            {/* Status summary row */}
+            <div className="flex flex-wrap gap-2 mb-3">
+              {ops.ready.length     > 0 && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-severity-success/10 px-2 py-0.5 text-[10px] font-semibold text-severity-success">
+                  ● {ops.ready.length} Ready
+                </span>
+              )}
+              {ops.executing.length > 0 && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent">
+                  ◎ {ops.executing.length} Executing
+                </span>
+              )}
+              {ops.completed.length > 0 && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-elevated px-2 py-0.5 text-[10px] font-semibold text-fg-muted">
+                  ✓ {ops.completed.length} Done today
+                </span>
+              )}
+              {ops.blocked.length   > 0 && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-fg-disabled/10 px-2 py-0.5 text-[10px] font-semibold text-fg-disabled">
+                  ⊘ {ops.blocked.length} Blocked
+                </span>
+              )}
+            </div>
+            {/* Top 5 active ops */}
+            <div className="space-y-1.5">
+              {activeOps.slice(0, 5).map(op => (
+                <Link
+                  key={op.operation_id}
+                  href="/founder/approvals#operations"
+                  className="flex items-center gap-2.5 rounded-lg border border-severity-success/20 bg-severity-success/[0.03] px-3 py-2 hover:bg-severity-success/[0.07] transition-colors"
+                >
+                  <span className="h-1.5 w-1.5 rounded-full bg-severity-success shrink-0" />
+                  <p className="flex-1 min-w-0 truncate text-[12px] font-medium text-fg-primary">{op.title}</p>
+                  <span className="shrink-0 text-[10px] font-medium text-fg-disabled capitalize">{op.status}</span>
+                  <ChevronRight className="h-3 w-3 shrink-0 text-fg-disabled" />
+                </Link>
+              ))}
+              {activeOps.length > 5 && (
+                <p className="text-[11px] text-fg-disabled pl-1">+{activeOps.length - 5} more operations</p>
+              )}
+              {activeOps.length === 0 && ops.completed.length > 0 && (
+                <p className="text-[12px] text-fg-muted">All operations completed today.</p>
+              )}
+            </div>
+          </McPanel>
+        )
+      })()}
+
       {/* ── Row: Approvals + Provider Status ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
