@@ -807,6 +807,43 @@ function PlanView({
         ) : null
       )}
 
+      {/* Replay Evidence accordion — available once task is done */}
+      {(phase === 'completed' || phase === 'failed') && (
+        <div className="rounded-xl border border-border-subtle bg-canvas overflow-hidden">
+          <button
+            onClick={() => {
+              if (!replay) { fetchReplay(); return }
+              setReplayOpen(o => !o)
+            }}
+            className="flex w-full items-center justify-between px-3 py-2.5 text-left"
+            aria-expanded={replayOpen}
+          >
+            <div className="flex items-center gap-1.5">
+              {replayLoading
+                ? <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />
+                : <Hash className="h-3.5 w-3.5 text-fg-muted" />
+              }
+              <span className="text-[12px] font-semibold text-fg-primary">Replay Evidence</span>
+              {replay && (
+                <span className="rounded-full bg-elevated px-1.5 py-0.5 text-[10px] font-medium text-fg-muted">
+                  {replay.replay.length}
+                </span>
+              )}
+            </div>
+            <ChevronDown
+              className={`h-3.5 w-3.5 text-fg-muted transition-transform duration-200 ${
+                replayOpen ? 'rotate-180' : ''
+              }`}
+            />
+          </button>
+          {replayOpen && replay && (
+            <div className="border-t border-border-subtle">
+              <ReplayView data={replay} />
+            </div>
+          )}
+        </div>
+      )}
+
       {timeline.length > 0 && (
         <details className="group" open={phase !== 'idle'}>
           <summary className="flex cursor-pointer list-none items-center gap-1 text-[11px] text-fg-disabled hover:text-fg-muted">
