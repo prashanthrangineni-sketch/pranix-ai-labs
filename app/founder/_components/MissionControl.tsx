@@ -255,6 +255,36 @@ export function MissionControl() {
     } catch { /* non-fatal */ }
   }, [])
 
+  // P8 — Governance
+  const [governance, setGovernance] = useState<{
+    evaluations:             GovernanceEvaluation[]
+    violations:              GovernanceEvaluation[]
+    approval_required_count: number
+    blocked_count:           number
+    policies:                Policy[]
+  }>({
+    evaluations:             [],
+    violations:              [],
+    approval_required_count: 0,
+    blocked_count:           0,
+    policies:                [],
+  })
+
+  const loadGovernance = useCallback(async () => {
+    try {
+      const res = await fetch('/api/founder/governance', { cache: 'no-store' })
+      if (!res.ok) return
+      const j = await res.json()
+      setGovernance({
+        evaluations:             j.evaluations             ?? [],
+        violations:              j.violations              ?? [],
+        approval_required_count: j.approval_required_count ?? 0,
+        blocked_count:           j.blocked_count           ?? 0,
+        policies:                j.policies                ?? [],
+      })
+    } catch { /* non-fatal */ }
+  }, [])
+
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true)
     setError(null)
