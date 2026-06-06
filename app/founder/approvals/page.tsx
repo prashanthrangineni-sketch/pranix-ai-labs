@@ -119,6 +119,22 @@ async function getAutonomy(): Promise<AutonomyEngine | null> {
   } catch { return null }
 }
 
+async function getRoadmap(): Promise<{
+  roadmap:    RoadmapItem[]
+  progress: { pct: number; total: number; completed: number; in_progress: number; blocked: number; current: RoadmapItem | null; next: RoadmapItem | null; blocked_items: RoadmapItem[]; milestones: RoadmapItem[] }
+  completed_phases: Array<{ phase_id: string; title: string; phase_type: string; status: string }>
+}> {
+  const empty = { roadmap: [], progress: { pct: 0, total: 14, completed: 0, in_progress: 0, blocked: 0, current: null, next: null, blocked_items: [], milestones: [] }, completed_phases: [] }
+  try {
+    const j = await fetchFromBase('/api/founder/roadmap')
+    return j ? {
+      roadmap:          (j.roadmap         ?? []) as RoadmapItem[],
+      progress:          j.progress         ?? empty.progress,
+      completed_phases: (j.completed_phases ?? []) as Array<{ phase_id: string; title: string; phase_type: string; status: string }>,
+    } : empty
+  } catch { return empty }
+}
+
 async function getExecutor(): Promise<{
   records: ExecutorRecord[]
   running: number
