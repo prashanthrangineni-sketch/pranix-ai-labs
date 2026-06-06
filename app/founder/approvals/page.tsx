@@ -296,7 +296,89 @@ function RecCard({ rec }: { rec: Recommendation }) {
         {isDone && <span className="font-medium text-fg-secondary capitalize">{rec.status}</span>}
       </div>
 
-      {!isDone && <RecDecisionControls recommendationId={rec.recommendation_id} />}
+      {!isDone && (
+        <RecDecisionControls
+          recommendationId={rec.recommendation_id}
+          recTitle={rec.title}
+          recCategory={rec.category}
+          recRiskLevel={rec.risk_level}
+          recSummary={rec.summary}
+          sourceTaskId={rec.source_task_id ?? null}
+        />
+      )}
+    </div>
+  )
+}
+
+// ─── P6: Operation components ─────────────────────────────────────────────────
+
+const OP_STATUS_MAP: Record<OpStatus, { label: string; cls: string }> = {
+  queued:    { label: 'Queued',    cls: 'bg-elevated text-fg-muted' },
+  ready:     { label: 'Ready',     cls: 'bg-severity-success/10 text-severity-success' },
+  executing: { label: 'Executing', cls: 'bg-accent/10 text-accent' },
+  completed: { label: 'Completed', cls: 'bg-severity-success/10 text-severity-success' },
+  failed:    { label: 'Failed',    cls: 'bg-severity-critical/10 text-severity-critical' },
+  blocked:   { label: 'Blocked',   cls: 'bg-fg-disabled/10 text-fg-disabled' },
+}
+
+function opStatusBadge(status: OpStatus) {
+  const m = OP_STATUS_MAP[status] ?? OP_STATUS_MAP.queued
+  return (
+    <span className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${m.cls}`}>
+      {m.label}
+    </span>
+  )
+}
+
+function OpCard({ op }: { op: Operation }) {
+  return (
+    <div className="rounded-xl border border-severity-success/20 bg-severity-success/[0.02] p-4 space-y-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-elevated">
+            <ListChecks className="h-4 w-4 text-severity-success" />
+          </span>
+          <div className="min-w-0">
+            <p className="truncate text-[13px] font-semibold text-fg-primary">{op.title}</p>
+            <p className="text-[11px] text-fg-disabled capitalize">{op.category} · {op.execution_mode}</p>
+          </div>
+        </div>
+        {opStatusBadge(op.status)}
+      </div>
+
+      <p className="text-[12px] text-fg-secondary">{op.description}</p>
+
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-fg-muted">
+        <span>Risk: {op.risk_level}</span>
+        <span>Created {timeAgo(op.created_at)}</span>
+        <span className="font-mono text-fg-disabled">{op.operation_id}</span>
+      </div>
+
+      {op.replay_id && (
+        <a
+          href={`/founder/replay?task_id=${op.replay_id}`}
+          target="_blank" rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 text-[11px] text-accent hover:underline"
+        >
+          View source replay <ExternalLink className="h-3 w-3" />
+        </a>
+      )}
+    </div>
+  )
+}
+
+function OpHistoryRow({ op }: { op: Operation }) {
+  return (
+    <div className="flex items-start justify-between gap-3 px-3 py-2.5 text-[12px]">
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-fg-secondary">
+          <span className="font-medium text-fg-primary">{op.title}</span>
+        </p>
+        <p className="truncate text-[11px] text-fg-disabled">
+          {op.category} · {timeAgo(op.approved_at)}
+        </p>
+      </div>
+      {opStatusBadge(op.status)}
     </div>
   )
 }
