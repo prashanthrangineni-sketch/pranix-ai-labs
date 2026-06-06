@@ -20,12 +20,15 @@ export type PlanStep = {
   title:       string
   description: string
   tool?:       string
-  status:      'planned' | 'approved' | 'executing' | 'completed' | 'failed'
+  // S1: 'unverified' is a terminal status — gateway was offline, result not confirmed
+  status:      'planned' | 'approved' | 'executing' | 'completed' | 'failed' | 'unverified'
+  verified?:   boolean
 }
 
 export type TimelineEvent = {
   id:        string
-  kind:      'planned' | 'approved' | 'executing' | 'completed' | 'failed'
+  // S1: 'unverified' is a new terminal kind displayed as ⚠ Unverified Execution
+  kind:      'planned' | 'approved' | 'executing' | 'completed' | 'failed' | 'unverified'
   label:     string
   timestamp: string
 }
