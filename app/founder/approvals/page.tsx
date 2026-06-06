@@ -15,30 +15,44 @@ import { RecDecisionControls } from './rec-decision-controls'
 export const metadata: Metadata = { title: 'Permissions' }
 export const revalidate = 0
 
+async function fetchFromBase(path: string) {
+  const base = process.env.NEXT_PUBLIC_APP_URL ?? process.env.VERCEL_URL
+  if (!base) return null
+  const url = `${base.startsWith('http') ? base : `https://${base}`}${path}`
+  const res = await fetch(url, { cache: 'no-store' })
+  if (!res.ok) return null
+  return res.json()
+}
+
 async function getRecommendations(): Promise<Recommendation[]> {
   try {
-    // Same process — call the route handler directly via relative URL won't work
-    // in RSC without an absolute URL, so we re-use the logic by dynamic import.
-    // Use absolute URL only if NEXT_PUBLIC_APP_URL is set, else fallback to [].
-    const base = process.env.NEXT_PUBLIC_APP_URL ?? process.env.VERCEL_URL
-    if (!base) return []
-    const url = `${base.startsWith('http') ? base : `https://${base}`}/api/founder/recommendations`
-    const res = await fetch(url, { cache: 'no-store' })
-    if (!res.ok) return []
-    const j = await res.json()
-    return j.recommendations ?? []
+    const j = await fetchFromBase('/api/founder/recommendations')
+    return j?.recommendations ?? []
   } catch { return [] }
 }
 
+async function getOperations(): Promise<{
+  queued: Operation[]; ready: Operation[]; executing: Operation[];
+  completed: Operation[]; blocked: Operation[]; history: Operation[];
+}> {
+  const empty = { queued: [], ready: [], executing: [], completed: [], blocked: [], history: [] }
+  try {
+    const j = await fetchFromBase('/api/founder/operations')
+    return j ?? empty
+  } catch { return empty }
+}
+
 export default async function FounderPermissionsPage() {
-  const [{ pending, active, history }, agentInbox, recommendations] = await Promise.all([
+  const [{ pending, active, history }, agentInbox, recommendations, ops] = await Promise.all([
     getPermissionInbox(150),
     getAgentTaskInbox(),
     getRecommendations(),
+    getOperations(),
   ])
 
-  const pendingRecs  = recommendations.filter((r: Recommendation) => r.status === 'pending')
-  const totalPending = pending.length + agentInbox.pending.length
+  const pendingRecs   = recommendations.filter((r: Recommendation) => r.status === 'pending')
+  const activeOps     = [...ops.queued, ...ops.ready, ...ops.executing]
+  const totalPending  = pending.length + agentInbox.pending.length
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-6 space-y-7">
