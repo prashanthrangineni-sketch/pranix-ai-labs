@@ -221,6 +221,88 @@ export default async function FounderPermissionsPage() {
         </section>
       )}
 
+      {/* ── P8: Governance Review ── */}
+      {governanceData.evaluations.length > 0 && (
+        <section id="governance" className="space-y-3 scroll-mt-4">
+          <div className="flex items-center gap-2">
+            <Shield className="h-4 w-4 text-accent" />
+            <h2 className="text-[13px] font-semibold text-fg-secondary">Governance Review</h2>
+            <span className="rounded-full bg-elevated px-2 py-0.5 text-[11px] font-medium text-fg-muted">
+              {governanceData.evaluations.filter(e => e.verdict === 'allowed').length} allowed
+              &nbsp;&middot;&nbsp;
+              {governanceData.evaluations.filter(e => e.verdict === 'needs_approval').length} pending approval
+              &nbsp;&middot;&nbsp;
+              {governanceData.evaluations.filter(e => e.verdict === 'blocked').length} blocked
+            </span>
+          </div>
+
+          {/* Policy list */}
+          {governanceData.policies.length > 0 && (
+            <div className="rounded-xl border border-border-subtle bg-surface overflow-hidden">
+              <div className="px-3 py-2 border-b border-border-subtle flex items-center justify-between">
+                <span className="text-[11px] font-semibold text-fg-secondary uppercase tracking-wide">Active Policies</span>
+                <span className="text-[10px] text-fg-disabled">{governanceData.policies.filter(p => p.enabled).length} of {governanceData.policies.length} enabled</span>
+              </div>
+              <div className="divide-y divide-border-subtle">
+                {governanceData.policies.map(pol => (
+                  <div key={pol.policy_id} className="flex items-center gap-3 px-3 py-2.5">
+                    <span className={`h-2 w-2 rounded-full shrink-0 ${
+                      pol.enabled ? 'bg-severity-success' : 'bg-fg-disabled'
+                    }`} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[12px] font-medium text-fg-primary">{pol.name}</p>
+                      <p className="text-[11px] text-fg-muted">{pol.description}</p>
+                    </div>
+                    <div className="shrink-0 flex flex-col items-end gap-0.5">
+                      {pol.approval_required ? (
+                        <span className="text-[10px] font-semibold text-severity-warn">Approval required</span>
+                      ) : (
+                        <span className="text-[10px] font-semibold text-severity-success">Auto-permitted</span>
+                      )}
+                      <span className="text-[10px] text-fg-disabled capitalize">Max risk: {pol.max_risk}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Evaluation rows */}
+          <div className="divide-y divide-border-subtle rounded-xl border border-border-subtle bg-surface overflow-hidden">
+            {governanceData.evaluations
+              .sort((a, b) => {
+                const order = { blocked: 0, needs_approval: 1, allowed: 2 }
+                return (order[a.verdict] ?? 3) - (order[b.verdict] ?? 3)
+              })
+              .map(ev => {
+                const verdictCls = ev.verdict === 'blocked'
+                  ? { badge: 'bg-severity-critical/10 text-severity-critical', icon: 'text-severity-critical' }
+                  : ev.verdict === 'needs_approval'
+                  ? { badge: 'bg-severity-warn/10 text-severity-warn', icon: 'text-severity-warn' }
+                  : { badge: 'bg-severity-success/10 text-severity-success', icon: 'text-severity-success' }
+                const verdictLabel = ev.verdict === 'blocked' ? 'Blocked'
+                  : ev.verdict === 'needs_approval' ? 'Needs Approval'
+                  : 'Allowed'
+                return (
+                  <div key={ev.operation_id} className="flex items-start gap-3 px-3 py-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-medium text-fg-primary truncate">{ev.operation_title}</p>
+                      <p className="text-[11px] text-fg-muted mt-0.5">
+                        Policy: <span className="text-fg-secondary">{ev.policy_name}</span>
+                      </p>
+                      <p className="text-[11px] text-fg-secondary mt-0.5">{ev.reason}</p>
+                    </div>
+                    <span className={`shrink-0 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${verdictCls.badge}`}>
+                      {verdictLabel}
+                    </span>
+                  </div>
+                )
+              })
+            }
+          </div>
+        </section>
+      )}
+
       {/* ── P6: Operation History ── */}
       {ops.history.length > 0 && (
         <section className="space-y-2">
