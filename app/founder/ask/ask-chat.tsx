@@ -1193,9 +1193,10 @@ function AnalysisView({ analysis }: { analysis: TaskAnalysis }) {
 
 function TimelineIcon({ kind }: { kind: TimelineEvent['kind'] }) {
   const cls = 'h-3 w-3 shrink-0 mt-0.5'
-  if (kind === 'planned')   return <Clock        className={`${cls} text-fg-disabled`} />
-  if (kind === 'approved')  return <CheckCircle2 className={`${cls} text-accent`} />
-  if (kind === 'executing') return <Loader2      className={`${cls} text-accent animate-spin`} />
-  if (kind === 'completed') return <CheckCircle2 className={`${cls} text-accent`} />
-  return                           <AlertCircle  className={`${cls} text-severity-critical`} />
+  if (kind === 'planned')    return <Clock        className={`${cls} text-fg-disabled`} />
+  if (kind === 'approved')   return <CheckCircle2 className={`${cls} text-accent`} />
+  if (kind === 'executing')  return <Loader2      className={`${cls} text-accent animate-spin`} />
+  if (kind === 'completed')  return <CheckCircle2 className={`${cls} text-accent`} />
+  if (kind === 'unverified') return <AlertCircle  className={`${cls} text-severity-warn`} />   // S1
+  return                            <AlertCircle  className={`${cls} text-severity-critical`} />
 }
