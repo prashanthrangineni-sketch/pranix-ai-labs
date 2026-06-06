@@ -1,7 +1,10 @@
 import type { Metadata } from 'next'
-import { ShieldCheck, Bot, User, Clock, History as HistoryIcon, AlertTriangle } from 'lucide-react'
+import { ShieldCheck, Bot, User, Clock, History as HistoryIcon, AlertTriangle, BrainCircuit, LayoutList } from 'lucide-react'
 import { getPermissionInbox, type PermissionRequest } from '@/lib/permissions'
 import { DecisionControls } from './decision-controls'
+import { getAgentTaskInbox } from './agent-task-actions'
+import { AgentTaskControls } from './agent-task-controls'
+import type { PersistedTask } from '../ask/ask-chat'
 
 export const metadata: Metadata = { title: 'Permissions' }
 export const revalidate = 15
