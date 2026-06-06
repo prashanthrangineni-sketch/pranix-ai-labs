@@ -28,6 +28,7 @@ import type { DispatchRecord }                from '@/app/api/founder/dispatch/r
 import type { ActivationRecord }              from '@/app/api/founder/activation/route'
 import type { QueueRecord }                   from '@/app/api/founder/queue/route'
 import type { ExecutorRecord }                from '@/app/api/founder/executor/route'
+import type { RoadmapItem }                   from '@/app/api/founder/roadmap/route'
 import { Key, PlayCircle, Sparkles, CheckCircle2, Ban, Activity, Zap, AlertOctagon, Loader2, Send } from 'lucide-react'
 
 // ── Types ────────────────────────────────────────────────────────────────
