@@ -1091,6 +1091,87 @@ export function MissionControl() {
         )
       })()}
 
+      {/* ── S4: Activation Status ── */}
+      {activation.records.length > 0 && (() => {
+        const total = activation.pending + activation.activated + activation.executing +
+                      activation.completed + activation.failed + activation.blocked
+        if (total === 0) return null
+        return (
+          <div className="rounded-xl border border-border-subtle bg-surface px-4 py-3 space-y-3">
+            {/* Header */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <PlayCircle className="h-3.5 w-3.5 text-severity-success shrink-0" />
+                <span className="text-[11px] font-semibold text-fg-primary uppercase tracking-wide">Activation Status</span>
+              </div>
+              <Link href="/founder/approvals#activation" className="text-[10px] text-accent hover:underline">
+                Review →
+              </Link>
+            </div>
+
+            {/* 5 status pills */}
+            <div className="flex flex-wrap gap-2">
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                activation.pending > 0 ? 'bg-severity-warn/10 text-severity-warn' : 'bg-elevated text-fg-muted'
+              }`}>
+                <Clock className="h-3 w-3" />
+                Pending: {activation.pending}
+              </span>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                activation.activated > 0 ? 'bg-severity-success/10 text-severity-success' : 'bg-elevated text-fg-muted'
+              }`}>
+                <Sparkles className="h-3 w-3" />
+                Activated: {activation.activated}
+              </span>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                activation.executing > 0 ? 'bg-accent/10 text-accent' : 'bg-elevated text-fg-muted'
+              }`}>
+                <Activity className="h-3 w-3" />
+                Executing: {activation.executing}
+              </span>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                activation.completed > 0 ? 'bg-severity-success/10 text-severity-success' : 'bg-elevated text-fg-muted'
+              }`}>
+                <CheckCircle2 className="h-3 w-3" />
+                Completed: {activation.completed}
+              </span>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                activation.blocked > 0 ? 'bg-severity-critical/10 text-severity-critical' : 'bg-elevated text-fg-muted'
+              }`}>
+                <Ban className="h-3 w-3" />
+                Blocked: {activation.blocked}
+              </span>
+            </div>
+
+            {/* Top Active Operation */}
+            {activation.top_active && (
+              <div className="rounded-lg border border-severity-success/20 bg-severity-success/[0.03] px-3 py-2.5 space-y-1">
+                <p className="text-[10px] font-semibold text-fg-disabled uppercase tracking-wide">Top Active Operation</p>
+                <p className="text-[13px] font-semibold text-fg-primary leading-snug">
+                  {activation.top_active.operation_title}
+                </p>
+                <p className="text-[12px] text-fg-secondary leading-relaxed">
+                  {activation.top_active.activation_reason}
+                </p>
+                <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-fg-muted">
+                  <span>Mode: <span className="text-fg-secondary font-medium">{activation.top_active.founder_mode}</span></span>
+                  <span className={`font-medium ${
+                    activation.top_active.activation_status === 'activated' || activation.top_active.activation_status === 'executing'
+                      ? 'text-severity-success'
+                      : activation.top_active.activation_status === 'pending'
+                      ? 'text-severity-warn'
+                      : 'text-severity-critical'
+                  }`}>
+                    {activation.top_active.activation_status.charAt(0).toUpperCase() + activation.top_active.activation_status.slice(1)}
+                  </span>
+                  <span className="text-fg-disabled tabular-nums">Priority {activation.top_active.priority_score}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )
+      })()}
+
       {/* ── Count cards ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <CountCard
