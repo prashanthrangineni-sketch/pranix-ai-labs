@@ -157,7 +157,12 @@ export default async function FounderPermissionsPage() {
           <Empty>No operations queued. Approve a recommendation above to create one.</Empty>
         ) : (
           activeOps.map((op: Operation) => (
-            <OpCard key={op.operation_id} op={op} schedule={scheduleMap.get(op.operation_id)} />
+            <OpCard
+              key={op.operation_id}
+              op={op}
+              schedule={scheduleMap.get(op.operation_id)}
+              governance={govMap.get(op.operation_id)}
+            />
           ))
         )}
       </section>
