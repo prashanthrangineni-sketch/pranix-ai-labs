@@ -80,14 +80,11 @@ export async function POST(req: Request) {
   } catch { /* ignore */ }
   const q = message.toLowerCase().trim()
 
-  if (!q) {
-    return NextResponse.json({ reply: helpReply() })
-  }
+  if (!q) return NextResponse.json({ reply: helpReply() })
 
   try {
-    // 1) Sensitive actions → Permission Center (no bypass)
+    // ─── GATE: sensitive write actions → Permission Center only (never LLM) ───
     if (ACTION_RE.test(q)) {
-      // Read-only accounts (e.g. QA) cannot route actions — routeToPermissionCenter writes a grant request.
       const w = await requireWritableFounder()
       if (w instanceof NextResponse) {
         return NextResponse.json({
@@ -98,60 +95,150 @@ export async function POST(req: Request) {
       return NextResponse.json({ reply })
     }
 
-    // 2) Open a console
-    if (has(q, 'open', 'launch', 'go to', 'console', 'dashboard')) {
-      const hit = CONSOLES.find(c => c.keys.some(k => q.includes(k)))
-      if (hit) {
-        return NextResponse.json({
-          reply: {
-            kind: 'console', title: hit.label.replace('Open ', '') + ' console',
-            lines: ['Opens in a new tab. You stay signed in here.'],
-            link: hit.url, link_label: hit.label,
-          } as Reply,
-        })
-      }
+    // ─── GATE: open a console → instant link, no LLM needed ───
+    if (has(q, 'open', 'launch', 'go to') && CONSOLES.some(c => c.keys.some(k => q.includes(k)))) {
+      const hit = CONSOLES.find(c => c.keys.some(k => q.includes(k)))!
+      return NextResponse.json({
+        reply: {
+          kind: 'console', title: hit.label.replace('Open ', '') + ' console',
+          lines: ['Opens in a new tab. You stay signed in here.'],
+          link: hit.url, link_label: hit.label,
+        } as Reply,
+      })
     }
 
-    // 3) Product review
+    // ─── CONTEXT COLLECTION — keyword branches enrich, never terminate ───
+    const contextLines: string[] = []
+
+    // Detected product entity → attach metadata as context
     const prod = PRODUCTS.find(p => q.includes(p))
-    if (prod && has(q, 'review', 'how is', 'status', 'check', 'health')) {
-      return NextResponse.json({ reply: await productReply(prod) })
+    if (prod) {
+      try {
+        const productData = await getProductHealth()
+        const norm = prod.replace(/\s+/g, '')
+        const match = productData.find(p => p.project_name.toLowerCase().replace(/\s+/g, '').includes(norm))
+        if (match) {
+          contextLines.push(`Product context for ${match.project_name}:`)
+          contextLines.push(`  Type: ${match.product_type}`)
+          contextLines.push(`  Plan tier: ${match.account_tier}`)
+          contextLines.push(`  Deployment: ${match.deployment_health || 'unknown'}`)
+          if (match.url) contextLines.push(`  URL: ${match.url}`)
+        }
+      } catch { /* non-blocking */ }
     }
 
-    // 4) Failures
+    // Failure context
     if (has(q, 'fail', 'broke', 'broken', 'error', 'dead', 'went wrong')) {
-      return NextResponse.json({ reply: await failuresReply() })
-    }
-    // 5) Approvals / permissions
-    if (has(q, 'approv', 'permission', 'pending', 'grant', 'request', 'waiting')) {
-      return NextResponse.json({ reply: await approvalsReply() })
-    }
-    // 6) Provider / inference health
-    if (has(q, 'provider', 'inference', 'model', 'groq', 'anthropic', 'gemini', 'openrouter')) {
-      return NextResponse.json({ reply: await providersReply() })
-    }
-    // 7) Alerts
-    if (has(q, 'alert', 'critical', 'warning', 'incident')) {
-      return NextResponse.json({ reply: await alertsReply() })
-    }
-    // 8) Agents / workers
-    if (has(q, 'agent', 'worker', 'orchestrat')) {
-      return NextResponse.json({ reply: await agentsReply() })
-    }
-    // 9) Deployments
-    if (has(q, 'deploy', 'build', 'production', 'live site')) {
-      return NextResponse.json({ reply: await deploymentsReply() })
-    }
-    // 10) Memory search
-    if (has(q, 'memory', 'remember', 'recall', 'note', 'what did')) {
-      return NextResponse.json({ reply: await memoryReply(q) })
+      try {
+        const counts = await getTaskCounts()
+        if (counts.dead > 0) contextLines.push(`System context: ${counts.dead} failed task(s) currently in dead queue.`)
+      } catch { /* non-blocking */ }
     }
 
-    return NextResponse.json({ reply: helpReply() })
-  } catch {
+    // Approval context
+    if (has(q, 'approv', 'permission', 'pending', 'grant', 'waiting')) {
+      try {
+        const { pending } = await getPermissionInbox(10)
+        if (pending.length > 0) contextLines.push(`System context: ${pending.length} approval request(s) pending.`)
+      } catch { /* non-blocking */ }
+    }
+
+    // Alert context
+    if (has(q, 'alert', 'critical', 'warning', 'incident')) {
+      try {
+        const counts = await getAlertCounts()
+        contextLines.push(`System context: ${counts.critical} critical alert(s), ${counts.error} error(s), ${counts.warn} warning(s).`)
+      } catch { /* non-blocking */ }
+    }
+
+    // ─── FORWARD TO AGENT ENGINE ────────────────────────────────────
+    // Build enriched prompt: original message + live context lines
+    const enrichedPrompt = contextLines.length > 0
+      ? `${message}\n\nLive system context:\n${contextLines.join('\n')}`
+      : message
+
+    let engineData: Record<string, unknown> = {}
+    try {
+      const engineRes = await fetch(`${ENGINE_URL}/api/ask`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: enrichedPrompt }),
+        // Vercel hobby timeout safety — engine has its own 60s limit
+        signal: AbortSignal.timeout(55_000),
+      })
+      if (engineRes.ok) {
+        engineData = await engineRes.json()
+      } else {
+        const errText = await engineRes.text().catch(() => engineRes.statusText)
+        console.error('[ask-adapter] engine error', engineRes.status, errText)
+      }
+    } catch (fetchErr) {
+      console.error('[ask-adapter] fetch failed', fetchErr)
+    }
+
+    // ─── BUILD REPLY FROM ENGINE RESPONSE ───────────────────────────
+    const answer = typeof engineData.answer === 'string' && engineData.answer.trim()
+      ? engineData.answer
+      : null
+
+    if (!answer) {
+      // Engine unreachable or returned empty — fall back to live-data summary
+      return NextResponse.json({ reply: await liveDataFallback(q) })
+    }
+
+    // Split answer into display lines (paragraph breaks → separate bubbles)
+    const answerLines = answer
+      .split(/\n{2,}/)
+      .map((l: string) => l.replace(/\n/g, ' ').trim())
+      .filter(Boolean)
+      .slice(0, 20)
+
+    const modelUsed = typeof engineData.model_used === 'string' ? engineData.model_used : ''
+    const taskId = typeof engineData.task_id === 'string' ? engineData.task_id : ''
+
+    const metaLines: string[] = []
+    if (modelUsed) metaLines.push(`🤖 ${modelUsed}`)
+    if (taskId) metaLines.push(`📍 Task ${taskId.slice(0, 8)}`)
+
+    const reply: Reply = {
+      kind: 'info',
+      title: typeof engineData.title === 'string' ? engineData.title : message.slice(0, 60),
+      lines: [...answerLines, ...(metaLines.length ? ['\u2014', ...metaLines] : [])],
+    }
+
+    return NextResponse.json({ reply })
+
+  } catch (err) {
+    console.error('[ask-adapter] unhandled', err)
     return NextResponse.json({
       reply: { kind: 'error', title: 'Something went wrong', lines: ['I could not read that just now. Please try again.'] } as Reply,
     })
+  }
+}
+
+// ─── Fallback: live data summary when engine is unreachable ────────────
+async function liveDataFallback(q: string): Promise<Reply> {
+  try {
+    if (has(q, 'fail', 'broke', 'error')) return failuresReply()
+    if (has(q, 'approv', 'permission', 'pending')) return approvalsReply()
+    if (has(q, 'provider', 'model', 'inference')) return providersReply()
+    if (has(q, 'alert', 'critical', 'warning')) return alertsReply()
+    if (has(q, 'agent', 'worker')) return agentsReply()
+    if (has(q, 'deploy', 'build')) return deploymentsReply()
+    if (has(q, 'memory', 'remember')) return memoryReply(q)
+    const prod = PRODUCTS.find(p => q.includes(p))
+    if (prod) return productReply(prod)
+  } catch { /* non-blocking */ }
+  return {
+    kind: 'error',
+    title: 'AI engine unavailable',
+    lines: [
+      'The inference engine did not respond.',
+      'Your live system data is still accessible via the dashboard tabs.',
+      'Try again in a moment or check provider health.',
+    ],
+    link: '/founder/orchestrate',
+    link_label: 'Check providers',
   }
 }
 
