@@ -272,6 +272,32 @@ export function MissionControl() {
     } catch { /* non-fatal */ }
   }, [])
 
+  // P11 — Execution
+  const [execution, setExecution] = useState<{
+    queued:    ExecutionRecord[]
+    eligible:  ExecutionRecord[]
+    executing: ExecutionRecord[]
+    completed: ExecutionRecord[]
+    failed:    ExecutionRecord[]
+    blocked:   ExecutionRecord[]
+  }>({ queued: [], eligible: [], executing: [], completed: [], failed: [], blocked: [] })
+
+  const loadExecution = useCallback(async () => {
+    try {
+      const res = await fetch('/api/founder/execution', { cache: 'no-store' })
+      if (!res.ok) return
+      const j = await res.json()
+      setExecution({
+        queued:    j.queued    ?? [],
+        eligible:  j.eligible  ?? [],
+        executing: j.executing ?? [],
+        completed: j.completed ?? [],
+        failed:    j.failed    ?? [],
+        blocked:   j.blocked   ?? [],
+      })
+    } catch { /* non-fatal */ }
+  }, [])
+
   // P10 — Execution Authority
   const [authority, setAuthority] = useState<{
     pending:    AuthorityRecord[]
