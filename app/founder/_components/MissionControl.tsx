@@ -311,16 +311,16 @@ export function MissionControl() {
     finally { if (!silent) setLoading(false) }
   }, [])
 
-  useEffect(() => { load(); loadRecs(); loadOps(); loadSchedule(); loadGovernance() }, [load, loadRecs, loadOps, loadSchedule, loadGovernance])
-  // auto-refresh every 30s (overview) / 60s (recs + ops + schedule + governance)
+  useEffect(() => { load(); loadRecs(); loadOps(); loadSchedule(); loadGovernance(); loadModes() }, [load, loadRecs, loadOps, loadSchedule, loadGovernance, loadModes])
+  // auto-refresh every 30s (overview) / 60s (recs + ops + schedule + governance + modes)
   useEffect(() => {
     const t = setInterval(() => load(true), 30_000)
     return () => clearInterval(t)
   }, [load])
   useEffect(() => {
-    const t = setInterval(() => { loadRecs(); loadOps(); loadSchedule(); loadGovernance() }, 60_000)
+    const t = setInterval(() => { loadRecs(); loadOps(); loadSchedule(); loadGovernance(); loadModes() }, 60_000)
     return () => clearInterval(t)
-  }, [loadRecs, loadOps, loadSchedule, loadGovernance])
+  }, [loadRecs, loadOps, loadSchedule, loadGovernance, loadModes])
 
   if (loading) {
     return (
