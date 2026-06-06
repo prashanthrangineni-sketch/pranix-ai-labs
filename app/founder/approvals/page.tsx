@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { ShieldCheck, Bot, User, Clock, History as HistoryIcon, AlertTriangle, BrainCircuit, LayoutList,
-         Inbox, FlameKindling, AlertCircle, Info, CheckCircle2, XCircle, ExternalLink } from 'lucide-react'
+         Inbox, FlameKindling, AlertCircle, Info, CheckCircle2, XCircle, ExternalLink, ListChecks,
+         PlayCircle, CheckSquare, AlertOctagon, Ban } from 'lucide-react'
 import { getPermissionInbox, type PermissionRequest } from '@/lib/permissions'
 import { DecisionControls } from './decision-controls'
 import { getAgentTaskInbox } from './agent-task-actions'
@@ -8,6 +9,7 @@ import { AgentTaskControls } from './agent-task-controls'
 import { ViewReplayButton } from './view-replay-button'
 import type { PersistedTask } from '../ask/ask-chat'
 import type { Recommendation, RiskLevel } from '@/app/api/founder/recommendations/route'
+import type { Operation, OpStatus } from '@/app/api/founder/operations/route'
 import { RecDecisionControls } from './rec-decision-controls'
 
 export const metadata: Metadata = { title: 'Permissions' }
