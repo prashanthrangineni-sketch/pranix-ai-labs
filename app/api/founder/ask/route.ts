@@ -22,6 +22,53 @@ export const dynamic = 'force-dynamic'
 // e.g. https://pranix-agent-engine.vercel.app
 const ENGINE_URL = process.env.PRANIX_AGENT_ENGINE_URL ?? 'https://pranix-agent-engine.vercel.app'
 
+// ─── Agent Mode types (exported so UI can import without duplication) ───
+export type ExecutionMode = 'chat' | 'plan' | 'approval_required' | 'executing' | 'completed'
+
+export type PlanStep = {
+  step_number: number
+  title:       string
+  description: string
+  tool?:       string
+  status:      'planned' | 'approved' | 'executing' | 'completed' | 'failed'
+}
+
+// ─── Domain-templated plan synthesiser (runs when engine returns no structured plan) ───
+function generateFallbackPlan(goal: string): PlanStep[] {
+  const g = goal.toLowerCase()
+  if (has(g, 'cart2save') && has(g, 'affiliat')) return [
+    { step_number: 1, title: 'Audit current affiliate config',    description: 'Read affiliate settings and last-run logs from Supabase.',               status: 'planned' },
+    { step_number: 2, title: 'Identify broken automation steps',  description: 'Check worker task history for affiliate-related failures.',              status: 'planned' },
+    { step_number: 3, title: 'Verify API credentials',            description: 'Confirm affiliate API keys are present in Doppler config.',             status: 'planned' },
+    { step_number: 4, title: 'Review pending approval requests',  description: 'Check if any affiliate actions are blocked in Permission Center.',      status: 'planned' },
+    { step_number: 5, title: 'Generate fix report',               description: 'Summarise findings and recommended actions for founder review.',         status: 'planned' },
+  ]
+  if ((has(g, 'schoolos') || has(g, 'school os')) && has(g, 'admiss')) return [
+    { step_number: 1, title: 'Read admissions schema',        description: 'Inspect relevant Supabase tables for current admissions data.',      status: 'planned' },
+    { step_number: 2, title: 'Check intake pipeline status',  description: 'Review task queue for admissions-related workers.',                  status: 'planned' },
+    { step_number: 3, title: 'Identify blockers',             description: 'Find failed or stalled tasks in the admissions flow.',                status: 'planned' },
+    { step_number: 4, title: 'Summarise current state',       description: 'Report total applications, pending reviews, and errors.',            status: 'planned' },
+  ]
+  if (has(g, 'deploy', 'launch', 'release')) return [
+    { step_number: 1, title: 'Check deployment health',       description: 'Read current Vercel deployment status for all products.',           status: 'planned' },
+    { step_number: 2, title: 'Review recent build logs',      description: 'Identify any build failures or warnings.',                           status: 'planned' },
+    { step_number: 3, title: 'Verify environment variables',  description: 'Check Doppler config drift between dev and prod.',                  status: 'planned' },
+    { step_number: 4, title: 'Confirm approval gate',         description: 'Route deploy action to Permission Center for founder sign-off.',    status: 'planned' },
+  ]
+  if (has(g, 'fix', 'debug', 'broke', 'error', 'fail')) return [
+    { step_number: 1, title: 'Gather failure evidence',   description: 'Read task failure counts and patterns from the control plane.',          status: 'planned' },
+    { step_number: 2, title: 'Read recent error logs',    description: 'Pull runtime logs from Vercel for affected services.',                   status: 'planned' },
+    { step_number: 3, title: 'Check database integrity',  description: 'Run read-only diagnostic queries against affected Supabase tables.',    status: 'planned' },
+    { step_number: 4, title: 'Produce incident summary',  description: 'Write structured finding to execution memory for founder review.',       status: 'planned' },
+  ]
+  return [
+    { step_number: 1, title: 'Gather context',          description: `Read live system data relevant to: ${goal.slice(0, 80)}`,   status: 'planned' },
+    { step_number: 2, title: 'Analyse findings',        description: 'Identify blockers, errors, and required actions.',           status: 'planned' },
+    { step_number: 3, title: 'Produce action list',     description: 'List required write actions for founder approval.',           status: 'planned' },
+    { step_number: 4, title: 'Await founder approval',  description: 'No changes will be made until the plan is approved.',        status: 'planned' },
+  ]
+}
+
 // ─── Reply shape the chat UI renders ─────────────────────────────
 type Reply = {
   kind: 'info' | 'approval_routed' | 'console' | 'help' | 'error'
