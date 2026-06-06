@@ -30,6 +30,29 @@ export type TimelineEvent = {
   timestamp: string
 }
 
+// ── Replay types (also exported for approvals page) ────────────────────────
+export type ReplayStep = {
+  step_id:        string
+  tool:           string
+  executed_at:    string
+  result_summary: string
+  raw_result:     unknown
+  evidence_hash:  string
+}
+
+export type IntegrityStatus = 'verified' | 'partial' | 'failed'
+
+export type ReplayData = {
+  task_id:      string
+  replay:       ReplayStep[]
+  verification: {
+    verified_steps:   number
+    total_steps:      number
+    integrity_status: IntegrityStatus
+  }
+  analysis?:    TaskAnalysis
+}
+
 export type FounderDecision =
   | 'approve_next_step'
   | 'investigate_further'
