@@ -12,6 +12,7 @@ import type { Recommendation, RiskLevel } from '@/app/api/founder/recommendation
 import type { Operation, OpStatus }       from '@/app/api/founder/operations/route'
 import type { ScheduleEntry }              from '@/app/api/founder/scheduler/route'
 import type { GovernanceEvaluation, Policy } from '@/app/api/founder/governance/route'
+import type { DispatchRecord }                from '@/app/api/founder/dispatch/route'
 import type { AuthorityRecord }               from '@/app/api/founder/authority/route'
 import type { ExecutionRecord }               from '@/app/api/founder/execution/route'
 import type { LearningRecord, LearningEngine } from '@/app/api/founder/learning/route'
