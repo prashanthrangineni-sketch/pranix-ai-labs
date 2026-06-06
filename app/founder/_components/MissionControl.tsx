@@ -274,6 +274,28 @@ export function MissionControl() {
     } catch { /* non-fatal */ }
   }, [])
 
+  // P13 — Autonomy
+  const [autonomy, setAutonomy] = useState<Pick<AutonomyEngine,
+    'status' | 'next_best_action' | 'blocking_reason' | 'ready_operations' | 'pending_approvals' | 'high_risk_operations' | 'learning_signals'
+  > | null>(null)
+
+  const loadAutonomy = useCallback(async () => {
+    try {
+      const res = await fetch('/api/founder/autonomy', { cache: 'no-store' })
+      if (!res.ok) return
+      const j = await res.json()
+      setAutonomy({
+        status:               j.status               ?? 'idle',
+        next_best_action:     j.next_best_action     ?? '',
+        blocking_reason:      j.blocking_reason      ?? '',
+        ready_operations:     j.ready_operations     ?? [],
+        pending_approvals:    j.pending_approvals    ?? [],
+        high_risk_operations: j.high_risk_operations ?? [],
+        learning_signals:     j.learning_signals     ?? [],
+      })
+    } catch { /* non-fatal */ }
+  }, [])
+
   // P12 — Learning
   const [learning, setLearning] = useState<Pick<LearningEngine,
     'learning_count' | 'success_patterns' | 'failure_patterns' | 'top_insights' | 'recommendation_quality'
