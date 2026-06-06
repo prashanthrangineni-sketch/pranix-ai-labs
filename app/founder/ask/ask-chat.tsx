@@ -3,24 +3,39 @@
 import { useRef, useState, useEffect, useCallback } from 'react'
 import {
   Send, Loader2, Sparkles, ShieldAlert, ArrowUpRight, ExternalLink, User,
-  PanelLeftOpen, Bot,
+  PanelLeftOpen, Bot, Info,
 } from 'lucide-react'
 import { WorkspaceSidebar } from './_components/WorkspaceSidebar'
 import { ModelSelector, useModelSelector, type ModelOption } from './_components/ModelSelector'
+import { EvidenceDrawer, type EvidenceMeta } from './_components/EvidenceDrawer'
 
-type Reply = {
+// ── Types ─────────────────────────────────────────────────────────────────────
+export type Reply = {
   kind: 'info' | 'approval_routed' | 'console' | 'help' | 'error'
   title: string
   lines: string[]
   link?: string
   link_label?: string
-  // Engine fields surfaced in the reply for display
-  model_used?: string
+  // ─ Model & Evidence fields attached by route.ts ─
+  model_used?:       string
+  confidence?:       number           // 0–1 float
+  task_id?:          string
+  workspace_id?:     string
+  gathered_at?:      string           // ISO timestamp
+  speculation_flag?: boolean
+  evidence_used?: {
+    github?:   { summary: string; files_checked?: number; commits_checked?: number }
+    supabase?: { summary: string; tables_queried?: number; rows_read?: number }
+    vercel?:   { summary: string; deployments_checked?: number }
+    memory?:   { count: number; summary?: string }
+    tasks?:    { count: number; summary?: string }
+  }
 }
 type Msg =
   | { role: 'founder'; text: string; model_label: string }
-  | { role: 'pranix'; reply: Reply }
+  | { role: 'pranix';  reply: Reply }
 
+// ── Constants ─────────────────────────────────────────────────────────────────
 const SUGGESTIONS = [
   'What failed today?',
   'Show pending approvals.',
@@ -31,20 +46,21 @@ const SUGGESTIONS = [
   'Review Cart2Save.',
   'Open Supabase.',
 ]
-
 const LS_WS_KEY = 'pranix_active_workspace'
 
+// ── AskChat ───────────────────────────────────────────────────────────────────
 export function AskChat() {
   const [messages, setMessages]               = useState<Msg[]>([])
   const [input, setInput]                     = useState('')
   const [sending, setSending]                 = useState(false)
   const [sidebarOpen, setSidebarOpen]         = useState(false)
   const [activeWorkspace, setActiveWorkspace] = useState<string | null>(null)
-  // Last model_used echoed by the engine (shown in header after first reply)
   const [lastModelUsed, setLastModelUsed]     = useState<string | null>(null)
+  // Evidence drawer state
+  const [evidenceOpen, setEvidenceOpen]       = useState(false)
+  const [evidenceMeta, setEvidenceMeta]       = useState<EvidenceMeta>({})
   const endRef = useRef<HTMLDivElement>(null)
 
-  // Model selector state
   const { selectedModel, setSelectedModel } = useModelSelector()
 
   // Restore workspace from localStorage
@@ -66,6 +82,19 @@ export function AskChat() {
     endRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, sending])
 
+  function openEvidence(reply: Reply) {
+    setEvidenceMeta({
+      model_used:       reply.model_used,
+      confidence:       reply.confidence,
+      task_id:          reply.task_id,
+      workspace_id:     reply.workspace_id,
+      gathered_at:      reply.gathered_at,
+      speculation_flag: reply.speculation_flag,
+      evidence_used:    reply.evidence_used,
+    })
+    setEvidenceOpen(true)
+  }
+
   async function send(text: string) {
     const msg = text.trim()
     if (!msg || sending) return
@@ -81,19 +110,17 @@ export function AskChat() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: msg,
-          workspace_id:     activeWorkspace ?? undefined,
-          // ── Model routing fields — survive the full ask → engine path ──
-          model:            selectedModel.engine_model_id,     // raw id forwarded to engine
-          model_display:    selectedModel.display_name,        // human label echoed in reply
-          provider:         selectedModel.provider,            // provider hint for engine routing
+          message:       msg,
+          workspace_id:  activeWorkspace ?? undefined,
+          model:         selectedModel.engine_model_id,
+          model_display: selectedModel.display_name,
+          provider:      selectedModel.provider,
         }),
       })
       const data = await res.json()
       const reply: Reply = data?.reply ?? {
         kind: 'error', title: 'No response', lines: ['Please try again.'],
       }
-      // Capture model_used from engine response for header display
       if (reply.model_used) setLastModelUsed(reply.model_used)
       setMessages((m) => [...m, { role: 'pranix', reply }])
     } catch {
@@ -119,12 +146,18 @@ export function AskChat() {
         onClose={() => setSidebarOpen(false)}
       />
 
+      {/* Evidence Drawer — portal-like, sits above everything */}
+      <EvidenceDrawer
+        open={evidenceOpen}
+        onClose={() => setEvidenceOpen(false)}
+        meta={evidenceMeta}
+      />
+
       {/* Chat column */}
       <div className="flex flex-1 flex-col overflow-hidden">
 
-        {/* ── Chat topbar — mobile workspace toggle + active model indicator ── */}
+        {/* Chat topbar */}
         <div className="flex items-center gap-2 border-b border-border-subtle bg-surface px-3 py-2">
-          {/* Mobile: open workspace drawer */}
           <button
             onClick={() => setSidebarOpen(true)}
             className="lg:hidden flex h-8 w-8 items-center justify-center rounded-md text-fg-muted hover:bg-elevated hover:text-fg-primary transition-colors"
@@ -132,20 +165,12 @@ export function AskChat() {
           >
             <PanelLeftOpen className="h-4 w-4" />
           </button>
-
-          {/* Active model display — shows engine-confirmed model after first reply */}
           <div className="flex flex-1 items-center gap-2 min-w-0">
             <Bot className="h-4 w-4 shrink-0 text-fg-muted" />
             <span className="truncate text-[12px] font-medium text-fg-muted">
               {lastModelUsed
-                ? <>
-                    <span className="text-fg-disabled">Using </span>
-                    <span className="text-accent">{lastModelUsed}</span>
-                  </>
-                : <>
-                    <span className="text-fg-disabled">Model: </span>
-                    <span className="text-fg-secondary">{selectedModel.display_name}</span>
-                  </>}
+                ? <><span className="text-fg-disabled">Using </span><span className="text-accent">{lastModelUsed}</span></>
+                : <><span className="text-fg-disabled">Model: </span><span className="text-fg-secondary">{selectedModel.display_name}</span></>}
             </span>
           </div>
         </div>
@@ -169,7 +194,6 @@ export function AskChat() {
               <div key={i} className="flex justify-end">
                 <div className="flex items-end gap-2">
                   <div className="flex flex-col items-end gap-0.5">
-                    {/* Model label on founder bubble */}
                     <span className="text-[10px] text-fg-disabled px-1">{m.model_label}</span>
                     <div className="max-w-[80%] rounded-2xl rounded-br-md bg-accent px-3.5 py-2 text-[14px] text-canvas">
                       {m.text}
@@ -181,7 +205,7 @@ export function AskChat() {
                 </div>
               </div>
             ) : (
-              <PranixBubble key={i} reply={m.reply} />
+              <PranixBubble key={i} reply={m.reply} onOpenEvidence={() => openEvidence(m.reply)} />
             )
           )}
 
@@ -197,11 +221,8 @@ export function AskChat() {
           {empty && (
             <div className="grid grid-cols-1 gap-2 pt-4 sm:grid-cols-2">
               {SUGGESTIONS.map((s) => (
-                <button
-                  key={s}
-                  onClick={() => send(s)}
-                  className="rounded-xl border border-border-subtle bg-surface px-3.5 py-2.5 text-left text-[13px] text-fg-secondary transition-colors hover:border-accent/40 hover:bg-elevated"
-                >
+                <button key={s} onClick={() => send(s)}
+                  className="rounded-xl border border-border-subtle bg-surface px-3.5 py-2.5 text-left text-[13px] text-fg-secondary transition-colors hover:border-accent/40 hover:bg-elevated">
                   {s}
                 </button>
               ))}
@@ -211,37 +232,30 @@ export function AskChat() {
           <div ref={endRef} />
         </div>
 
-        {/* ── Composer ── */}
+        {/* Composer */}
         <div className="border-t border-border-subtle bg-surface px-3 py-3 safe-bottom">
-          {/* Model selector row — sits above textarea */}
           <div className="mb-2 flex items-center gap-2">
             <span className="text-[11px] text-fg-disabled">Model</span>
             <ModelSelector
               selectedModel={selectedModel}
               onSelect={(m: ModelOption) => {
                 setSelectedModel(m)
-                setLastModelUsed(null) // clear confirmed label on manual change
+                setLastModelUsed(null)
               }}
             />
           </div>
-
           <div className="flex items-end gap-2 rounded-2xl border border-border-subtle bg-canvas px-3 py-2 focus-within:border-accent/50">
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input) }
-              }}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input) } }}
               rows={1}
               placeholder="Ask Pranix anything…"
               className="max-h-32 flex-1 resize-none bg-transparent text-[14px] text-fg-primary placeholder:text-fg-disabled focus:outline-none"
             />
-            <button
-              onClick={() => send(input)}
-              disabled={sending || !input.trim()}
+            <button onClick={() => send(input)} disabled={sending || !input.trim()}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent text-canvas transition-opacity disabled:opacity-40"
-              aria-label="Send"
-            >
+              aria-label="Send">
               {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             </button>
           </div>
@@ -254,10 +268,11 @@ export function AskChat() {
   )
 }
 
-function PranixBubble({ reply }: { reply: Reply }) {
+// ── PranixBubble ────────────────────────────────────────────────────────────────
+function PranixBubble({ reply, onOpenEvidence }: { reply: Reply; onOpenEvidence: () => void }) {
   const accent =
     reply.kind === 'approval_routed' ? 'border-severity-warn/30 bg-severity-warn/[0.04]'
-    : reply.kind === 'error' ? 'border-severity-critical/30 bg-severity-critical/[0.04]'
+    : reply.kind === 'error'         ? 'border-severity-critical/30 bg-severity-critical/[0.04]'
     : 'border-border-subtle bg-surface'
   const isExternal = reply.link?.startsWith('http')
 
@@ -266,8 +281,9 @@ function PranixBubble({ reply }: { reply: Reply }) {
       <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent-subtle">
         {reply.kind === 'approval_routed'
           ? <ShieldAlert className="h-3.5 w-3.5 text-severity-warn" />
-          : <Sparkles className="h-3.5 w-3.5 text-accent" />}
+          : <Sparkles    className="h-3.5 w-3.5 text-accent" />}
       </span>
+
       <div className={`max-w-[85%] space-y-2 rounded-2xl rounded-tl-md border px-3.5 py-2.5 ${accent}`}>
         <p className="text-[14px] font-semibold text-fg-primary">{reply.title}</p>
         <div className="space-y-0.5">
@@ -275,20 +291,29 @@ function PranixBubble({ reply }: { reply: Reply }) {
             <p key={i} className="text-[13px] leading-relaxed text-fg-secondary">{l}</p>
           ))}
         </div>
-        {/* model_used badge — shown when engine confirms which model answered */}
-        {reply.model_used && (
-          <p className="text-[11px] text-fg-disabled">
-            <span className="inline-flex items-center gap-1">
+
+        {/* model_used + Why? button row */}
+        <div className="flex items-center justify-between gap-2 pt-0.5">
+          {reply.model_used && (
+            <span className="inline-flex items-center gap-1 text-[11px] text-fg-disabled">
               <Bot className="h-3 w-3" /> {reply.model_used}
             </span>
-          </p>
-        )}
-        {reply.link && reply.link_label && (
-          <a
-            href={reply.link}
-            {...(isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-            className="inline-flex items-center gap-1 rounded-lg border border-border-subtle bg-canvas px-2.5 py-1.5 text-[12px] font-medium text-accent hover:bg-elevated"
+          )}
+          {/* Why? button — always visible on every Pranix answer */}
+          <button
+            onClick={onOpenEvidence}
+            className="ml-auto inline-flex items-center gap-1 rounded-full border border-border-subtle bg-canvas px-2.5 py-1 text-[11px] font-medium text-fg-muted hover:border-accent/40 hover:bg-elevated hover:text-accent transition-colors"
+            aria-label="Why did Pranix answer this?"
           >
+            <Info className="h-3 w-3" />
+            Why did Pranix answer this?
+          </button>
+        </div>
+
+        {reply.link && reply.link_label && (
+          <a href={reply.link}
+            {...(isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+            className="inline-flex items-center gap-1 rounded-lg border border-border-subtle bg-canvas px-2.5 py-1.5 text-[12px] font-medium text-accent hover:bg-elevated">
             {reply.link_label}
             {isExternal ? <ExternalLink className="h-3 w-3" /> : <ArrowUpRight className="h-3 w-3" />}
           </a>
