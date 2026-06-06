@@ -322,6 +322,7 @@ export async function POST(req: Request) {
       // Agent Mode fields
       execution_mode,
       plan,
+      task_id: agentMode ? agentTaskId : taskId,
     }
 
     return NextResponse.json({ reply })
