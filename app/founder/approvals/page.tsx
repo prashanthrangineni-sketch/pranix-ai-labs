@@ -663,6 +663,43 @@ export default async function FounderPermissionsPage() {
         </section>
       )}
 
+      {/* ── S2: State Review ── */}
+      {stateHealthData.records.length > 0 && (
+        <section id="state" className="space-y-3 scroll-mt-4">
+          <div className="flex items-center gap-2">
+            <AlertOctagon className="h-4 w-4 text-accent" />
+            <h2 className="text-[13px] font-semibold text-fg-secondary">State Health Review</h2>
+            <span className="rounded-full bg-elevated px-2 py-0.5 text-[11px] font-medium text-fg-muted">
+              {stateHealthData.summary.healthy} healthy
+              &nbsp;&middot;&nbsp;
+              {stateHealthData.summary.warning} warning
+              &nbsp;&middot;&nbsp;
+              {stateHealthData.summary.critical > 0
+                ? <span className="text-severity-critical font-semibold">{stateHealthData.summary.critical} critical</span>
+                : '0 critical'
+              }
+              &nbsp;&middot;&nbsp;
+              {stateHealthData.summary.expired} expired
+            </span>
+          </div>
+
+          {/* Summary pill row */}
+          <div className="flex flex-wrap gap-2">
+            <StatHealthPill count={stateHealthData.summary.healthy}  label="Healthy"  variant="healthy"  />
+            <StatHealthPill count={stateHealthData.summary.warning}  label="Warning"  variant="warning"  />
+            <StatHealthPill count={stateHealthData.summary.critical} label="Critical" variant="critical" />
+            <StatHealthPill count={stateHealthData.summary.expired}  label="Expired"  variant="expired"  />
+          </div>
+
+          {/* Per-record rows — sorted: critical → warning → healthy → expired */}
+          <div className="divide-y divide-border-subtle rounded-xl border border-border-subtle bg-surface overflow-hidden">
+            {stateHealthData.records.map((rec: StateRecord) => (
+              <StateRecordRow key={rec.key} rec={rec} />
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* ── P13: Autonomy Review ── */}
       {autonomyData && (
         <section id="autonomy" className="space-y-3 scroll-mt-4">
