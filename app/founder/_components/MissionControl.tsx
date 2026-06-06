@@ -609,6 +609,76 @@ export function MissionControl() {
         )
       })()}
 
+      {/* ── P10: Execution Authority panel ── */}
+      {(() => {
+        const total = authority.pending.length + authority.authorized.length +
+                      authority.blocked.length + authority.expired.length + authority.revoked.length
+        if (total === 0) return null
+        return (
+          <div className="rounded-xl border border-border-subtle bg-surface px-4 py-3 space-y-3">
+            {/* Header */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Key className="h-3.5 w-3.5 text-accent shrink-0" />
+                <span className="text-[11px] font-semibold text-fg-primary uppercase tracking-wide">Execution Authority</span>
+              </div>
+              <Link href="/founder/approvals#authority" className="text-[10px] text-accent hover:underline">
+                Review
+              </Link>
+            </div>
+
+            {/* Status counters — 4 pills */}
+            <div className="flex flex-wrap gap-2">
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                authority.authorized.length > 0 ? 'bg-severity-success/10 text-severity-success' : 'bg-elevated text-fg-muted'
+              }`}>
+                <CheckCircle2 className="h-3 w-3" />
+                Authorized: {authority.authorized.length}
+              </span>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                authority.pending.length > 0 ? 'bg-severity-warn/10 text-severity-warn' : 'bg-elevated text-fg-muted'
+              }`}>
+                <Clock className="h-3 w-3" />
+                Pending Approval: {authority.pending.length}
+              </span>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                authority.blocked.length > 0 ? 'bg-severity-critical/10 text-severity-critical' : 'bg-elevated text-fg-muted'
+              }`}>
+                <Ban className="h-3 w-3" />
+                Blocked: {authority.blocked.length}
+              </span>
+              {(authority.expired.length > 0 || authority.revoked.length > 0) && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-elevated px-2.5 py-1 text-[11px] font-medium text-fg-disabled">
+                  <Clock className="h-3 w-3" />
+                  Expired / Revoked: {authority.expired.length + authority.revoked.length}
+                </span>
+              )}
+            </div>
+
+            {/* Top pending item (if any) */}
+            {authority.pending.length > 0 && (
+              <div className="rounded-lg border border-severity-warn/20 bg-severity-warn/[0.03] px-3 py-2">
+                <p className="text-[10px] font-semibold text-fg-disabled uppercase tracking-wide mb-0.5">Awaiting Approval</p>
+                <p className="text-[12px] font-medium text-fg-primary">{authority.pending[0].operation_title}</p>
+                <p className="text-[11px] text-fg-secondary mt-0.5">{authority.pending[0].reason}</p>
+                {authority.pending.length > 1 && (
+                  <p className="text-[10px] text-fg-disabled mt-1">+{authority.pending.length - 1} more pending</p>
+                )}
+              </div>
+            )}
+
+            {/* Top blocked item (if any) */}
+            {authority.blocked.length > 0 && (
+              <div className="rounded-lg border border-severity-critical/15 bg-severity-critical/[0.03] px-3 py-2">
+                <p className="text-[10px] font-semibold text-fg-disabled uppercase tracking-wide mb-0.5">Blocked</p>
+                <p className="text-[12px] font-medium text-fg-primary">{authority.blocked[0].operation_title}</p>
+                <p className="text-[11px] text-fg-secondary mt-0.5">{authority.blocked[0].reason}</p>
+              </div>
+            )}
+          </div>
+        )
+      })()}
+
       {/* ── Count cards ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <CountCard
