@@ -4,7 +4,7 @@ import { useRef, useState, useEffect, useCallback } from 'react'
 import {
   Send, Loader2, Sparkles, ShieldAlert, ArrowUpRight, ExternalLink, User,
   PanelLeftOpen, Bot, Info, Zap, MessageSquare, CheckCircle2, Circle,
-  Clock, AlertCircle, ChevronRight, PlayCircle,
+  Clock, AlertCircle, ChevronRight, PlayCircle, History, RotateCcw,
 } from 'lucide-react'
 import { WorkspaceSidebar } from './_components/WorkspaceSidebar'
 import { ModelSelector, useModelSelector, type ModelOption } from './_components/ModelSelector'
@@ -21,13 +21,31 @@ export type PlanStep = {
   status:      'planned' | 'approved' | 'executing' | 'completed' | 'failed'
 }
 
+export type TimelineEvent = {
+  id:        string
+  kind:      'planned' | 'approved' | 'executing' | 'completed' | 'failed'
+  label:     string
+  timestamp: string
+}
+
+export type PersistedTask = {
+  task_id:        string
+  workspace_id:   string | null
+  goal:           string
+  execution_mode: ExecutionMode
+  status:         'planned' | 'approved' | 'executing' | 'completed' | 'failed'
+  plan:           PlanStep[]
+  timeline:       TimelineEvent[]
+  updated_at:     string
+  persisted_at?:  string
+}
+
 export type Reply = {
   kind: 'info' | 'approval_routed' | 'console' | 'help' | 'error'
   title: string
   lines: string[]
   link?: string
   link_label?: string
-  // ─ Model & Evidence fields ─
   model_used?:       string
   confidence?:       number
   task_id?:          string
@@ -41,7 +59,6 @@ export type Reply = {
     memory?:   { count: number; summary?: string }
     tasks?:    { count: number; summary?: string }
   }
-  // ─ Agent Mode fields ─
   execution_mode?: ExecutionMode
   plan?:           PlanStep[]
 }
@@ -49,14 +66,6 @@ export type Reply = {
 type Msg =
   | { role: 'founder'; text: string; model_label: string; agent_mode: boolean }
   | { role: 'pranix';  reply: Reply }
-
-// ── Timeline event shape (client-only, no DB) ─────────────────────────────────
-type TimelineEvent = {
-  id:        string
-  kind:      'planned' | 'approved' | 'executing' | 'completed' | 'failed'
-  label:     string
-  timestamp: string
-}
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const SUGGESTIONS = [
@@ -77,7 +86,40 @@ const AGENT_SUGGESTIONS = [
 ]
 const LS_WS_KEY = 'pranix_active_workspace'
 
-// ── AskChat ───────────────────────────────────────────────────────────────────
+// ── useTimeline ─────────────────────────────────────────────────────────────────
+function useTimeline(workspaceId: string | null) {
+  const [recentTasks, setRecentTasks] = useState<PersistedTask[]>([])
+  const [loaded, setLoaded]           = useState(false)
+
+  useEffect(() => {
+    setLoaded(false)
+    setRecentTasks([])
+    const params = new URLSearchParams()
+    if (workspaceId) params.set('workspace_id', workspaceId)
+    params.set('limit', '10')
+    fetch(`/api/founder/timeline?${params}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.tasks) setRecentTasks(data.tasks as PersistedTask[]) })
+      .catch(() => {})
+      .finally(() => setLoaded(true))
+  }, [workspaceId])
+
+  const persistTask = useCallback((snapshot: Omit<PersistedTask, 'persisted_at'>) => {
+    fetch('/api/founder/timeline', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(snapshot),
+    }).catch(() => {})
+    setRecentTasks(prev => [
+      snapshot as PersistedTask,
+      ...prev.filter(t => t.task_id !== snapshot.task_id),
+    ].slice(0, 10))
+  }, [])
+
+  return { recentTasks, loaded, persistTask }
+}
+
+// ── AskChat ─────────────────────────────────────────────────────────────────
 export function AskChat() {
   const [messages, setMessages]               = useState<Msg[]>([])
   const [input, setInput]                     = useState('')
@@ -86,12 +128,12 @@ export function AskChat() {
   const [activeWorkspace, setActiveWorkspace] = useState<string | null>(null)
   const [lastModelUsed, setLastModelUsed]     = useState<string | null>(null)
   const [agentMode, setAgentMode]             = useState(false)
-  // Evidence drawer state
   const [evidenceOpen, setEvidenceOpen]       = useState(false)
   const [evidenceMeta, setEvidenceMeta]       = useState<EvidenceMeta>({})
   const endRef = useRef<HTMLDivElement>(null)
 
   const { selectedModel, setSelectedModel } = useModelSelector()
+  const { recentTasks, loaded, persistTask } = useTimeline(activeWorkspace)
 
   useEffect(() => {
     try {
@@ -122,6 +164,25 @@ export function AskChat() {
       evidence_used:    reply.evidence_used,
     })
     setEvidenceOpen(true)
+  }
+
+  // Restore a persisted task into the conversation
+  function restoreTask(task: PersistedTask) {
+    setAgentMode(true)
+    setMessages([
+      { role: 'founder', text: task.goal, model_label: 'Restored', agent_mode: true },
+      {
+        role: 'pranix',
+        reply: {
+          kind:           'info',
+          title:          task.goal,
+          lines:          [],
+          execution_mode: task.execution_mode,
+          plan:           task.plan,
+          task_id:        task.task_id,
+        },
+      },
+    ])
   }
 
   async function send(text: string) {
@@ -170,7 +231,6 @@ export function AskChat() {
   return (
     <div className="flex h-[calc(100dvh-7rem)] w-full overflow-hidden lg:h-[calc(100dvh-3.5rem)]">
 
-      {/* Workspace sidebar */}
       <WorkspaceSidebar
         activeId={activeWorkspace}
         onSelect={handleSelectWorkspace}
@@ -178,14 +238,12 @@ export function AskChat() {
         onClose={() => setSidebarOpen(false)}
       />
 
-      {/* Evidence Drawer */}
       <EvidenceDrawer
         open={evidenceOpen}
         onClose={() => setEvidenceOpen(false)}
         meta={evidenceMeta}
       />
 
-      {/* Chat column */}
       <div className="flex flex-1 flex-col overflow-hidden">
 
         {/* Topbar */}
@@ -198,7 +256,6 @@ export function AskChat() {
             <PanelLeftOpen className="h-4 w-4" />
           </button>
 
-          {/* Model label */}
           <div className="flex flex-1 items-center gap-2 min-w-0">
             <Bot className="h-4 w-4 shrink-0 text-fg-muted" />
             <span className="truncate text-[12px] font-medium text-fg-muted">
@@ -208,14 +265,11 @@ export function AskChat() {
             </span>
           </div>
 
-          {/* ── Mode Toggle ── */}
           <div className="flex items-center rounded-lg border border-border-subtle bg-canvas p-0.5">
             <button
               onClick={() => setAgentMode(false)}
               className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors ${
-                !agentMode
-                  ? 'bg-accent text-canvas shadow-sm'
-                  : 'text-fg-muted hover:text-fg-primary'
+                !agentMode ? 'bg-accent text-canvas shadow-sm' : 'text-fg-muted hover:text-fg-primary'
               }`}
               aria-pressed={!agentMode}
             >
@@ -225,9 +279,7 @@ export function AskChat() {
             <button
               onClick={() => setAgentMode(true)}
               className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors ${
-                agentMode
-                  ? 'bg-accent text-canvas shadow-sm'
-                  : 'text-fg-muted hover:text-fg-primary'
+                agentMode ? 'bg-accent text-canvas shadow-sm' : 'text-fg-muted hover:text-fg-primary'
               }`}
               aria-pressed={agentMode}
             >
@@ -242,9 +294,7 @@ export function AskChat() {
           {empty && (
             <div className="flex flex-col items-center justify-center pt-10 text-center">
               <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent-subtle">
-                {agentMode
-                  ? <Zap className="h-6 w-6 text-accent" />
-                  : <Sparkles className="h-6 w-6 text-accent" />}
+                {agentMode ? <Zap className="h-6 w-6 text-accent" /> : <Sparkles className="h-6 w-6 text-accent" />}
               </span>
               <h1 className="mt-3 text-lg font-semibold text-fg-primary">
                 {agentMode ? 'Agent Mode' : 'Ask Pranix'}
@@ -255,6 +305,11 @@ export function AskChat() {
                   : 'Ask about your system in plain words. I read your live data and route anything risky to your Permission Center first.'}
               </p>
             </div>
+          )}
+
+          {/* Recent Tasks panel — shown only on empty state after data loads */}
+          {empty && loaded && recentTasks.length > 0 && (
+            <RecentTasksPanel tasks={recentTasks} onRestore={restoreTask} />
           )}
 
           {messages.map((m, i) =>
@@ -276,16 +331,20 @@ export function AskChat() {
                 </div>
               </div>
             ) : (
-              <PranixBubble key={i} reply={m.reply} onOpenEvidence={() => openEvidence(m.reply)} />
+              <PranixBubble
+                key={i}
+                reply={m.reply}
+                workspaceId={activeWorkspace}
+                onOpenEvidence={() => openEvidence(m.reply)}
+                persistTask={persistTask}
+              />
             )
           )}
 
           {sending && (
             <div className="flex items-center gap-2 text-[13px] text-fg-muted">
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent-subtle">
-                {agentMode
-                  ? <Zap className="h-3.5 w-3.5 text-accent" />
-                  : <Sparkles className="h-3.5 w-3.5 text-accent" />}
+                {agentMode ? <Zap className="h-3.5 w-3.5 text-accent" /> : <Sparkles className="h-3.5 w-3.5 text-accent" />}
               </span>
               <Loader2 className="h-4 w-4 animate-spin" />
               {agentMode ? 'Planning…' : 'Thinking…'}
@@ -312,10 +371,7 @@ export function AskChat() {
             <span className="text-[11px] text-fg-disabled">Model</span>
             <ModelSelector
               selectedModel={selectedModel}
-              onSelect={(m: ModelOption) => {
-                setSelectedModel(m)
-                setLastModelUsed(null)
-              }}
+              onSelect={(m: ModelOption) => { setSelectedModel(m); setLastModelUsed(null) }}
             />
           </div>
           <div className="flex items-end gap-2 rounded-2xl border border-border-subtle bg-canvas px-3 py-2 focus-within:border-accent/50">
@@ -344,8 +400,68 @@ export function AskChat() {
   )
 }
 
+// ── RecentTasksPanel ──────────────────────────────────────────────────────────────
+function RecentTasksPanel({ tasks, onRestore }: { tasks: PersistedTask[]; onRestore: (t: PersistedTask) => void }) {
+  const statusColor: Record<string, string> = {
+    planned:   'text-fg-disabled',
+    approved:  'text-accent',
+    executing: 'text-accent',
+    completed: 'text-accent',
+    failed:    'text-severity-critical',
+  }
+  const statusDot: Record<string, string> = {
+    planned:   'bg-fg-disabled',
+    approved:  'bg-accent',
+    executing: 'bg-accent animate-pulse',
+    completed: 'bg-accent',
+    failed:    'bg-severity-critical',
+  }
+
+  return (
+    <div className="mx-auto w-full max-w-lg">
+      <div className="mb-2 flex items-center gap-1.5">
+        <History className="h-3.5 w-3.5 text-fg-muted" />
+        <span className="text-[12px] font-medium text-fg-muted">Recent agent tasks</span>
+      </div>
+      <div className="space-y-1.5">
+        {tasks.map(task => (
+          <button
+            key={task.task_id}
+            onClick={() => onRestore(task)}
+            className="group flex w-full items-start gap-3 rounded-xl border border-border-subtle bg-surface px-3 py-2.5 text-left transition-colors hover:border-accent/30 hover:bg-elevated"
+          >
+            <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${statusDot[task.status] ?? 'bg-fg-disabled'}`} />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[13px] font-medium text-fg-primary">{task.goal}</p>
+              <p className={`mt-0.5 text-[11px] ${statusColor[task.status] ?? 'text-fg-disabled'}`}>
+                {task.status} · {task.plan.length} step{task.plan.length === 1 ? '' : 's'}
+                {task.timeline.length > 0 && (
+                  <> · {task.timeline.length} event{task.timeline.length === 1 ? '' : 's'}</>
+                )}
+              </p>
+              {task.updated_at && (
+                <p className="text-[10px] text-fg-disabled">
+                  {new Date(task.updated_at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                </p>
+              )}
+            </div>
+            <RotateCcw className="h-3.5 w-3.5 shrink-0 text-fg-disabled opacity-0 transition-opacity group-hover:opacity-100" />
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ── PranixBubble ──────────────────────────────────────────────────────────────
-function PranixBubble({ reply, onOpenEvidence }: { reply: Reply; onOpenEvidence: () => void }) {
+function PranixBubble({
+  reply, workspaceId, onOpenEvidence, persistTask,
+}: {
+  reply: Reply
+  workspaceId: string | null
+  onOpenEvidence: () => void
+  persistTask: (s: Omit<PersistedTask, 'persisted_at'>) => void
+}) {
   const isPlan     = reply.execution_mode === 'plan' && Array.isArray(reply.plan) && reply.plan.length > 0
   const accent =
     reply.kind === 'approval_routed' ? 'border-severity-warn/30 bg-severity-warn/[0.04]'
@@ -367,7 +483,6 @@ function PranixBubble({ reply, onOpenEvidence }: { reply: Reply; onOpenEvidence:
       <div className={`w-full max-w-[92%] space-y-2 rounded-2xl rounded-tl-md border px-3.5 py-2.5 ${accent}`}>
         <p className="text-[14px] font-semibold text-fg-primary">{reply.title}</p>
 
-        {/* Chat mode: plain lines */}
         {!isPlan && (
           <div className="space-y-0.5">
             {reply.lines.map((l, i) => (
@@ -376,12 +491,25 @@ function PranixBubble({ reply, onOpenEvidence }: { reply: Reply; onOpenEvidence:
           </div>
         )}
 
-        {/* Agent Mode: plan view */}
-        {isPlan && reply.plan && (
-          <PlanView plan={reply.plan} goal={reply.title} />
+        {isPlan && reply.plan && reply.task_id && (
+          <PlanView
+            plan={reply.plan}
+            goal={reply.title}
+            taskId={reply.task_id}
+            workspaceId={workspaceId}
+            persistTask={persistTask}
+          />
+        )}
+        {isPlan && reply.plan && !reply.task_id && (
+          <PlanView
+            plan={reply.plan}
+            goal={reply.title}
+            taskId={crypto.randomUUID()}
+            workspaceId={workspaceId}
+            persistTask={persistTask}
+          />
         )}
 
-        {/* model_used + Why? */}
         <div className="flex items-center justify-between gap-2 pt-0.5">
           {reply.model_used && (
             <span className="inline-flex items-center gap-1 text-[11px] text-fg-disabled">
@@ -414,11 +542,19 @@ function PranixBubble({ reply, onOpenEvidence }: { reply: Reply; onOpenEvidence:
 // ── PlanView ──────────────────────────────────────────────────────────────────
 type ExecPhase = 'idle' | 'executing' | 'completed'
 
-function PlanView({ plan, goal }: { plan: PlanStep[]; goal: string }) {
-  const [phase, setPhase]         = useState<ExecPhase>('idle')
-  const [activeStep, setActive]   = useState(-1)
-  const [steps, setSteps]         = useState<PlanStep[]>(plan.map(s => ({ ...s, status: 'planned' })))
-  const [timeline, setTimeline]   = useState<TimelineEvent[]>([{
+function PlanView({
+  plan, goal, taskId, workspaceId, persistTask,
+}: {
+  plan:        PlanStep[]
+  goal:        string
+  taskId:      string
+  workspaceId: string | null
+  persistTask: (s: Omit<PersistedTask, 'persisted_at'>) => void
+}) {
+  const [phase, setPhase]       = useState<ExecPhase>('idle')
+  const [activeStep, setActive] = useState(-1)
+  const [steps, setSteps]       = useState<PlanStep[]>(plan.map(s => ({ ...s, status: 'planned' })))
+  const [timeline, setTimeline] = useState<TimelineEvent[]>([{
     id:        'plan-created',
     kind:      'planned',
     label:     `Plan created — ${plan.length} step${plan.length === 1 ? '' : 's'}`,
@@ -426,74 +562,98 @@ function PlanView({ plan, goal }: { plan: PlanStep[]; goal: string }) {
   }])
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Mark all steps approved then simulate read-only execution
+  // Persist current state (called after each meaningful state change)
+  const persist = useCallback((overridePhase?: ExecPhase, overrideSteps?: PlanStep[], overrideTimeline?: TimelineEvent[]) => {
+    const s  = overrideSteps    ?? steps
+    const t  = overrideTimeline ?? timeline
+    const ph = overridePhase    ?? phase
+    persistTask({
+      task_id:        taskId,
+      workspace_id:   workspaceId,
+      goal,
+      execution_mode: ph === 'completed' ? 'completed' : ph === 'executing' ? 'executing' : 'plan',
+      status:         ph === 'completed' ? 'completed' : ph === 'executing' ? 'executing' : 'planned',
+      plan:           s,
+      timeline:       t,
+      updated_at:     new Date().toISOString(),
+    })
+  }, [taskId, workspaceId, goal, phase, steps, timeline, persistTask])
+
+  // Persist on mount (initial plan-created event)
+  useEffect(() => { persist('idle', steps, timeline) }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   function approvePlan() {
-    setSteps(s => s.map(step => ({ ...step, status: 'approved' })))
-    setTimeline(t => [...t, {
+    const approvedSteps    = steps.map(step => ({ ...step, status: 'approved' as const }))
+    const approvedTimeline = [...timeline, {
       id:        'plan-approved',
-      kind:      'approved',
+      kind:      'approved' as const,
       label:     'Plan approved by founder',
       timestamp: new Date().toISOString(),
-    }])
+    }]
+    setSteps(approvedSteps)
+    setTimeline(approvedTimeline)
     setPhase('executing')
-    runStep(0)
+    persist('executing', approvedSteps, approvedTimeline)
+    runStep(0, approvedSteps, approvedTimeline)
   }
 
-  function runStep(idx: number) {
-    if (idx >= steps.length) {
-      setPhase('completed')
-      setTimeline(t => [...t, {
+  function runStep(idx: number, currentSteps: PlanStep[], currentTimeline: TimelineEvent[]) {
+    if (idx >= currentSteps.length) {
+      const finalTimeline = [...currentTimeline, {
         id:        'plan-completed',
-        kind:      'completed',
-        label:     `All ${steps.length} steps completed (read-only)`,
+        kind:      'completed' as const,
+        label:     `All ${currentSteps.length} steps completed (read-only)`,
         timestamp: new Date().toISOString(),
-      }])
+      }]
+      setPhase('completed')
+      setTimeline(finalTimeline)
+      persist('completed', currentSteps, finalTimeline)
       return
     }
     setActive(idx)
-    setSteps(s => s.map((step, i) =>
-      i === idx ? { ...step, status: 'executing' } : step
-    ))
-    setTimeline(t => [...t, {
+    const executingSteps = currentSteps.map((step, i) =>
+      i === idx ? { ...step, status: 'executing' as const } : step
+    )
+    const executingTimeline = [...currentTimeline, {
       id:        `step-${idx}-executing`,
-      kind:      'executing',
-      label:     `Step ${idx + 1}: ${steps[idx].title}`,
+      kind:      'executing' as const,
+      label:     `Step ${idx + 1}: ${currentSteps[idx].title}`,
       timestamp: new Date().toISOString(),
-    }])
-    // Simulate read-only execution delay (1.2 – 2s per step)
+    }]
+    setSteps(executingSteps)
+    setTimeline(executingTimeline)
+
     timerRef.current = setTimeout(() => {
-      setSteps(s => s.map((step, i) =>
-        i === idx ? { ...step, status: 'completed' } : step
-      ))
-      setTimeline(t => [...t, {
+      const doneSteps = executingSteps.map((step, i) =>
+        i === idx ? { ...step, status: 'completed' as const } : step
+      )
+      const doneTimeline = [...executingTimeline, {
         id:        `step-${idx}-done`,
-        kind:      'completed',
+        kind:      'completed' as const,
         label:     `Step ${idx + 1} completed`,
         timestamp: new Date().toISOString(),
-      }])
-      runStep(idx + 1)
+      }]
+      setSteps(doneSteps)
+      setTimeline(doneTimeline)
+      runStep(idx + 1, doneSteps, doneTimeline)
     }, 1200 + Math.random() * 800)
   }
 
-  // Cleanup on unmount
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
 
   return (
     <div className="space-y-3">
-      {/* Goal header */}
       <div className="flex items-center gap-1.5 text-[11px] text-fg-muted">
         <Zap className="h-3 w-3 text-accent" />
         <span>Agent plan for: <em className="text-fg-secondary not-italic">{goal.slice(0, 60)}</em></span>
       </div>
 
-      {/* Steps */}
       <div className="space-y-1.5">
         {steps.map((step, i) => (
           <StepRow key={step.step_number} step={step} active={i === activeStep && phase === 'executing'} />
         ))}
       </div>
 
-      {/* Approve / progress bar */}
       {phase === 'idle' && (
         <button
           onClick={approvePlan}
@@ -525,7 +685,6 @@ function PlanView({ plan, goal }: { plan: PlanStep[]; goal: string }) {
         </div>
       )}
 
-      {/* Timeline */}
       {timeline.length > 0 && (
         <details className="group" open={phase !== 'idle'}>
           <summary className="flex cursor-pointer list-none items-center gap-1 text-[11px] text-fg-disabled hover:text-fg-muted">
