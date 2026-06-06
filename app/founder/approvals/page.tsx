@@ -646,6 +646,125 @@ export default async function FounderPermissionsPage() {
         </section>
       )}
 
+      {/* ── P13: Autonomy Review ── */}
+      {autonomyData && (
+        <section id="autonomy" className="space-y-3 scroll-mt-4">
+          <div className="flex items-center gap-2">
+            <AutonomyIcon status={autonomyData.status} />
+            <h2 className="text-[13px] font-semibold text-fg-secondary">Autonomy Review</h2>
+            <AutonomyBadge status={autonomyData.status} />
+          </div>
+
+          {/* Summary card */}
+          <div className="rounded-xl border border-border-subtle bg-surface overflow-hidden">
+            {/* Header row */}
+            <div className="px-3 py-2.5 border-b border-border-subtle flex flex-wrap items-center gap-x-4 gap-y-1">
+              <span className="text-[11px] font-semibold text-fg-secondary uppercase tracking-wide">Loop Summary</span>
+              <span className="text-[11px] text-fg-muted">
+                Mode: <span className="font-semibold text-fg-primary">{autonomyData.active_mode}</span>
+              </span>
+              <span className="text-[11px] text-fg-disabled tabular-nums ml-auto">
+                {new Date(autonomyData.generated_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+              </span>
+            </div>
+
+            {/* Status + Reason */}
+            <div className="px-3 py-3 space-y-2">
+              <div className="flex items-start justify-between gap-3">
+                <p className="text-[13px] font-medium text-fg-primary flex-1">Current Status</p>
+                <AutonomyBadge status={autonomyData.status} />
+              </div>
+              <p className="text-[12px] text-fg-secondary leading-relaxed">{autonomyData.record.reason}</p>
+            </div>
+
+            {/* Next Best Action */}
+            {autonomyData.next_best_action && (
+              <div className="px-3 py-3 border-t border-border-subtle space-y-1">
+                <p className="text-[10px] font-semibold text-fg-disabled uppercase tracking-wide">Next Best Action</p>
+                <p className="text-[13px] font-semibold text-fg-primary leading-snug">{autonomyData.next_best_action}</p>
+              </div>
+            )}
+
+            {/* Blocking reason (when applicable) */}
+            {autonomyData.blocking_reason && (
+              <div className="px-3 py-2.5 border-t border-border-subtle">
+                <p className="text-[10px] font-semibold text-severity-warn uppercase tracking-wide mb-1">Blocking Reason</p>
+                <p className="text-[12px] text-fg-secondary">{autonomyData.blocking_reason}</p>
+              </div>
+            )}
+
+            {/* Signal counts */}
+            <div className="px-3 py-2.5 border-t border-border-subtle grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <AutonomyStat label="Pending Approvals" value={autonomyData.pending_approvals.length}
+                cls={autonomyData.pending_approvals.length > 0 ? 'text-severity-warn' : 'text-fg-muted'} />
+              <AutonomyStat label="Ready Operations"  value={autonomyData.ready_operations.length}
+                cls={autonomyData.ready_operations.length > 0 ? 'text-severity-success' : 'text-fg-muted'} />
+              <AutonomyStat label="High Risk Ops"     value={autonomyData.high_risk_operations.length}
+                cls={autonomyData.high_risk_operations.length > 0 ? 'text-severity-critical' : 'text-fg-muted'} />
+              <AutonomyStat label="Learning Signals"  value={autonomyData.learning_signals.length}
+                cls={autonomyData.learning_signals.length > 0 ? 'text-accent' : 'text-fg-muted'} />
+            </div>
+          </div>
+
+          {/* Pending approvals list */}
+          {autonomyData.pending_approvals.length > 0 && (
+            <div className="rounded-xl border border-severity-warn/25 bg-severity-warn/[0.02] overflow-hidden">
+              <div className="px-3 py-2 border-b border-severity-warn/20">
+                <span className="text-[11px] font-semibold text-severity-warn uppercase tracking-wide">
+                  Pending Approvals ({autonomyData.pending_approvals.length})
+                </span>
+              </div>
+              <div className="divide-y divide-border-subtle">
+                {autonomyData.pending_approvals.map((op, i) => (
+                  <div key={i} className="flex items-center gap-2 px-3 py-2.5">
+                    <Clock className="h-3.5 w-3.5 shrink-0 text-severity-warn" />
+                    <p className="text-[12px] text-fg-primary">{op}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Ready operations list */}
+          {autonomyData.ready_operations.length > 0 && (
+            <div className="rounded-xl border border-severity-success/25 bg-severity-success/[0.02] overflow-hidden">
+              <div className="px-3 py-2 border-b border-severity-success/20">
+                <span className="text-[11px] font-semibold text-severity-success uppercase tracking-wide">
+                  Ready Operations ({autonomyData.ready_operations.length})
+                </span>
+              </div>
+              <div className="divide-y divide-border-subtle">
+                {autonomyData.ready_operations.map((op, i) => (
+                  <div key={i} className="flex items-center gap-2 px-3 py-2.5">
+                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-severity-success" />
+                    <p className="text-[12px] text-fg-primary">{op}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Learning signals */}
+          {autonomyData.learning_signals.length > 0 && (
+            <div className="rounded-xl border border-accent/20 bg-accent/[0.02] overflow-hidden">
+              <div className="px-3 py-2 border-b border-accent/15">
+                <span className="text-[11px] font-semibold text-accent uppercase tracking-wide">
+                  Learning Signals ({autonomyData.learning_signals.length})
+                </span>
+              </div>
+              <div className="divide-y divide-border-subtle">
+                {autonomyData.learning_signals.map((sig, i) => (
+                  <div key={i} className="flex items-start gap-2 px-3 py-2.5">
+                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-accent shrink-0" />
+                    <p className="text-[12px] text-fg-secondary">{sig}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+
       {/* ── P6: Operation History ── */}
       {ops.history.length > 0 && (
         <section className="space-y-2">
