@@ -875,6 +875,80 @@ export function MissionControl() {
         </div>
       )}
 
+      {/* ── P13: Autonomy Status panel ── */}
+      {autonomy && (() => {
+        const statusMeta: Record<string, { ring: string; dot: string; label: string; badge: string }> = {
+          ready:                { ring: 'border-severity-success/30', dot: 'bg-severity-success', label: 'Ready',               badge: 'bg-severity-success/10 text-severity-success' },
+          waiting_for_founder:  { ring: 'border-severity-warn/30',    dot: 'bg-severity-warn',    label: 'Waiting for Founder',  badge: 'bg-severity-warn/10 text-severity-warn' },
+          monitoring:           { ring: 'border-blue-400/30',          dot: 'bg-blue-400',         label: 'Monitoring',           badge: 'bg-blue-400/10 text-blue-400' },
+          blocked:              { ring: 'border-severity-critical/30', dot: 'bg-severity-critical', label: 'Blocked',             badge: 'bg-severity-critical/10 text-severity-critical' },
+          idle:                 { ring: 'border-border-subtle',        dot: 'bg-fg-disabled',      label: 'Idle',                 badge: 'bg-elevated text-fg-muted' },
+        }
+        const sm = statusMeta[autonomy.status] ?? statusMeta.idle
+        return (
+          <div className={`rounded-xl border ${sm.ring} bg-surface px-4 py-3 space-y-3`}>
+            {/* Header */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Activity className="h-3.5 w-3.5 text-accent shrink-0" />
+                <span className="text-[11px] font-semibold text-fg-primary uppercase tracking-wide">Autonomy Status</span>
+                <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${sm.badge}`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${sm.dot}`} />
+                  {sm.label}
+                </span>
+              </div>
+              <Link href="/founder/approvals#autonomy" className="text-[10px] text-accent hover:underline">
+                Review
+              </Link>
+            </div>
+
+            {/* Next Best Action */}
+            {autonomy.next_best_action && (
+              <div className="rounded-lg bg-elevated px-3 py-2">
+                <p className="text-[10px] font-semibold text-fg-disabled uppercase tracking-wide mb-0.5">Next Best Action</p>
+                <p className="text-[12px] font-medium text-fg-primary leading-snug">{autonomy.next_best_action}</p>
+              </div>
+            )}
+
+            {/* 4-stat pill row */}
+            <div className="flex flex-wrap gap-2">
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                autonomy.pending_approvals.length > 0 ? 'bg-severity-warn/10 text-severity-warn' : 'bg-elevated text-fg-muted'
+              }`}>
+                <Clock className="h-3 w-3" />
+                Pending Approvals: {autonomy.pending_approvals.length}
+              </span>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                autonomy.ready_operations.length > 0 ? 'bg-severity-success/10 text-severity-success' : 'bg-elevated text-fg-muted'
+              }`}>
+                <CheckCircle2 className="h-3 w-3" />
+                Ready Operations: {autonomy.ready_operations.length}
+              </span>
+              {autonomy.high_risk_operations.length > 0 && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-severity-critical/10 px-2.5 py-1 text-[11px] font-medium text-severity-critical">
+                  <AlertTriangle className="h-3 w-3" />
+                  High Risk: {autonomy.high_risk_operations.length}
+                </span>
+              )}
+              {autonomy.learning_signals.length > 0 && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2.5 py-1 text-[11px] font-medium text-accent">
+                  <BrainCircuit className="h-3 w-3" />
+                  Signals: {autonomy.learning_signals.length}
+                </span>
+              )}
+            </div>
+
+            {/* Blocking reason */}
+            {autonomy.blocking_reason && (
+              <div className="rounded-lg border border-severity-warn/20 bg-severity-warn/[0.03] px-3 py-2">
+                <p className="text-[10px] font-semibold text-fg-disabled uppercase tracking-wide mb-0.5">Blocking Reason</p>
+                <p className="text-[11px] text-fg-secondary leading-relaxed">{autonomy.blocking_reason}</p>
+              </div>
+            )}
+          </div>
+        )
+      })()}
+
       {/* ── Count cards ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <CountCard
