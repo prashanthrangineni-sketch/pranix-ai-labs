@@ -57,7 +57,7 @@ async function applyDecision(
     ...(snapshot.timeline ?? []),
     {
       id:        `${newStatus}-${Date.now()}`,
-      kind:      newStatus === 'approved' ? 'approved' : 'failed',
+      kind:      (newStatus === 'approved' ? 'approved' : 'failed') as TimelineEvent['kind'],
       label:     newStatus === 'approved'
         ? `Plan approved by ${gate.email}`
         : `Plan rejected by ${gate.email}`,
