@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createServerClient } from '@/lib/supabase'
 import { getControlPlane } from '@/app/lib/control-plane'
-import type { PersistedTask } from '../ask/ask-chat'
+import type { PersistedTask, TimelineEvent } from '../ask/ask-chat'
 
 const PROJECT = 'pranix-dashboard'
 const KEY_NS  = 'ask:task:'
