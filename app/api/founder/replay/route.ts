@@ -10,11 +10,14 @@ import { createClient }              from '@supabase/supabase-js'
 import { createHash }                from 'crypto'
 
 // ── Supabase (service role for execution_memory reads) ─────────────────────
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { persistSession: false } },
-)
+// Lazy init — a module-scope client crashes `next build` page-data collection
+// when env vars are absent at build time. Instantiate per-request instead.
+const supabase = () =>
+  createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false } },
+  )
 
 // ── Types ──────────────────────────────────────────────────────────────────
 interface ReplayStep {
