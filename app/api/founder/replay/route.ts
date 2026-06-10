@@ -88,10 +88,10 @@ export async function GET(req: NextRequest) {
   // Load from execution_memory — key = task:<taskId>
   const { data, error } = await supabase()
     .from('execution_memory')
-    .select('value, updated_at')
+    .select('value, created_at')
     .eq('project', 'pranix')
     .or(`key.eq.task:${taskId},key.like.agent_task:${taskId}%`)
-    .order('updated_at', { ascending: false })
+    .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle()
 
