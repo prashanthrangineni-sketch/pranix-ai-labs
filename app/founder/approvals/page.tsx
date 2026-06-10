@@ -612,7 +612,7 @@ export default async function FounderPermissionsPage() {
         return (
           <section id="roadmap" className="space-y-3 scroll-mt-4">
             <div className="flex items-center gap-2">
-              <Map className="h-4 w-4 text-accent" />
+              <MapIcon className="h-4 w-4 text-accent" />
               <h2 className="text-[13px] font-semibold text-fg-secondary">Founder OS Roadmap</h2>
               <span className="rounded-full bg-severity-success/10 text-severity-success text-[10px] font-medium px-2 py-0.5">
                 P1–P13 + S1–S5 complete
