@@ -168,7 +168,7 @@ export async function GET(req: NextRequest) {
       goal:           task.goal,
       status:         task.status,
       execution_mode: task.execution_mode,
-      updated_at:     task.updated_at ?? data.updated_at,
+      updated_at:     task.updated_at ?? data.created_at,
     },
     plan,
     timeline,
