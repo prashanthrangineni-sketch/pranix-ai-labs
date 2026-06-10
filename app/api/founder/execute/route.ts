@@ -161,7 +161,9 @@ async function dispatchTool(tool: string, step: PlanStep): Promise<ToolResult> {
       return { summary: `Query returned ${rows} row(s)`, raw: body }
     }
     // Direct fallback: use getControlPlane (already scoped to control-plane project)
-    const { data, error } = await cp.rpc('exec_safe_select', { sql }).catch(() => ({ data: null, error: { message: 'rpc unavailable' } }))
+    let data: any = null, error: any = null
+    try { ({ data, error } = await cp.rpc('exec_safe_select', { sql })) }
+    catch { error = { message: 'rpc unavailable' } }
     if (!error && data) return { summary: `Query executed — ${Array.isArray(data) ? data.length : '?'} row(s)`, raw: data }
     return { summary: `SELECT executed on Supabase (${pid})`, raw: { sql, note: 'gateway unavailable — summary inferred' } }
   }
