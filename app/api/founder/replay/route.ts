@@ -86,7 +86,7 @@ export async function GET(req: NextRequest) {
   }
 
   // Load from execution_memory — key = task:<taskId>
-  const { data, error } = await supabase
+  const { data, error } = await supabase()
     .from('execution_memory')
     .select('value, updated_at')
     .eq('project', 'pranix')
