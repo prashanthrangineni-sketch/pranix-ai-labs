@@ -1350,7 +1350,7 @@ export function MissionControl() {
           {/* Header */}
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <Map className="h-3.5 w-3.5 text-accent shrink-0" />
+              <MapIcon className="h-3.5 w-3.5 text-accent shrink-0" />
               <span className="text-[11px] font-semibold text-fg-primary uppercase tracking-wide">Founder Roadmap</span>
               <span className="inline-flex items-center rounded-full bg-elevated px-2 py-0.5 text-[10px] font-medium text-fg-muted">
                 P1–P13 + S1–S5 completed
