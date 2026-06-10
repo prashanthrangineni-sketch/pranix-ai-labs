@@ -132,7 +132,7 @@ export async function GET(req: NextRequest) {
     const executed_at =
       (event?.timestamp as string) ??
       (step.completed_at as string) ??
-      (data.updated_at as string) ??
+      (data.created_at as string) ??
       new Date().toISOString()
 
     return {
