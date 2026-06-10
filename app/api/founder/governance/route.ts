@@ -323,7 +323,7 @@ export async function GET() {
   const evaluations: GovernanceEvaluation[] = await Promise.all(
     operations.map(async (op) => {
       const cached = await memRead(`p8:governance:${op.operation_id}`)
-      if (cached && (cached as GovernanceEvaluation).verdict) {
+      if (cached && (cached as unknown as GovernanceEvaluation).verdict) {
         return cached as unknown as GovernanceEvaluation
       }
       const ev = evaluateOperation(op, policies)
