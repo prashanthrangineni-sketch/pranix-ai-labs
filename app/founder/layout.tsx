@@ -3,7 +3,7 @@ import Link from 'next/link'
 import {
   LayoutDashboard, Bot, ListChecks, Bell, ShieldCheck,
   Brain, Monitor, Package,
-  ChevronDown, Clock, Sparkles, Boxes, Archive, LayoutGrid, Gauge,
+  ChevronDown, Clock, Sparkles, Boxes, Archive, LayoutGrid, Gauge, Camera,
 } from 'lucide-react'
 import BiometricGate from './_components/BiometricGate'
 import { getFounderSession } from '@/lib/auth'
