@@ -14,17 +14,44 @@ function Metric({ label, value, sub }: { label: string; value: string; sub: stri
   )
 }
 
-// Compact text sparkline (no chart lib). Renders a 7-point series with unicode blocks.
+// Compact SVG sparkline (no chart lib). Renders a 7-point series with an inline SVG.
 function Spark({ label, series, sub }: { label: string; series: number[]; sub: string }) {
-  const blocks = ['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█']
   const max = Math.max(1, ...series)
-  const spark = series
-    .map((n) => blocks[Math.min(blocks.length - 1, Math.round((n / max) * (blocks.length - 1)))])
-    .join('')
+  const width = 100
+  const height = 20
+  const points = series
+    .map((val, i) => {
+      const x = (i / (series.length - 1)) * width
+      const y = height - (val / max) * (height - 4) - 2 // 2px padding top/bottom
+      return `${x.toFixed(1)},${y.toFixed(1)}`
+    })
+    .join(' ')
+
+  const fillPoints = `0,${height} ` + points + ` ${width},${height}`
+  const gradId = `grad-${label.toLowerCase().replace(/[^a-z0-9]/g, '-')}`
+
   return (
     <div className="rounded-lg border border-border-subtle bg-canvas p-3">
       <p className="text-[10px] uppercase tracking-wide text-fg-disabled">{label}</p>
-      <p className="text-[16px] font-semibold text-fg-primary mt-0.5 tracking-tight leading-none" aria-hidden>{spark}</p>
+      <div className="h-6 mt-1 flex items-center" aria-hidden>
+        <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full text-accent" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="currentColor" stopOpacity="0.2" />
+              <stop offset="100%" stopColor="currentColor" stopOpacity="0.0" />
+            </linearGradient>
+          </defs>
+          <polygon points={fillPoints} fill={`url(#${gradId})`} />
+          <polyline
+            points={points}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </div>
       <p className="text-[10px] text-fg-muted mt-1">{sub}</p>
     </div>
   )
