@@ -68,12 +68,19 @@ export type TaskAnalysis = {
   evidence_quality:  'Strong' | 'Partial' | 'Weak'
   founder_decision:  FounderDecision
   analyzed_at:       string
+  // Legacy persisted payloads (overview/recommendations consumers) — optional.
+  decision?:         string
+  reasoning?:        string
 }
 
 export type PersistedTask = {
   task_id:        string
   workspace_id:   string | null
   goal:           string
+  title?:         string
+  created_at?:    string
+  verification?:  { integrity_status?: string; [k: string]: unknown }
+  model?:         string
   execution_mode: ExecutionMode
   status:         'planned' | 'approved' | 'executing' | 'completed' | 'failed'
   plan:           PlanStep[]
