@@ -9,6 +9,7 @@ export const metadata = { title: 'More' }
 // the mobile bottom nav. Surfaced here so a mobile-only founder can reach them.
 const CONSOLE_LINKS: { href: string; label: string; sub: string; icon: React.ReactNode }[] = [
   { href: '/founder/baselines', label: 'Browser Intelligence', sub: 'Visual regression screenshots', icon: <Monitor className="h-4 w-4" /> },
+  { href: '/founder/evidence', label: 'Evidence', sub: 'Flow videos & all screenshots', icon: <ImageIcon className="h-4 w-4" /> },
   { href: '/founder/artifacts', label: 'Artifacts', sub: 'Artifact governance', icon: <ImageIcon className="h-4 w-4" /> },
   { href: '/founder/workers', label: 'Workers', sub: 'Worker runs', icon: <Cpu className="h-4 w-4" /> },
   { href: '/founder/orchestrate', label: 'Orchestrate', sub: 'Inference & routing', icon: <Network className="h-4 w-4" /> },

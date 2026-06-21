@@ -24,7 +24,12 @@ import type { AuthorityRecord }               from '@/app/api/founder/authority/
 import type { ExecutionRecord }               from '@/app/api/founder/execution/route'
 import type { LearningEngine }                from '@/app/api/founder/learning/route'
 import type { AutonomyEngine }                from '@/app/api/founder/autonomy/route'
-import { Key, PlayCircle, Sparkles, CheckCircle2, Ban, Activity, Zap, AlertOctagon, Loader2 } from 'lucide-react'
+import type { DispatchRecord }                from '@/app/api/founder/dispatch/route'
+import type { ActivationRecord }              from '@/app/api/founder/activation/route'
+import type { QueueRecord }                   from '@/app/api/founder/queue/route'
+import type { ExecutorRecord }                from '@/app/api/founder/executor/route'
+import type { RoadmapItem }                   from '@/app/api/founder/roadmap/route'
+import { Key, PlayCircle, Sparkles, Send, Map as MapIcon } from 'lucide-react'
 
 // ── Types ────────────────────────────────────────────────────────────────
 interface ApprovalItem  { task_id: string; title: string; goal: string; created_at: string }
@@ -366,6 +371,157 @@ export function MissionControl() {
     } catch { /* non-fatal */ }
   }, [])
 
+  // S4 — Activation
+  const [activation, setActivation] = useState<{
+    pending:    number
+    activated:  number
+    executing:  number
+    completed:  number
+    failed:     number
+    blocked:    number
+    top_active: ActivationRecord | null
+    records:    ActivationRecord[]
+  }>({ pending: 0, activated: 0, executing: 0, completed: 0, failed: 0, blocked: 0, top_active: null, records: [] })
+
+  const loadActivation = useCallback(async () => {
+    try {
+      const res = await fetch('/api/founder/activation', { cache: 'no-store' })
+      if (!res.ok) return
+      const j = await res.json()
+      setActivation({
+        pending:    j.pending    ?? 0,
+        activated:  j.activated  ?? 0,
+        executing:  j.executing  ?? 0,
+        completed:  j.completed  ?? 0,
+        failed:     j.failed     ?? 0,
+        blocked:    j.blocked    ?? 0,
+        top_active: j.top_active ?? null,
+        records:    j.records    ?? [],
+      })
+    } catch { /* non-fatal */ }
+  }, [])
+
+  // Roadmap
+  const [roadmap, setRoadmap] = useState<{
+    pct:          number
+    total:        number
+    completed:    number
+    in_progress:  number
+    blocked:      number
+    current:      RoadmapItem | null
+    next:         RoadmapItem | null
+    blocked_items: RoadmapItem[]
+    milestones:   RoadmapItem[]
+    items:        RoadmapItem[]
+  }>({ pct: 0, total: 14, completed: 0, in_progress: 0, blocked: 0, current: null, next: null, blocked_items: [], milestones: [], items: [] })
+
+  const loadRoadmap = useCallback(async () => {
+    try {
+      const res = await fetch('/api/founder/roadmap', { cache: 'no-store' })
+      if (!res.ok) return
+      const j = await res.json()
+      const p = j.progress ?? {}
+      setRoadmap({
+        pct:           p.pct          ?? 0,
+        total:         p.total        ?? 14,
+        completed:     p.completed    ?? 0,
+        in_progress:   p.in_progress  ?? 0,
+        blocked:       p.blocked      ?? 0,
+        current:       p.current      ?? null,
+        next:          p.next         ?? null,
+        blocked_items: p.blocked_items ?? [],
+        milestones:    p.milestones   ?? [],
+        items:         j.roadmap      ?? [],
+      })
+    } catch { /* non-fatal */ }
+  }, [])
+
+  // S6 — Executor
+  const [executor, setExecutor] = useState<{
+    running:     number
+    completed:   number
+    failed:      number
+    blocked:     number
+    unverified:  number
+    gateway_live: boolean
+    top_running: ExecutorRecord | null
+    records:     ExecutorRecord[]
+  }>({ running: 0, completed: 0, failed: 0, blocked: 0, unverified: 0, gateway_live: false, top_running: null, records: [] })
+
+  const loadExecutor = useCallback(async () => {
+    try {
+      const res = await fetch('/api/founder/executor', { cache: 'no-store' })
+      if (!res.ok) return
+      const j = await res.json()
+      setExecutor({
+        running:      j.running      ?? 0,
+        completed:    j.completed    ?? 0,
+        failed:       j.failed       ?? 0,
+        blocked:      j.blocked      ?? 0,
+        unverified:   j.unverified   ?? 0,
+        gateway_live: j.gateway_live ?? false,
+        top_running:  j.top_running  ?? null,
+        records:      j.records      ?? [],
+      })
+    } catch { /* non-fatal */ }
+  }, [])
+
+  // S5 — Queue
+  const [queue, setQueue] = useState<{
+    queued:      number
+    leased:      number
+    executing:   number
+    completed:   number
+    failed:      number
+    dead_letter: number
+    top_item:    QueueRecord | null
+    records:     QueueRecord[]
+  }>({ queued: 0, leased: 0, executing: 0, completed: 0, failed: 0, dead_letter: 0, top_item: null, records: [] })
+
+  const loadQueue = useCallback(async () => {
+    try {
+      const res = await fetch('/api/founder/queue', { cache: 'no-store' })
+      if (!res.ok) return
+      const j = await res.json()
+      setQueue({
+        queued:      j.queued      ?? 0,
+        leased:      j.leased      ?? 0,
+        executing:   j.executing   ?? 0,
+        completed:   j.completed   ?? 0,
+        failed:      j.failed      ?? 0,
+        dead_letter: j.dead_letter ?? 0,
+        top_item:    j.top_item    ?? null,
+        records:     j.records     ?? [],
+      })
+    } catch { /* non-fatal */ }
+  }, [])
+
+  // S3 — Dispatch
+  const [dispatch, setDispatch] = useState<{
+    queued:        number
+    dispatched:    number
+    blocked:       number
+    eligible:      number
+    top_candidate: DispatchRecord | null
+    records:       DispatchRecord[]
+  }>({ queued: 0, dispatched: 0, blocked: 0, eligible: 0, top_candidate: null, records: [] })
+
+  const loadDispatch = useCallback(async () => {
+    try {
+      const res = await fetch('/api/founder/dispatch', { cache: 'no-store' })
+      if (!res.ok) return
+      const j = await res.json()
+      setDispatch({
+        queued:        j.queued        ?? 0,
+        dispatched:    j.dispatched    ?? 0,
+        blocked:       j.blocked       ?? 0,
+        eligible:      j.eligible      ?? 0,
+        top_candidate: j.top_candidate ?? null,
+        records:       j.records       ?? [],
+      })
+    } catch { /* non-fatal */ }
+  }, [])
+
   // P8 — Governance
   const [governance, setGovernance] = useState<{
     evaluations:             GovernanceEvaluation[]
@@ -408,16 +564,16 @@ export function MissionControl() {
     finally { if (!silent) setLoading(false) }
   }, [])
 
-  useEffect(() => { load(); loadRecs(); loadOps(); loadSchedule(); loadGovernance(); loadModes(); loadAuthority(); loadExecution(); loadLearning(); loadAutonomy() }, [load, loadRecs, loadOps, loadSchedule, loadGovernance, loadModes, loadAuthority, loadExecution, loadLearning, loadAutonomy])
-  // auto-refresh every 30s (overview + autonomy) / 60s (recs + ops + schedule + governance + modes + authority + execution + learning)
+  useEffect(() => { load(); loadRecs(); loadOps(); loadSchedule(); loadGovernance(); loadModes(); loadAuthority(); loadExecution(); loadLearning(); loadAutonomy(); loadDispatch(); loadActivation(); loadQueue(); loadExecutor(); loadRoadmap() }, [load, loadRecs, loadOps, loadSchedule, loadGovernance, loadModes, loadAuthority, loadExecution, loadLearning, loadAutonomy, loadDispatch, loadActivation, loadQueue, loadExecutor, loadRoadmap])
+  // auto-refresh every 30s (overview + autonomy) / 60s (rest)
   useEffect(() => {
     const t = setInterval(() => { load(true); loadAutonomy() }, 30_000)
     return () => clearInterval(t)
   }, [load, loadAutonomy])
   useEffect(() => {
-    const t = setInterval(() => { loadRecs(); loadOps(); loadSchedule(); loadGovernance(); loadModes(); loadAuthority(); loadExecution(); loadLearning() }, 60_000)
+    const t = setInterval(() => { loadRecs(); loadOps(); loadSchedule(); loadGovernance(); loadModes(); loadAuthority(); loadExecution(); loadLearning(); loadDispatch(); loadActivation(); loadQueue(); loadExecutor(); loadRoadmap() }, 60_000)
     return () => clearInterval(t)
-  }, [loadRecs, loadOps, loadSchedule, loadGovernance, loadModes, loadAuthority, loadExecution, loadLearning])
+  }, [loadRecs, loadOps, loadSchedule, loadGovernance, loadModes, loadAuthority, loadExecution, loadLearning, loadDispatch, loadActivation, loadQueue, loadExecutor, loadRoadmap])
 
   if (loading) {
     return (
@@ -943,6 +1099,418 @@ export function MissionControl() {
               <div className="rounded-lg border border-severity-warn/20 bg-severity-warn/[0.03] px-3 py-2">
                 <p className="text-[10px] font-semibold text-fg-disabled uppercase tracking-wide mb-0.5">Blocking Reason</p>
                 <p className="text-[11px] text-fg-secondary leading-relaxed">{autonomy.blocking_reason}</p>
+              </div>
+            )}
+          </div>
+        )
+      })()}
+
+      {/* ── S3: Dispatch Queue ── */}
+      {(() => {
+        if (dispatch.records.length === 0 && dispatch.eligible === 0) return null
+        return (
+          <div className="rounded-xl border border-border-subtle bg-surface px-4 py-3 space-y-3">
+            {/* Header */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Send className="h-3.5 w-3.5 text-accent shrink-0" />
+                <span className="text-[11px] font-semibold text-fg-primary uppercase tracking-wide">Dispatch Queue</span>
+              </div>
+              <Link href="/founder/approvals#dispatch" className="text-[10px] text-accent hover:underline">
+                Review →
+              </Link>
+            </div>
+
+            {/* 4 status pills */}
+            <div className="flex flex-wrap gap-2">
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                dispatch.eligible > 0 ? 'bg-severity-success/10 text-severity-success' : 'bg-elevated text-fg-muted'
+              }`}>
+                <CheckCircle2 className="h-3 w-3" />
+                Eligible: {dispatch.eligible}
+              </span>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                dispatch.queued > 0 ? 'bg-accent/10 text-accent' : 'bg-elevated text-fg-muted'
+              }`}>
+                <Clock className="h-3 w-3" />
+                Queued: {dispatch.queued}
+              </span>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                dispatch.dispatched > 0 ? 'bg-severity-success/10 text-severity-success' : 'bg-elevated text-fg-muted'
+              }`}>
+                <Send className="h-3 w-3" />
+                Dispatched: {dispatch.dispatched}
+              </span>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                dispatch.blocked > 0 ? 'bg-severity-critical/10 text-severity-critical' : 'bg-elevated text-fg-muted'
+              }`}>
+                <Ban className="h-3 w-3" />
+                Blocked: {dispatch.blocked}
+              </span>
+            </div>
+
+            {/* Top Candidate */}
+            {dispatch.top_candidate && (
+              <div className="rounded-lg border border-severity-success/20 bg-severity-success/[0.03] px-3 py-2.5 space-y-1">
+                <p className="text-[10px] font-semibold text-fg-disabled uppercase tracking-wide">Top Candidate</p>
+                <p className="text-[13px] font-semibold text-fg-primary leading-snug">
+                  {dispatch.top_candidate.operation_title}
+                </p>
+                <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px]">
+                  <span className="text-fg-muted">
+                    Priority{' '}
+                    <span className="text-fg-secondary font-medium tabular-nums">
+                      {dispatch.top_candidate.priority_score}
+                    </span>
+                  </span>
+                  <span className={`font-medium ${
+                    dispatch.top_candidate.authority_status === 'authorized'
+                      ? 'text-severity-success'
+                      : 'text-severity-warn'
+                  }`}>
+                    Authority {dispatch.top_candidate.authority_status === 'authorized' ? 'Authorized' : dispatch.top_candidate.authority_status}
+                  </span>
+                  <span className={`font-medium ${
+                    dispatch.top_candidate.governance_status === 'allowed'
+                      ? 'text-severity-success'
+                      : dispatch.top_candidate.governance_status === 'needs_approval'
+                      ? 'text-severity-warn'
+                      : 'text-severity-critical'
+                  }`}>
+                    Governance {dispatch.top_candidate.governance_status === 'allowed' ? 'Approved' : dispatch.top_candidate.governance_status === 'needs_approval' ? 'Needs Review' : 'Blocked'}
+                  </span>
+                  <span className="text-fg-disabled">
+                    {dispatch.top_candidate.founder_mode}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        )
+      })()}
+
+      {/* ── S4: Activation Status ── */}
+      {activation.records.length > 0 && (() => {
+        const total = activation.pending + activation.activated + activation.executing +
+                      activation.completed + activation.failed + activation.blocked
+        if (total === 0) return null
+        return (
+          <div className="rounded-xl border border-border-subtle bg-surface px-4 py-3 space-y-3">
+            {/* Header */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <PlayCircle className="h-3.5 w-3.5 text-severity-success shrink-0" />
+                <span className="text-[11px] font-semibold text-fg-primary uppercase tracking-wide">Activation Status</span>
+              </div>
+              <Link href="/founder/approvals#activation" className="text-[10px] text-accent hover:underline">
+                Review →
+              </Link>
+            </div>
+
+            {/* 5 status pills */}
+            <div className="flex flex-wrap gap-2">
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                activation.pending > 0 ? 'bg-severity-warn/10 text-severity-warn' : 'bg-elevated text-fg-muted'
+              }`}>
+                <Clock className="h-3 w-3" />
+                Pending: {activation.pending}
+              </span>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                activation.activated > 0 ? 'bg-severity-success/10 text-severity-success' : 'bg-elevated text-fg-muted'
+              }`}>
+                <Sparkles className="h-3 w-3" />
+                Activated: {activation.activated}
+              </span>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                activation.executing > 0 ? 'bg-accent/10 text-accent' : 'bg-elevated text-fg-muted'
+              }`}>
+                <Activity className="h-3 w-3" />
+                Executing: {activation.executing}
+              </span>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                activation.completed > 0 ? 'bg-severity-success/10 text-severity-success' : 'bg-elevated text-fg-muted'
+              }`}>
+                <CheckCircle2 className="h-3 w-3" />
+                Completed: {activation.completed}
+              </span>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                activation.blocked > 0 ? 'bg-severity-critical/10 text-severity-critical' : 'bg-elevated text-fg-muted'
+              }`}>
+                <Ban className="h-3 w-3" />
+                Blocked: {activation.blocked}
+              </span>
+            </div>
+
+            {/* Top Active Operation */}
+            {activation.top_active && (
+              <div className="rounded-lg border border-severity-success/20 bg-severity-success/[0.03] px-3 py-2.5 space-y-1">
+                <p className="text-[10px] font-semibold text-fg-disabled uppercase tracking-wide">Top Active Operation</p>
+                <p className="text-[13px] font-semibold text-fg-primary leading-snug">
+                  {activation.top_active.operation_title}
+                </p>
+                <p className="text-[12px] text-fg-secondary leading-relaxed">
+                  {activation.top_active.activation_reason}
+                </p>
+                <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-fg-muted">
+                  <span>Mode: <span className="text-fg-secondary font-medium">{activation.top_active.founder_mode}</span></span>
+                  <span className={`font-medium ${
+                    activation.top_active.activation_status === 'activated' || activation.top_active.activation_status === 'executing'
+                      ? 'text-severity-success'
+                      : activation.top_active.activation_status === 'pending'
+                      ? 'text-severity-warn'
+                      : 'text-severity-critical'
+                  }`}>
+                    {activation.top_active.activation_status.charAt(0).toUpperCase() + activation.top_active.activation_status.slice(1)}
+                  </span>
+                  <span className="text-fg-disabled tabular-nums">Priority {activation.top_active.priority_score}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )
+      })()}
+
+      {/* ── S5: Execution Queue ── */}
+      {queue.records.length > 0 && (() => {
+        const total = queue.queued + queue.leased + queue.executing + queue.completed + queue.failed + queue.dead_letter
+        if (total === 0) return null
+        return (
+          <div className="rounded-xl border border-border-subtle bg-surface px-4 py-3 space-y-3">
+            {/* Header */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <ListChecks className="h-3.5 w-3.5 text-accent shrink-0" />
+                <span className="text-[11px] font-semibold text-fg-primary uppercase tracking-wide">Execution Queue</span>
+              </div>
+              <Link href="/founder/approvals#queue" className="text-[10px] text-accent hover:underline">
+                Review →
+              </Link>
+            </div>
+
+            {/* Pills */}
+            <div className="flex flex-wrap gap-2">
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                queue.queued > 0 ? 'bg-accent/10 text-accent' : 'bg-elevated text-fg-muted'
+              }`}>
+                <Clock className="h-3 w-3" />
+                Queued: {queue.queued}
+              </span>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                queue.executing > 0 ? 'bg-severity-warn/10 text-severity-warn' : 'bg-elevated text-fg-muted'
+              }`}>
+                <Activity className="h-3 w-3" />
+                Executing: {queue.executing}
+              </span>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                queue.completed > 0 ? 'bg-severity-success/10 text-severity-success' : 'bg-elevated text-fg-muted'
+              }`}>
+                <CheckCircle2 className="h-3 w-3" />
+                Completed: {queue.completed}
+              </span>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                queue.dead_letter > 0 ? 'bg-severity-critical/10 text-severity-critical' : 'bg-elevated text-fg-muted'
+              }`}>
+                <AlertOctagon className="h-3 w-3" />
+                Dead Letter: {queue.dead_letter}
+              </span>
+            </div>
+
+            {/* Top Queue Item */}
+            {queue.top_item && (
+              <div className="rounded-lg border border-accent/20 bg-accent/[0.03] px-3 py-2.5 space-y-1">
+                <p className="text-[10px] font-semibold text-fg-disabled uppercase tracking-wide">Top Queue Item</p>
+                <p className="text-[13px] font-semibold text-fg-primary leading-snug">{queue.top_item.operation_title}</p>
+                <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-fg-muted">
+                  <span>Mode: <span className="font-medium text-fg-secondary">{queue.top_item.founder_mode}</span></span>
+                  <span className="tabular-nums">
+                    Retry: <span className="font-medium text-fg-secondary">{queue.top_item.retry_count}/{queue.top_item.max_retries}</span>
+                  </span>
+                  <span className={`font-medium ${
+                    queue.top_item.queue_status === 'queued'   ? 'text-accent'
+                    : queue.top_item.queue_status === 'leased'   ? 'text-severity-warn'
+                    : queue.top_item.queue_status === 'completed' ? 'text-severity-success'
+                    : queue.top_item.queue_status === 'dead_letter' ? 'text-severity-critical'
+                    : 'text-fg-muted'
+                  }`}>
+                    {queue.top_item.queue_status.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                  </span>
+                  {queue.top_item.leased_by && (
+                    <span className="text-fg-disabled">Leased by: {queue.top_item.leased_by}</span>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )
+      })()}
+
+      {/* ── Founder Roadmap ── */}
+      {roadmap.total > 0 && (
+        <div className="rounded-xl border border-border-subtle bg-surface px-4 py-3 space-y-3">
+          {/* Header */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <MapIcon className="h-3.5 w-3.5 text-accent shrink-0" />
+              <span className="text-[11px] font-semibold text-fg-primary uppercase tracking-wide">Founder Roadmap</span>
+              <span className="inline-flex items-center rounded-full bg-elevated px-2 py-0.5 text-[10px] font-medium text-fg-muted">
+                P1–P13 + S1–S5 completed
+              </span>
+            </div>
+            <Link href="/founder/approvals#roadmap" className="text-[10px] text-accent hover:underline">
+              Full map →
+            </Link>
+          </div>
+
+          {/* Progress bar */}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="text-fg-muted">Future Phases (P14–P20 · S6–S12)</span>
+              <span className="tabular-nums font-semibold text-fg-primary">{roadmap.pct}%</span>
+            </div>
+            <div className="h-1.5 w-full rounded-full bg-elevated overflow-hidden">
+              <div
+                className="h-full rounded-full bg-accent transition-all duration-700"
+                style={{ width: `${roadmap.pct}%` }}
+              />
+            </div>
+            <div className="flex gap-3 text-[10px] text-fg-disabled tabular-nums">
+              <span>{roadmap.completed}/{roadmap.total} done</span>
+              {roadmap.in_progress > 0 && <span className="text-accent">{roadmap.in_progress} in progress</span>}
+              {roadmap.blocked > 0 && <span className="text-severity-critical">{roadmap.blocked} blocked</span>}
+            </div>
+          </div>
+
+          {/* Current + Next phase */}
+          {roadmap.current && (
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-lg bg-accent/[0.04] border border-accent/15 px-3 py-2 space-y-0.5">
+                <p className="text-[9px] font-semibold text-accent uppercase tracking-wide">Current</p>
+                <p className="text-[12px] font-semibold text-fg-primary leading-snug">{roadmap.current.phase_id}</p>
+                <p className="text-[11px] text-fg-muted leading-snug">{roadmap.current.title}</p>
+              </div>
+              {roadmap.next && (
+                <div className="rounded-lg bg-elevated border border-border-subtle px-3 py-2 space-y-0.5">
+                  <p className="text-[9px] font-semibold text-fg-disabled uppercase tracking-wide">Next</p>
+                  <p className="text-[12px] font-semibold text-fg-secondary leading-snug">{roadmap.next.phase_id}</p>
+                  <p className="text-[11px] text-fg-muted leading-snug">{roadmap.next.title}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Blocked phases */}
+          {roadmap.blocked_items.length > 0 && (
+            <div className="rounded-lg bg-severity-critical/[0.04] border border-severity-critical/15 px-3 py-2">
+              <p className="text-[9px] font-semibold text-severity-critical uppercase tracking-wide mb-1">Blocked</p>
+              <div className="flex flex-wrap gap-1">
+                {roadmap.blocked_items.map(b => (
+                  <span key={b.roadmap_id} className="rounded-full bg-severity-critical/10 text-severity-critical text-[10px] font-medium px-2 py-0.5">
+                    {b.phase_id}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Strategic milestones */}
+          {roadmap.milestones.length > 0 && (
+            <div className="space-y-1">
+              <p className="text-[9px] font-semibold text-fg-disabled uppercase tracking-wide">Strategic Milestones</p>
+              <div className="flex flex-wrap gap-1">
+                {roadmap.milestones.map(m => (
+                  <span
+                    key={m.roadmap_id}
+                    className={`rounded-full text-[10px] font-medium px-2 py-0.5 ${
+                      m.status === 'completed'  ? 'bg-severity-success/10 text-severity-success'
+                      : m.status === 'in_progress' ? 'bg-accent/10 text-accent'
+                      : m.status === 'blocked'     ? 'bg-severity-critical/10 text-severity-critical'
+                      : 'bg-elevated text-fg-muted'
+                    }`}
+                  >
+                    {m.phase_id}: {m.title.length > 22 ? m.title.slice(0, 22) + '…' : m.title}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── S6: Execution Engine ── */}
+      {executor.records.length > 0 && (() => {
+        const total = executor.running + executor.completed + executor.failed + executor.unverified
+        if (total === 0) return null
+        return (
+          <div className="rounded-xl border border-border-subtle bg-surface px-4 py-3 space-y-3">
+            {/* Header */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Zap className="h-3.5 w-3.5 text-severity-success shrink-0" />
+                <span className="text-[11px] font-semibold text-fg-primary uppercase tracking-wide">Execution Engine</span>
+                <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                  executor.gateway_live
+                    ? 'bg-severity-success/10 text-severity-success'
+                    : 'bg-severity-critical/10 text-severity-critical'
+                }`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${
+                    executor.gateway_live ? 'bg-severity-success' : 'bg-severity-critical'
+                  }`} />
+                  {executor.gateway_live ? 'Gateway Live' : 'Gateway Offline'}
+                </span>
+              </div>
+              <Link href="/founder/approvals#executor" className="text-[10px] text-accent hover:underline">
+                Review →
+              </Link>
+            </div>
+
+            {/* Pills */}
+            <div className="flex flex-wrap gap-2">
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                executor.running > 0 ? 'bg-accent/10 text-accent' : 'bg-elevated text-fg-muted'
+              }`}>
+                <Activity className="h-3 w-3" />
+                Running: {executor.running}
+              </span>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                executor.completed > 0 ? 'bg-severity-success/10 text-severity-success' : 'bg-elevated text-fg-muted'
+              }`}>
+                <CheckCircle2 className="h-3 w-3" />
+                Completed: {executor.completed}
+              </span>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                executor.failed > 0 ? 'bg-severity-critical/10 text-severity-critical' : 'bg-elevated text-fg-muted'
+              }`}>
+                <AlertOctagon className="h-3 w-3" />
+                Failed: {executor.failed}
+              </span>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                executor.unverified > 0 ? 'bg-severity-warn/10 text-severity-warn' : 'bg-elevated text-fg-muted'
+              }`}>
+                <Eye className="h-3 w-3" />
+                Unverified: {executor.unverified}
+              </span>
+            </div>
+
+            {/* Top Running Task */}
+            {executor.top_running && (
+              <div className="rounded-lg border border-accent/20 bg-accent/[0.03] px-3 py-2.5 space-y-1">
+                <p className="text-[10px] font-semibold text-fg-disabled uppercase tracking-wide">Top Running Task</p>
+                <p className="text-[13px] font-semibold text-fg-primary leading-snug">{executor.top_running.operation_title}</p>
+                <p className="text-[12px] text-fg-secondary leading-relaxed">{executor.top_running.execution_reason}</p>
+                <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-fg-muted">
+                  <span>Mode: <span className="font-medium text-fg-secondary">{executor.top_running.founder_mode}</span></span>
+                  <span className={`font-medium ${
+                    executor.top_running.verification_status === 'verified'   ? 'text-severity-success'
+                    : executor.top_running.verification_status === 'unverified' ? 'text-severity-warn'
+                    : executor.top_running.verification_status === 'failed'     ? 'text-severity-critical'
+                    : 'text-fg-muted'
+                  }`}>
+                    Verification: {executor.top_running.verification_status}
+                  </span>
+                  {executor.top_running.duration_ms !== null && (
+                    <span className="text-fg-disabled tabular-nums">{executor.top_running.duration_ms}ms</span>
+                  )}
+                </div>
               </div>
             )}
           </div>

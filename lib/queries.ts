@@ -545,22 +545,59 @@ export async function getTaskById(id: string): Promise<TaskDetail | null> {
   return data as TaskDetail
 }
 
+// Signed-URL TTL: founder views this on a mobile PWA that can keep a rendered
+// page alive for many hours. 1h tokens expired in-page and every <img> broke
+// with 400 InvalidJWT. 24h survives realistic session lengths.
+const ARTIFACT_SIGN_TTL_SEC = 86400
+
 export async function getReviewArtifacts(): Promise<ReviewArtifact[]> {
   const db = createServerClient()
   const { data, error } = await db
     .from('browser_artifacts')
     .select('id, project_name, check_name, viewport, status, diff_score, storage_path, created_at')
     .in('status', ['review', 'fail'])
+    .not('check_name', 'like', 'failure_step_%')
     .order('created_at', { ascending: false })
     .limit(50)
   if (error || !data) return []
   const withUrls = await Promise.all(
     data.map(async (a) => {
-      const { data: signed } = await db.storage.from('artifacts').createSignedUrl(a.storage_path, 3600)
+      const { data: signed } = await db.storage.from('artifacts').createSignedUrl(a.storage_path, ARTIFACT_SIGN_TTL_SEC)
       return { ...a, signed_url: signed?.signedUrl || null }
     })
   )
   return withUrls as ReviewArtifact[]
+}
+
+export type EvidenceArtifact = {
+  id: string
+  project_name: string
+  check_name: string
+  viewport: string
+  status: string
+  artifact_type: string
+  storage_path: string
+  signed_url: string | null
+  created_at: string
+}
+
+// Evidence feed: every artifact the browser worker produced — videos,
+// failure screenshots, passing screenshots — newest first.
+export async function getEvidenceArtifacts(limit = 60): Promise<EvidenceArtifact[]> {
+  const db = createServerClient()
+  const { data, error } = await db
+    .from('browser_artifacts')
+    .select('id, project_name, check_name, viewport, status, artifact_type, storage_path, created_at')
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  if (error || !data) return []
+  const withUrls = await Promise.all(
+    data.map(async (a) => {
+      const { data: signed } = await db.storage.from('artifacts').createSignedUrl(a.storage_path, ARTIFACT_SIGN_TTL_SEC)
+      return { ...a, signed_url: signed?.signedUrl || null }
+    })
+  )
+  return withUrls as EvidenceArtifact[]
 }
 
 export async function getMemoryCount(): Promise<number> {

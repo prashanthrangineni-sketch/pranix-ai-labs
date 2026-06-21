@@ -314,7 +314,6 @@ export async function POST(req: Request) {
       lines:            agentMode ? [] : answerLines,
       model_used:       modelUsed  || undefined,
       confidence,
-      task_id:          taskId     || undefined,
       workspace_id:     workspaceId,
       gathered_at:      new Date().toISOString(),
       speculation_flag: specFlag,
@@ -322,7 +321,7 @@ export async function POST(req: Request) {
       // Agent Mode fields
       execution_mode,
       plan,
-      task_id: agentMode ? agentTaskId : taskId,
+      task_id: (agentMode ? agentTaskId : taskId) || undefined,
     }
 
     return NextResponse.json({ reply })

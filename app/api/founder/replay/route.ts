@@ -10,11 +10,14 @@ import { createClient }              from '@supabase/supabase-js'
 import { createHash }                from 'crypto'
 
 // ── Supabase (service role for execution_memory reads) ─────────────────────
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { persistSession: false } },
-)
+// Lazy init — a module-scope client crashes `next build` page-data collection
+// when env vars are absent at build time. Instantiate per-request instead.
+const supabase = () =>
+  createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false } },
+  )
 
 // ── Types ──────────────────────────────────────────────────────────────────
 interface ReplayStep {
@@ -83,12 +86,12 @@ export async function GET(req: NextRequest) {
   }
 
   // Load from execution_memory — key = task:<taskId>
-  const { data, error } = await supabase
+  const { data, error } = await supabase()
     .from('execution_memory')
-    .select('value, updated_at')
+    .select('value, created_at')
     .eq('project', 'pranix')
     .or(`key.eq.task:${taskId},key.like.agent_task:${taskId}%`)
-    .order('updated_at', { ascending: false })
+    .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle()
 
@@ -129,7 +132,7 @@ export async function GET(req: NextRequest) {
     const executed_at =
       (event?.timestamp as string) ??
       (step.completed_at as string) ??
-      (data.updated_at as string) ??
+      (data.created_at as string) ??
       new Date().toISOString()
 
     return {
@@ -165,7 +168,7 @@ export async function GET(req: NextRequest) {
       goal:           task.goal,
       status:         task.status,
       execution_mode: task.execution_mode,
-      updated_at:     task.updated_at ?? data.updated_at,
+      updated_at:     task.updated_at ?? data.created_at,
     },
     plan,
     timeline,

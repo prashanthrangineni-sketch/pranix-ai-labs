@@ -52,7 +52,7 @@ export async function GET(_req: NextRequest) {
       task_types: ['all'],
       is_free: true,
       enabled: true,
-      status: 'available' as const,
+      status: 'available' as 'available' | 'offline' | 'missing_key' | 'founder_only',
       status_reason: null as string | null,
       engine_model_id: 'auto',
     }
