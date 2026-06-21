@@ -36,10 +36,9 @@ export type IntegrationStatus = Integration & {
   // monitored = we have a real live datasource for this integration
   monitored: boolean
   connected: boolean | null   // null when not monitored here
-  health: string | null       // provider_registry.health_status, when monitored
+  health: string | null       // status from provider_registry or credential_health
   checked_at: string | null   // when health was last checked
-  // token expiry is genuinely not stored for these integrations
-  token_expiry: null
+  token_expiry: string | null  // token expiry if tracked
 }
 
 export type AccountHub = {
@@ -53,7 +52,7 @@ const ORDER: IntegrationCategory[] = ['AI Models', 'Infrastructure', 'Messaging'
 export async function getAccountHub(): Promise<AccountHub> {
   const db = getControlPlane()
 
-  // Real signal for the 4 AI providers.
+  // 1. Fetch provider_registry (for AI models)
   const live = new Map<string, { enabled: boolean; health: string | null; checked_at: string | null }>()
   try {
     const { data } = await db
@@ -68,7 +67,72 @@ export async function getAccountHub(): Promise<AccountHub> {
     }
   } catch { /* fall through to unmonitored */ }
 
+  // 2. Fetch credential_health (for all infra/messaging/LLM providers)
+  const credsMap = new Map<string, { status: string; expires_at: string | null; last_checked: string | null }[]>()
+  try {
+    const { data } = await db
+      .from('credential_health')
+      .select('provider, status, expires_at, last_checked')
+    for (const c of data ?? []) {
+      if (!c.provider) continue
+      const existing = credsMap.get(c.provider) ?? []
+      existing.push({
+        status: c.status,
+        expires_at: c.expires_at,
+        last_checked: c.last_checked
+      })
+      credsMap.set(c.provider, existing)
+    }
+  } catch { /* fall through to unmonitored */ }
+
   const statuses: IntegrationStatus[] = CATALOG.map((c) => {
+    // Map catalog ID to provider name in credential_health
+    let providerName = c.id
+    if (c.id === 'claude') providerName = 'anthropic'
+    if (c.id === 'gemini') providerName = 'google'
+
+    const creds = credsMap.get(providerName)
+
+    if (creds && creds.length > 0) {
+      let connected = true
+      let health = 'valid'
+      let checked_at: string | null = null
+      let token_expiry: string | null = null
+
+      for (const cred of creds) {
+        if (cred.status !== 'valid') {
+          connected = false
+        }
+
+        const s = cred.status
+        if (s === 'invalid') health = 'invalid'
+        else if (s === 'expired' && health !== 'invalid') health = 'expired'
+        else if (s === 'degraded' && health !== 'invalid' && health !== 'expired') health = 'degraded'
+        else if (s === 'unknown' && health === 'valid') health = 'unknown'
+
+        if (cred.last_checked) {
+          if (!checked_at || new Date(cred.last_checked).getTime() > new Date(checked_at).getTime()) {
+            checked_at = cred.last_checked
+          }
+        }
+
+        if (cred.expires_at) {
+          if (!token_expiry || new Date(cred.expires_at).getTime() < new Date(token_expiry).getTime()) {
+            token_expiry = cred.expires_at
+          }
+        }
+      }
+
+      return {
+        ...c,
+        monitored: true,
+        connected,
+        health,
+        checked_at,
+        token_expiry,
+      }
+    }
+
     const l = c.providerKey ? live.get(c.providerKey) : undefined
     if (l) {
       return {
@@ -80,6 +144,7 @@ export async function getAccountHub(): Promise<AccountHub> {
         token_expiry: null,
       }
     }
+
     return {
       ...c,
       monitored: false,
