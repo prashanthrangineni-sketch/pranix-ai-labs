@@ -57,7 +57,7 @@ function Card({ it }: { it: IntegrationStatus }) {
 
       <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5 text-[12px]">
         <Row label="Health">{it.monitored ? humanHealth(it.health) : 'Not tracked here'}</Row>
-        <Row label="Token expiry">Not tracked</Row>
+        <Row label="Token expiry">{expiryText(it.token_expiry)}</Row>
         <Row label="Last checked">{it.monitored ? rel(it.checked_at) : '—'}</Row>
         <Row label="Permissions">
           <a href="/founder/approvals" className="inline-flex items-center gap-0.5 text-accent hover:underline">
@@ -86,8 +86,21 @@ function StatusBadge({ it }: { it: IntegrationStatus }) {
   let cls = 'border-border-subtle bg-canvas text-fg-muted'
   let label = 'Open console to verify'
   if (it.monitored) {
-    if (it.connected) { cls = 'border-severity-success/30 bg-severity-success/10 text-severity-success'; label = 'Connected' }
-    else { cls = 'border-border-subtle bg-elevated text-fg-muted'; label = 'Disabled' }
+    if (it.connected) {
+      cls = 'border-severity-success/30 bg-severity-success/10 text-severity-success'
+      label = 'Connected'
+    } else {
+      if (it.health === 'degraded') {
+        cls = 'border-severity-warn/30 bg-severity-warn/10 text-severity-warn'
+        label = 'Degraded'
+      } else if (it.health === 'invalid' || it.health === 'expired') {
+        cls = 'border-severity-critical/30 bg-severity-critical/10 text-severity-critical'
+        label = it.health === 'expired' ? 'Expired' : 'Invalid'
+      } else {
+        cls = 'border-border-subtle bg-elevated text-fg-muted'
+        label = 'Disabled'
+      }
+    }
   }
   return (
     <span className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${cls}`}>
@@ -119,4 +132,16 @@ function rel(iso: string | null): string {
   const h = Math.round(m / 60)
   if (h < 48) return `${h}h ago`
   return `${Math.round(h / 24)}d ago`
+}
+
+function expiryText(iso: string | null): string {
+  if (!iso) return 'Not tracked'
+  const diff = new Date(iso).getTime() - Date.now()
+  if (diff < 0) return 'Expired'
+  const days = Math.round(diff / (24 * 3600 * 1000))
+  if (days < 1) {
+    const hours = Math.round(diff / (3600 * 1000))
+    return hours <= 0 ? 'Expires soon' : `Expires in ${hours}h`
+  }
+  return `Expires in ${days}d`
 }
