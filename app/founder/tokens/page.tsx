@@ -3,6 +3,7 @@ import { getControlPlane } from '@/app/lib/control-plane'
 import { TokensClient } from './tokens-client'
 
 export const metadata: Metadata = { title: 'API & Gateway Tokens' }
+export const dynamic = 'force-dynamic'
 
 export default async function FounderTokensPage() {
   const db = getControlPlane()
