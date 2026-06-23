@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
   ]
 
   const teamId = 'team_uGOmdnVSpbocQEAszoKNIN1m'
-  const tokens = [process.env.VERCEL_TOKEN, process.env.VERCEL_SECONDARY_TOKEN].filter(Boolean)
+  const tokens = ([process.env.VERCEL_TOKEN, process.env.VERCEL_SECONDARY_TOKEN].filter(Boolean)) as string[]
 
   for (const project of projects) {
     let success = false
