@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { KeyRound, Shield, AlertTriangle, Check, Copy, X, Loader2, PlayCircle, Eye, Power } from 'lucide-react'
-import toast from 'react-hot-toast'
 
 export type ClientToken = {
   id: string
@@ -23,6 +22,17 @@ export function TokensClient({ initialClients }: { initialClients: ClientToken[]
   const [clients, setClients] = useState<ClientToken[]>(initialClients)
   const [loading, setLoading] = useState(false)
   const [deactivatingId, setDeactivatingId] = useState<string | null>(null)
+
+  // Status feedback state instead of toast
+  const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [copied, setCopied] = useState(false)
+
+  const showStatus = (type: 'success' | 'error', text: string) => {
+    setStatusMessage({ type, text })
+    setTimeout(() => {
+      setStatusMessage(prev => prev?.text === text ? null : prev)
+    }, 5000)
+  }
 
   // Form states
   const [clientName, setClientName] = useState('')
@@ -47,7 +57,7 @@ export function TokensClient({ initialClients }: { initialClients: ClientToken[]
   const handleMint = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!clientName.trim()) {
-      toast.error('Client name is required')
+      showStatus('error', 'Client name is required')
       return
     }
     setLoading(true)
@@ -84,10 +94,10 @@ export function TokensClient({ initialClients }: { initialClients: ClientToken[]
       setScopes(['read'])
       setVendorHint('')
 
-      toast.success('Token minted successfully!')
+      showStatus('success', 'Token minted successfully!')
       router.refresh()
     } catch (err: any) {
-      toast.error(err.message)
+      showStatus('error', err.message)
     } finally {
       setLoading(false)
     }
@@ -106,10 +116,10 @@ export function TokensClient({ initialClients }: { initialClients: ClientToken[]
       if (!res.ok) {
         throw new Error(data.error || 'Failed to deactivate token')
       }
-      toast.success('Token deactivated successfully')
+      showStatus('success', 'Token deactivated successfully')
       router.refresh()
     } catch (err: any) {
-      toast.error(err.message)
+      showStatus('error', err.message)
     } finally {
       setDeactivatingId(null)
     }
@@ -117,7 +127,8 @@ export function TokensClient({ initialClients }: { initialClients: ClientToken[]
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)
-    toast.success('Copied to clipboard!')
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
 
   return (
@@ -127,6 +138,19 @@ export function TokensClient({ initialClients }: { initialClients: ClientToken[]
         <KeyRound className="h-5 w-5 text-fg-muted" />
         <h1 className="text-lg font-semibold text-fg-primary">API &amp; Gateway Tokens</h1>
       </div>
+
+      {statusMessage && (
+        <div className={`p-3 rounded-lg border text-xs flex items-center justify-between gap-2 transition-all ${
+          statusMessage.type === 'success'
+            ? 'border-severity-success/30 bg-severity-success/5 text-severity-success'
+            : 'border-severity-error/30 bg-severity-error/5 text-severity-error'
+        }`}>
+          <span>{statusMessage.text}</span>
+          <button onClick={() => setStatusMessage(null)} className="opacity-60 hover:opacity-100 transition-opacity">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* ── Mint Form ── */}
@@ -359,10 +383,11 @@ export function TokensClient({ initialClients }: { initialClients: ClientToken[]
                 </div>
                 <button
                   onClick={() => copyToClipboard(revealedToken)}
-                  className="rounded-lg bg-accent p-2.5 text-white hover:opacity-90 shrink-0 flex items-center justify-center"
+                  className="rounded-lg bg-accent px-3 py-2 text-white hover:opacity-90 shrink-0 flex items-center justify-center gap-1.5 text-xs font-semibold"
                   title="Copy token"
                 >
-                  <Copy className="h-4 w-4" />
+                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  {copied ? 'Copied!' : 'Copy'}
                 </button>
               </div>
             </div>
