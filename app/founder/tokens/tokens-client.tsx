@@ -28,7 +28,7 @@ export function TokensClient({ initialClients }: { initialClients: ClientToken[]
   const [clientName, setClientName] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [notes, setNotes] = useState('')
-  const [isFounder, setIsFounder] = useState(false)
+
   const [rateLimit, setRateLimit] = useState(900)
   const [scopes, setScopes] = useState<string[]>(['read'])
   const [vendorHint, setVendorHint] = useState('')
@@ -59,7 +59,7 @@ export function TokensClient({ initialClients }: { initialClients: ClientToken[]
           client_name: clientName.trim(),
           display_name: displayName.trim() || clientName.trim(),
           notes: notes.trim() || null,
-          is_founder: isFounder,
+          is_founder: false,
           rate_limit_per_hour: rateLimit,
           default_scopes: scopes,
           vendor_hint: vendorHint.trim() || null
@@ -79,7 +79,7 @@ export function TokensClient({ initialClients }: { initialClients: ClientToken[]
       setClientName('')
       setDisplayName('')
       setNotes('')
-      setIsFounder(false)
+
       setRateLimit(900)
       setScopes(['read'])
       setVendorHint('')
@@ -215,18 +215,7 @@ export function TokensClient({ initialClients }: { initialClients: ClientToken[]
               </div>
             </div>
 
-            <div className="flex items-center gap-2 pt-1">
-              <input
-                type="checkbox"
-                id="isFounderCheck"
-                checked={isFounder}
-                onChange={e => setIsFounder(e.target.checked)}
-                className="rounded border-border-subtle text-accent focus:ring-accent cursor-pointer"
-              />
-              <label htmlFor="isFounderCheck" className="text-xs text-fg-secondary cursor-pointer select-none">
-                Is Founder Credentials (gives full control)
-              </label>
-            </div>
+
 
             <button
               type="submit"
