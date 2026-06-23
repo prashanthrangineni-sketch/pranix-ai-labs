@@ -9,12 +9,13 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json()
-    const { client_name, display_name, notes, is_founder, rate_limit_per_hour, default_scopes, vendor_hint } = body
+    const { client_name, display_name, notes, rate_limit_per_hour, default_scopes, vendor_hint } = body
 
     if (!client_name) {
       return NextResponse.json({ error: 'client_name is required' }, { status: 400 })
     }
 
+    const selectedScopes = Array.isArray(default_scopes) ? default_scopes : ['read']
     const db = getControlPlane()
 
     // 1. Generate token
@@ -33,10 +34,10 @@ export async function POST(req: NextRequest) {
         display_name: display_name || client_name,
         token_hash: tokenHash,
         token_prefix: tokenPrefix,
-        default_scopes: default_scopes || ['read'],
+        default_scopes: selectedScopes,
         active: true,
         rate_limit_per_hour: rate_limit_per_hour || 900,
-        is_founder: !!is_founder,
+        is_founder: false, // Routine minted tokens must NOT be founder-privileged
         vendor_hint: vendor_hint || null,
         notes: notes || null,
         registered_at: new Date().toISOString(),
@@ -47,11 +48,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: clientError.message }, { status: 500 })
     }
 
-    // 3. Assign permissions via mcp_access_grants from mcp_permission_templates
+    // 3. Assign permissions via mcp_access_grants from mcp_permission_templates filtered by selected scopes
     const { data: templates, error: templatesError } = await db
       .from('mcp_permission_templates')
       .select('scope, resource_pattern, notes')
       .eq('active', true)
+      .in('scope', selectedScopes)
 
     if (templatesError) {
       console.error('Failed to fetch templates:', templatesError)
@@ -76,15 +78,15 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 4. Audit-log to mcp_audit_logs
+    // 4. Audit-log to mcp_audit_logs: record ACTING founder's email as client_name (actor)
     const { error: auditError } = await db
       .from('mcp_audit_logs')
       .insert({
         client_id: clientId,
-        client_name,
+        client_name: gate.email,
         tool_name: 'mint_token',
         scope_used: 'write',
-        resource: 'client_token',
+        resource: `client_token:${client_name}`,
         status_code: 200,
         latency_ms: 0,
         created_at: new Date().toISOString(),
