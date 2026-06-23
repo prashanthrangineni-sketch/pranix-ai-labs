@@ -291,6 +291,28 @@ export default async function FounderOverviewPage() {
   return (
     <div className="p-4 lg:p-6 space-y-5">
 
+      {/* ── Pending Grants Alert ── */}
+      {grants && grants.length > 0 && (
+        <Link href="/founder/approvals" className="block">
+          <div className="flex items-center justify-between rounded-xl border border-severity-warn/30 bg-severity-warn/5 hover:bg-severity-warn/10 p-4 transition-all duration-200 group">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0 bg-severity-warn/10">
+                <ShieldAlert className="h-4.5 w-4.5 text-severity-warn" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-fg-primary">Pending Approvals</p>
+                <p className="text-xs text-fg-secondary font-medium">
+                  You have {grants.length} pending access request{grants.length > 1 ? 's' : ''} awaiting approval.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 text-xs font-semibold text-accent group-hover:translate-x-0.5 transition-transform">
+              Review <ChevronRight className="h-3 w-3" />
+            </div>
+          </div>
+        </Link>
+      )}
+
       {/* ── Stat bar ── */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         <StatCard icon={HeartPulse}  iconColor="#22c55e" label="System Health"  value={pulse.isOperational ? 'Healthy' : 'Degraded'} sub={`${pulse.needsAttention} signals need attention`}  valueClass={pulse.isOperational ? 'text-severity-success' : 'text-severity-warn'} />

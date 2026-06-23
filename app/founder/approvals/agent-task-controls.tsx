@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useState, useTransition } from 'react'
 import { CheckCircle2, XCircle, Loader2 } from 'lucide-react'
 import {
   approveAgentTask,
@@ -11,10 +11,40 @@ import {
 const INIT: AgentTaskDecisionState = { ok: false, message: '' }
 
 export function AgentTaskControls({ taskId }: { taskId: string }) {
-  const [approveState, approveAction, approvePending] = useActionState(approveAgentTask, INIT)
-  const [rejectState,  rejectAction,  rejectPending]  = useActionState(rejectAgentTask,  INIT)
+  const [approveState, setApproveState] = useState<AgentTaskDecisionState>(INIT)
+  const [rejectState, setRejectState] = useState<AgentTaskDecisionState>(INIT)
+  const [isPending, startTransition] = useTransition()
+  const [pendingType, setPendingType] = useState<'approve' | 'reject' | null>(null)
 
   const decided = approveState.ok || rejectState.ok
+
+  const handleApprove = () => {
+    setPendingType('approve')
+    startTransition(async () => {
+      try {
+        const formData = new FormData()
+        formData.append('task_id', taskId)
+        const res = await approveAgentTask(approveState, formData)
+        setApproveState(res)
+      } finally {
+        setPendingType(null)
+      }
+    })
+  }
+
+  const handleReject = () => {
+    setPendingType('reject')
+    startTransition(async () => {
+      try {
+        const formData = new FormData()
+        formData.append('task_id', taskId)
+        const res = await rejectAgentTask(rejectState, formData)
+        setRejectState(res)
+      } finally {
+        setPendingType(null)
+      }
+    })
+  }
 
   if (decided) {
     const wasApproved = approveState.ok
@@ -35,34 +65,31 @@ export function AgentTaskControls({ taskId }: { taskId: string }) {
   return (
     <div className="flex items-center gap-2">
       {/* Approve */}
-      <form action={approveAction}>
-        <input type="hidden" name="task_id" value={taskId} />
-        <button
-          type="submit"
-          disabled={approvePending || rejectPending}
-          className="flex items-center gap-1.5 rounded-lg border border-accent/30 bg-accent/10 px-3.5 py-1.5 text-[13px] font-semibold text-accent transition-colors hover:bg-accent/20 disabled:opacity-50"
-        >
-          {approvePending
-            ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            : <CheckCircle2 className="h-3.5 w-3.5" />}
-          Approve
-        </button>
-      </form>
+      <button
+        type="button"
+        onClick={handleApprove}
+        disabled={isPending}
+        className="flex items-center gap-1.5 rounded-lg border border-accent/30 bg-accent/10 px-3.5 py-1.5 text-[13px] font-semibold text-accent transition-colors hover:bg-accent/20 disabled:opacity-50"
+      >
+        {isPending && pendingType === 'approve'
+          ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          : <CheckCircle2 className="h-3.5 w-3.5" />}
+        Approve
+      </button>
 
       {/* Reject */}
-      <form action={rejectAction}>
-        <input type="hidden" name="task_id" value={taskId} />
-        <button
-          type="submit"
-          disabled={approvePending || rejectPending}
-          className="flex items-center gap-1.5 rounded-lg border border-severity-critical/20 bg-severity-critical/5 px-3.5 py-1.5 text-[13px] font-semibold text-severity-critical transition-colors hover:bg-severity-critical/10 disabled:opacity-50"
-        >
-          {rejectPending
-            ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            : <XCircle className="h-3.5 w-3.5" />}
-          Reject
-        </button>
-      </form>
+      <button
+        type="button"
+        onClick={handleReject}
+        disabled={isPending}
+        className="flex items-center gap-1.5 rounded-lg border border-severity-critical/20 bg-severity-critical/5 px-3.5 py-1.5 text-[13px] font-semibold text-severity-critical transition-colors hover:bg-severity-critical/10 disabled:opacity-50"
+      >
+        {isPending && pendingType === 'reject'
+          ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          : <XCircle className="h-3.5 w-3.5" />}
+        Reject
+      </button>
     </div>
   )
 }
+

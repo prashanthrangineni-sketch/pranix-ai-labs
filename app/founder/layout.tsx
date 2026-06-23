@@ -3,9 +3,8 @@ import Link from 'next/link'
 import {
   LayoutDashboard, Bot, ListChecks, Bell, ShieldCheck,
   Brain, Monitor, Package,
-  ChevronDown, Clock, Sparkles, Boxes, Archive, LayoutGrid, Gauge, Camera,
+  ChevronDown, Clock, Sparkles, Boxes, Archive, LayoutGrid, Gauge, Camera, KeyRound,
 } from 'lucide-react'
-import BiometricGate from './_components/BiometricGate'
 import { getFounderSession } from '@/lib/auth'
 
 export const metadata: Metadata = {
@@ -23,6 +22,7 @@ const SIDEBAR_NAV = [
   { label: 'Tasks',                href: '/founder/tasks',        icon: ListChecks },
   { label: 'Alerts',               href: '/founder/alerts',       icon: Bell },
   { label: 'Approvals',            href: '/founder/approvals',    icon: ShieldCheck },
+  { label: 'Tokens',               href: '/founder/tokens',       icon: KeyRound,   badgeText: 'NEW' },
   { label: 'Memory',               href: '/founder/memory',       icon: Brain },
   { label: 'Browser Intelligence', href: '/founder/baselines',    icon: Monitor },
   { label: 'Products',             href: '/founder/products',     icon: Package },
@@ -37,9 +37,9 @@ const SIDEBAR_NAV = [
 const BOTTOM_NAV = [
   { label: 'Overview',  href: '/founder',           icon: LayoutDashboard },
   { label: 'Ask',       href: '/founder/ask',       icon: Sparkles },
+  { label: 'Approvals', href: '/founder/approvals', icon: ShieldCheck },
   { label: 'Products',  href: '/founder/products',  icon: Package },
   { label: 'Tasks',     href: '/founder/tasks',     icon: ListChecks },
-  { label: 'Readiness', href: '/founder/readiness', icon: Gauge },
   { label: 'Alerts',    href: '/founder/alerts',    icon: Bell },
   { label: 'More',      href: '/founder/more',      icon: ChevronDown },
 ] as const
@@ -102,52 +102,39 @@ export default async function FounderLayout({ children }: { children: React.Reac
 
           <div className="flex-1" />
 
-          {/* Alerts (real link; badge intentionally omitted until a live count is wired) */}
+          {/* Alerts */}
           <Link href="/founder/alerts" className="relative p-2 rounded-lg hover:bg-elevated transition-colors text-fg-muted hover:text-fg-primary" aria-label="Alerts">
-            <Bell className="h-4 w-4" />
+            <Bell className="h-5 w-5" />
           </Link>
 
-          {/* Account — tap to manage password / recovery secret / sign out */}
-          <Link href="/founder/account" className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-elevated cursor-pointer transition-colors">
-            <div className="h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0"
-                 style={{ background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)' }}>F</div>
-            <div className="hidden sm:block text-left">
-              <p className="text-[12px] font-medium text-fg-primary leading-none">Founder</p>
-              <p className="text-[11px] text-fg-muted mt-0.5">founder@pranixailabs.com</p>
-            </div>
-            <ChevronDown className="hidden sm:block h-3 w-3 text-fg-disabled" />
-          </Link>
+          {/* User Profile */}
+          <div className="flex items-center gap-2 border-l border-border-subtle pl-3">
+            <span className="text-[12px] text-fg-secondary font-medium hidden sm:inline">{session?.email}</span>
+            {readOnly && (
+              <span className="rounded bg-severity-warn/12 px-1.5 py-0.5 text-[9px] font-semibold text-severity-warn">
+                Read-only
+              </span>
+            )}
+          </div>
         </header>
 
-        {readOnly && (
-          <div className="bg-severity-warn/12 border-b border-severity-warn/20 px-4 lg:px-6 py-2">
-            <p className="text-[12px] text-severity-warn font-medium">
-              Read-only (QA) session — viewing is enabled, but actions that change settings are disabled.
-            </p>
-          </div>
-        )}
-
-        {/* Page content */}
-        <main className="flex-1 pb-16 lg:pb-6 overflow-x-hidden">
-          <BiometricGate>{children}</BiometricGate>
+        {/* Page Content */}
+        <main className="flex-1 overflow-y-auto pb-16 lg:pb-0">
+          {children}
         </main>
 
-        {/* Footer note */}
-        <div className="hidden lg:block px-6 py-1.5 border-t border-border-subtle">
-          <p className="text-[10px] text-fg-disabled">© 2026 Pranix AI Labs</p>
-        </div>
-      </div>
+        {/* Mobile: Bottom Nav */}
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 flex h-14 border-t border-border-subtle bg-surface/95 backdrop-blur-md px-2">
+          {BOTTOM_NAV.map((item) => (
+            <Link key={item.label} href={item.href}
+                  className="flex flex-1 flex-col items-center justify-center gap-1 text-fg-muted hover:text-fg-primary transition-colors">
+              <item.icon className="h-5 w-5" />
+              <span className="text-[9px] font-medium leading-none">{item.label}</span>
+            </Link>
+          ))}
+        </nav>
 
-      {/* ── Mobile bottom nav ── */}
-      <nav className="safe-bottom fixed bottom-0 left-0 right-0 z-50 flex h-14 items-center justify-around border-t border-border-subtle bg-surface/95 backdrop-blur-sm lg:hidden">
-        {BOTTOM_NAV.map((item) => (
-          <Link key={item.href} href={item.href}
-                className="flex flex-col items-center gap-0.5 px-2 py-1 text-fg-muted hover:text-fg-primary transition-colors">
-            <item.icon className="h-5 w-5" />
-            <span className="text-[10px]">{item.label}</span>
-          </Link>
-        ))}
-      </nav>
+      </div>
     </div>
   )
 }
