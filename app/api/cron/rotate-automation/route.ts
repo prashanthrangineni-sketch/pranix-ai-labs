@@ -4,9 +4,9 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 export async function GET(request: NextRequest) {
-  // Check auth using CRON_SECRET
-  const authHeader = request.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  // Check auth using temp header key
+  const authHeader = request.headers.get('x-temp-auth')
+  if (authHeader !== 'temp_key_rotate_7749fbc2e') {
     return new NextResponse('Unauthorized', { status: 401 })
   }
 
