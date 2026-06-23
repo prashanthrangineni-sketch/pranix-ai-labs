@@ -35,15 +35,15 @@ export async function POST(
       return NextResponse.json({ error: updateError.message }, { status: 500 })
     }
 
-    // 3. Audit-log to mcp_audit_logs
+    // 3. Audit-log to mcp_audit_logs: record ACTING founder's email as client_name (actor)
     const { error: auditError } = await db
       .from('mcp_audit_logs')
       .insert({
         client_id: id,
-        client_name: client.client_name,
+        client_name: gate.email,
         tool_name: 'deactivate_token',
         scope_used: 'write',
-        resource: 'client_token',
+        resource: `client_token:${client.client_name}`,
         status_code: 200,
         latency_ms: 0,
         created_at: new Date().toISOString(),
