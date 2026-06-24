@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase'
 import { getControlPlane } from '../../../lib/control-plane'
+import type { PlanStep, TimelineEvent, PersistedTask } from '../../founder/ask/ask-chat'
+import type { VerifiedStep } from '../execute/route'
 import type { PlanStep, TimelineEvent, PersistedTask } from '@/app/founder/ask/ask-chat'
 
 export const dynamic    = 'force-dynamic'
@@ -16,6 +18,7 @@ export type FounderDecision =
   | 'investigate_further'
   | 'no_action_required'
   | 'blocked_missing_data'
+  | 'retry_unverified'     // S1: surface when steps have unverified executions
 
 export type ConfidenceLevel = 'High' | 'Medium' | 'Low'
 export type EvidenceQuality = 'Strong' | 'Partial' | 'Weak'
@@ -103,13 +106,20 @@ function deriveConfidence(steps: RichStep[]): { confidence: ConfidenceLevel; evi
 
 // ── Analysis engine ───────────────────────────────────────────────────────────
 function analyzeEvidence(snapshot: PersistedTask): TaskAnalysis {
-  const steps     = (snapshot.plan ?? []) as RichStep[]
+  const steps     = (snapshot.plan ?? []) as (RichStep & Partial<VerifiedStep>)[]
   const timeline  = snapshot.timeline ?? []
   const goal      = snapshot.goal ?? 'Unknown task'
   const completed = steps.filter(s => s.status === 'completed')
   const failed    = steps.filter(s => s.status === 'failed')
   const blocked   = steps.filter(s => s.result_summary?.includes('blocked') || s.result_summary?.includes('not in read-only allowlist'))
   const inferred  = steps.filter(s => s.result_summary?.includes('inferred') || s.result_summary?.includes('unavailable'))
+
+  // S1: detect unverified steps — any step where execution_verified is explicitly false
+  // (field absent on legacy steps — absence is NOT treated as unverified for back-compat)
+  const unverified = steps.filter(
+    s => s.status === 'unverified' || s.execution_verified === false
+  )
+  const hasUnverified = unverified.length > 0
 
   const { confidence, evidence_quality } = deriveConfidence(steps)
 
@@ -121,6 +131,11 @@ function analyzeEvidence(snapshot: PersistedTask): TaskAnalysis {
   }
   if (failed.length > 0) {
     findings.push(`${failed.length} step${failed.length !== 1 ? 's' : ''} failed: ${failed.map(s => s.title).join(', ')}`)
+  }
+  // S1: surface unverified steps prominently in findings
+  if (unverified.length > 0) {
+    const reason = (unverified[0] as Partial<VerifiedStep>).verification_reason ?? 'gateway unreachable'
+    findings.push(`⚠ ${unverified.length} step${unverified.length !== 1 ? 's' : ''} unverified — ${reason}`)
   }
 
   // Parse evidence summaries for domain-specific findings
@@ -184,6 +199,12 @@ function analyzeEvidence(snapshot: PersistedTask): TaskAnalysis {
   if (failed.length > 0) {
     risks.push(`${failed.length} execution failure${failed.length !== 1 ? 's' : ''} require investigation before proceeding`)
   }
+  // S1: unverified executions are a distinct risk category
+  if (hasUnverified) {
+    risks.push(
+      `${unverified.length} step${unverified.length !== 1 ? 's' : ''} executed without gateway verification — results cannot be trusted. Retry after restoring gateway connectivity.`
+    )
+  }
   if (inferred.length >= steps.length / 2) {
     risks.push('Majority of results are inferred — MCP gateway connectivity should be verified')
   }
@@ -241,12 +262,26 @@ function analyzeEvidence(snapshot: PersistedTask): TaskAnalysis {
   }
 
   // ── Founder Decision ──────────────────────────────────────────────────────
+  // S1 SAFETY RULE: if ANY step has execution_verified === false,
+  // founder_decision CANNOT be 'approve_next_step'.
+  // This is a hard constraint enforced before all other conditions.
+  if (hasUnverified) {
+    recs.unshift('Restore MCP gateway connectivity, then retry unverified steps before approving next action')
+  }
+
   const founder_decision: FounderDecision =
-    (inferred.length >= steps.length * 0.8)                                    ? 'blocked_missing_data' :
-    (failed.length > 0 || driftStep || confidence === 'Low')                   ? 'investigate_further'  :
-    (confidence === 'High' && failed.length === 0 && completed.length > 0)     ? 'approve_next_step'    :
-    (completed.length === steps.length && failed.length === 0)                 ? 'no_action_required'   :
+    (inferred.length >= steps.length * 0.8)                                         ? 'blocked_missing_data' :
+    // S1: unverified execution blocks approve — must retry first
+    hasUnverified                                                                    ? 'retry_unverified'     :
+    (failed.length > 0 || driftStep || confidence === 'Low')                         ? 'investigate_further'  :
+    (confidence === 'High' && failed.length === 0 && completed.length > 0)           ? 'approve_next_step'    :
+    (completed.length === steps.length && failed.length === 0)                       ? 'no_action_required'   :
     'investigate_further'
+
+  // S1: override executive_summary when unverified
+  if (hasUnverified) {
+    executive_summary = `⚠ ${unverified.length} step${unverified.length !== 1 ? 's' : ''} executed without gateway verification. Results are untrustworthy. Restore connectivity and retry before proceeding.`
+  }
 
   return {
     executive_summary,
