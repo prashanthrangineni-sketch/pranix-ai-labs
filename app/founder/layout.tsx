@@ -46,6 +46,9 @@ const BOTTOM_NAV = [
 
 export default async function FounderLayout({ children }: { children: React.ReactNode }) {
   const session = await getFounderSession()
+  if (!session) {
+    return <>{children}</>
+  }
   const readOnly = session?.role === 'readonly'
   return (
     <div className="flex min-h-screen bg-canvas text-fg-primary" style={{ fontFamily: "'DM Sans', 'Inter', system-ui, sans-serif" }}>
