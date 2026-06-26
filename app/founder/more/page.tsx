@@ -19,6 +19,7 @@ const CONSOLE_LINKS: { href: string; label: string; sub: string; icon: React.Rea
   { href: '/founder/accounts', label: 'Accounts', sub: 'Connected accounts', icon: <Users className="h-4 w-4" /> },
   { href: '/founder/workspace', label: 'Workspace', sub: 'Founder workspace', icon: <FolderArchive className="h-4 w-4" /> },
   { href: '/founder/vault', label: 'Vault', sub: 'Document vault', icon: <Lock className="h-4 w-4" /> },
+  { href: '/founder/tokens', label: 'Tokens', sub: 'Mint & manage gateway tokens', icon: <KeyRound className="h-4 w-4" /> },
 ]
 
 function rel(iso: string | null) {
