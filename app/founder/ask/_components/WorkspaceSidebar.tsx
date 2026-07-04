@@ -13,7 +13,11 @@ export type WorkspaceItem = {
   last_msg_at?: string
 }
 
-const AGENT_ENGINE = 'https://pranix-agent-engine.vercel.app'
+// Fixed: was a cross-origin browser fetch straight to the agent-engine deployment
+// (no auth header, blocked/failed silently -> "Could not load workspaces"). Now
+// proxied through this app's own /api/founder/workspaces route, same pattern as
+// every other founder/* data source (see app/api/founder/timeline/route.ts).
+const WORKSPACES_API = '/api/founder/workspaces'
 const LS_KEY = 'pranix_active_workspace'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -54,18 +58,11 @@ export function WorkspaceSidebar({ activeId, onSelect, open, onClose }: Props) {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`${AGENT_ENGINE}/api/workspaces`)
+      const res = await fetch(WORKSPACES_API)
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
-      const list: WorkspaceItem[] = data.workspaces ?? []
-      setWorkspaces(list)
-      // Auto-seed defaults if empty
-      if (list.length === 0) {
-        await fetch(`${AGENT_ENGINE}/api/workspaces/seed`, { method: 'POST' })
-        const res2 = await fetch(`${AGENT_ENGINE}/api/workspaces`)
-        const data2 = await res2.json()
-        setWorkspaces(data2.workspaces ?? [])
-      }
+      // Default-seeding on empty is now handled server-side in the route itself.
+      setWorkspaces(data.workspaces ?? [])
     } catch (e) {
       setError('Could not load workspaces')
     } finally {
@@ -80,7 +77,7 @@ export function WorkspaceSidebar({ activeId, onSelect, open, onClose }: Props) {
     if (!name) return
     setCreating(true)
     try {
-      const res = await fetch(`${AGENT_ENGINE}/api/workspaces`, {
+      const res = await fetch(WORKSPACES_API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, model: 'auto' }),
