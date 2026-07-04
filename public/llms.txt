@@ -1,0 +1,17 @@
+# Pranix AI Labs
+
+> Pranix AI Labs Pvt Ltd is an India-based product studio building a portfolio of AI-first consumer and education products: QuickScanZ (warranty/invoice tracking), Cart2Save (neutral price comparison), QuietKeep (voice assistant), EdProSys (school operating system), and EdGridAI/VidyaGrid (adaptive KG-PG learning platform) - all powered by a shared voice/multi-modal engine called Aaria.
+
+Based in Vijayawada, Andhra Pradesh, India.
+
+## Core pages
+
+- [Homepage](https://www.pranixailabs.com/): Company overview and product portfolio.
+
+## Products
+
+- [QuickScanZ](https://www.quickscanz.com/): Warranty and invoice tracking.
+- [Cart2Save](https://www.cart2save.com/): Neutral price comparison across Indian e-commerce.
+- [QuietKeep](https://www.quietkeep.com/): Voice-first personal assistant.
+- [EdProSys](https://www.edprosys.com/): AI-first school operating system.
+- [EdGridAI](https://www.edgridai.com/): Adaptive KG-PG learning platform.
