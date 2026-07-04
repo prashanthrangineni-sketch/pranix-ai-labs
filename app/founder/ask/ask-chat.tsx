@@ -208,6 +208,51 @@ export function AskChat() {
     endRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, sending])
 
+  // ── Voice input (Web Speech API) ─────────────────────────────────────────
+  // Fastest path to "Jarvis-style" hands-free control: press the mic, speak,
+  // the transcript fills the composer just like typing. Browser-native, no
+  // extra backend. Falls back to hiding the mic button entirely on browsers
+  // that don't implement SpeechRecognition (e.g. Firefox).
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const SpeechRecognitionCtor = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    setVoiceSupported(!!SpeechRecognitionCtor)
+  }, [])
+
+  function toggleVoiceInput() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const SpeechRecognitionCtor = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    if (!SpeechRecognitionCtor) return
+
+    if (listening) {
+      recognitionRef.current?.stop()
+      setListening(false)
+      return
+    }
+
+    const recognition = new SpeechRecognitionCtor()
+    recognition.lang = 'en-IN'
+    recognition.interimResults = true
+    recognition.continuous = false
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    recognition.onresult = (event: any) => {
+      let transcript = ''
+      for (let i = 0; i < event.results.length; i++) {
+        transcript += event.results[i][0].transcript
+      }
+      setInput(transcript)
+    }
+    recognition.onerror = () => setListening(false)
+    recognition.onend = () => setListening(false)
+
+    recognitionRef.current = recognition
+    setListening(true)
+    recognition.start()
+  }
+
+  useEffect(() => () => { recognitionRef.current?.stop() }, [])
+
   function openEvidence(reply: Reply) {
     setEvidenceMeta({
       model_used:       reply.model_used,
