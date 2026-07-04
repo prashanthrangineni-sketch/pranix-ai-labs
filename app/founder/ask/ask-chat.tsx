@@ -181,7 +181,11 @@ export function AskChat() {
   const [agentMode, setAgentMode]             = useState(false)
   const [evidenceOpen, setEvidenceOpen]       = useState(false)
   const [evidenceMeta, setEvidenceMeta]       = useState<EvidenceMeta>({})
+  const [listening, setListening]             = useState(false)
+  const [voiceSupported, setVoiceSupported]   = useState(false)
   const endRef = useRef<HTMLDivElement>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recognitionRef = useRef<any>(null)
 
   const { selectedModel, setSelectedModel } = useModelSelector()
   const { recentTasks, loaded, persistTask } = useTimeline(activeWorkspace)
