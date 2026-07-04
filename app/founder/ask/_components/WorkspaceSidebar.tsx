@@ -58,18 +58,11 @@ export function WorkspaceSidebar({ activeId, onSelect, open, onClose }: Props) {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`${AGENT_ENGINE}/api/workspaces`)
+      const res = await fetch(WORKSPACES_API)
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
-      const list: WorkspaceItem[] = data.workspaces ?? []
-      setWorkspaces(list)
-      // Auto-seed defaults if empty
-      if (list.length === 0) {
-        await fetch(`${AGENT_ENGINE}/api/workspaces/seed`, { method: 'POST' })
-        const res2 = await fetch(`${AGENT_ENGINE}/api/workspaces`)
-        const data2 = await res2.json()
-        setWorkspaces(data2.workspaces ?? [])
-      }
+      // Default-seeding on empty is now handled server-side in the route itself.
+      setWorkspaces(data.workspaces ?? [])
     } catch (e) {
       setError('Could not load workspaces')
     } finally {
