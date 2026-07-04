@@ -13,7 +13,11 @@ export type WorkspaceItem = {
   last_msg_at?: string
 }
 
-const AGENT_ENGINE = 'https://pranix-agent-engine.vercel.app'
+// Fixed: was a cross-origin browser fetch straight to the agent-engine deployment
+// (no auth header, blocked/failed silently -> "Could not load workspaces"). Now
+// proxied through this app's own /api/founder/workspaces route, same pattern as
+// every other founder/* data source (see app/api/founder/timeline/route.ts).
+const WORKSPACES_API = '/api/founder/workspaces'
 const LS_KEY = 'pranix_active_workspace'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
