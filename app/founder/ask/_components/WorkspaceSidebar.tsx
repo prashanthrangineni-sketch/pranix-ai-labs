@@ -77,7 +77,7 @@ export function WorkspaceSidebar({ activeId, onSelect, open, onClose }: Props) {
     if (!name) return
     setCreating(true)
     try {
-      const res = await fetch(`${AGENT_ENGINE}/api/workspaces`, {
+      const res = await fetch(WORKSPACES_API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, model: 'auto' }),
