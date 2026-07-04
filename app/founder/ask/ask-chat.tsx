@@ -7,6 +7,7 @@ import {
   Clock, AlertCircle, ChevronRight, PlayCircle, History, RotateCcw,
   TrendingUp, Shield, Lightbulb, Target, BarChart3,
   ChevronDown, Hash, Wrench, Calendar, BadgeCheck, AlertOctagon, MinusCircle,
+  Mic, MicOff,
 } from 'lucide-react'
 import { WorkspaceSidebar } from './_components/WorkspaceSidebar'
 import { ModelSelector, useModelSelector, type ModelOption } from './_components/ModelSelector'
@@ -180,7 +181,11 @@ export function AskChat() {
   const [agentMode, setAgentMode]             = useState(false)
   const [evidenceOpen, setEvidenceOpen]       = useState(false)
   const [evidenceMeta, setEvidenceMeta]       = useState<EvidenceMeta>({})
+  const [listening, setListening]             = useState(false)
+  const [voiceSupported, setVoiceSupported]   = useState(false)
   const endRef = useRef<HTMLDivElement>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recognitionRef = useRef<any>(null)
 
   const { selectedModel, setSelectedModel } = useModelSelector()
   const { recentTasks, loaded, persistTask } = useTimeline(activeWorkspace)
@@ -202,6 +207,51 @@ export function AskChat() {
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, sending])
+
+  // ── Voice input (Web Speech API) ─────────────────────────────────────────
+  // Fastest path to "Jarvis-style" hands-free control: press the mic, speak,
+  // the transcript fills the composer just like typing. Browser-native, no
+  // extra backend. Falls back to hiding the mic button entirely on browsers
+  // that don't implement SpeechRecognition (e.g. Firefox).
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const SpeechRecognitionCtor = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    setVoiceSupported(!!SpeechRecognitionCtor)
+  }, [])
+
+  function toggleVoiceInput() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const SpeechRecognitionCtor = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    if (!SpeechRecognitionCtor) return
+
+    if (listening) {
+      recognitionRef.current?.stop()
+      setListening(false)
+      return
+    }
+
+    const recognition = new SpeechRecognitionCtor()
+    recognition.lang = 'en-IN'
+    recognition.interimResults = true
+    recognition.continuous = false
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    recognition.onresult = (event: any) => {
+      let transcript = ''
+      for (let i = 0; i < event.results.length; i++) {
+        transcript += event.results[i][0].transcript
+      }
+      setInput(transcript)
+    }
+    recognition.onerror = () => setListening(false)
+    recognition.onend = () => setListening(false)
+
+    recognitionRef.current = recognition
+    setListening(true)
+    recognition.start()
+  }
+
+  useEffect(() => () => { recognitionRef.current?.stop() }, [])
 
   function openEvidence(reply: Reply) {
     setEvidenceMeta({
@@ -433,6 +483,21 @@ export function AskChat() {
               placeholder={agentMode ? 'Describe work for Pranix to plan…' : 'Ask Pranix anything…'}
               className="max-h-32 flex-1 resize-none bg-transparent text-[14px] text-fg-primary placeholder:text-fg-disabled focus:outline-none"
             />
+            {voiceSupported && (
+              <button
+                onClick={toggleVoiceInput}
+                disabled={sending}
+                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors disabled:opacity-40 ${
+                  listening
+                    ? 'bg-severity-critical/10 text-severity-critical animate-pulse'
+                    : 'bg-elevated text-fg-muted hover:text-accent'
+                }`}
+                aria-label={listening ? 'Stop voice input' : 'Start voice input'}
+                aria-pressed={listening}
+              >
+                {listening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+              </button>
+            )}
             <button onClick={() => send(input)} disabled={sending || !input.trim()}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent text-canvas transition-opacity disabled:opacity-40"
               aria-label="Send">
@@ -440,9 +505,11 @@ export function AskChat() {
             </button>
           </div>
           <p className="mt-1.5 px-1 text-center text-[10px] text-fg-disabled">
-            {agentMode
-              ? 'Agent Mode: Pranix plans first. Nothing runs without your approval.'
-              : 'Pranix reads live data and never changes anything without your approval.'}
+            {listening
+              ? 'Listening… speak now, tap the mic again to stop.'
+              : agentMode
+                ? 'Agent Mode: Pranix plans first. Nothing runs without your approval.'
+                : 'Pranix reads live data and never changes anything without your approval.'}
           </p>
         </div>
       </div>
