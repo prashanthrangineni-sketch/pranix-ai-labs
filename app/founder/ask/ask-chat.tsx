@@ -483,6 +483,21 @@ export function AskChat() {
               placeholder={agentMode ? 'Describe work for Pranix to plan…' : 'Ask Pranix anything…'}
               className="max-h-32 flex-1 resize-none bg-transparent text-[14px] text-fg-primary placeholder:text-fg-disabled focus:outline-none"
             />
+            {voiceSupported && (
+              <button
+                onClick={toggleVoiceInput}
+                disabled={sending}
+                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors disabled:opacity-40 ${
+                  listening
+                    ? 'bg-severity-critical/10 text-severity-critical animate-pulse'
+                    : 'bg-elevated text-fg-muted hover:text-accent'
+                }`}
+                aria-label={listening ? 'Stop voice input' : 'Start voice input'}
+                aria-pressed={listening}
+              >
+                {listening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+              </button>
+            )}
             <button onClick={() => send(input)} disabled={sending || !input.trim()}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent text-canvas transition-opacity disabled:opacity-40"
               aria-label="Send">
@@ -490,9 +505,11 @@ export function AskChat() {
             </button>
           </div>
           <p className="mt-1.5 px-1 text-center text-[10px] text-fg-disabled">
-            {agentMode
-              ? 'Agent Mode: Pranix plans first. Nothing runs without your approval.'
-              : 'Pranix reads live data and never changes anything without your approval.'}
+            {listening
+              ? 'Listening… speak now, tap the mic again to stop.'
+              : agentMode
+                ? 'Agent Mode: Pranix plans first. Nothing runs without your approval.'
+                : 'Pranix reads live data and never changes anything without your approval.'}
           </p>
         </div>
       </div>
