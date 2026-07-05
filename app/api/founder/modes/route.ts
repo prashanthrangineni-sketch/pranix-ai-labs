@@ -15,6 +15,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { readExecutionMemory, writeExecutionMemory } from '../../../lib/execution-memory'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
