@@ -12,7 +12,13 @@
 // other founder/* route, since nothing internal needs it unauthenticated
 // anymore.
 
-import { getControlPlane } from './control-plane'
+// NOTE: nothing currently imports this top-level copy — the three founder/*
+// routes resolve '../../../lib/execution-memory' to app/lib/execution-memory.ts
+// (that's where control-plane.ts already lives), not here. Kept as a working
+// re-export for any future top-level caller so it doesn't dangling-import and
+// break a project-wide type check.
+export * from '../app/lib/execution-memory'
+import { getControlPlane } from '../app/lib/control-plane'
 
 export const DEFAULT_EXECUTION_MEMORY_PROJECT = 'pranix'
 export const DEFAULT_EXECUTION_MEMORY_TTL_HOURS = 24
