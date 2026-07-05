@@ -68,6 +68,54 @@ function providerLabel(status: string) {
   return map[status] ?? status
 }
 
+// ── Founder Action Required summary (task #19) ─────────────────────
+// Consolidates every surface that already tracks something needing a
+// founder decision (grants, blocked authority, blocked operations, pending
+// recommendations) into one count on the main overview page. Read-only and
+// purely additive: reuses the same /api/founder/* endpoints and
+// try/catch-empty pattern already used on the approvals page
+// (app/founder/approvals/page.tsx's fetchFromBase) — doesn't touch that
+// page or its logic at all.
+
+async function fetchFounderApi(path: string) {
+  const base = process.env.NEXT_PUBLIC_APP_URL ?? process.env.VERCEL_URL
+  if (!base) return null
+  const url = `${base.startsWith('http') ? base : `https://${base}`}${path}`
+  try {
+    const res = await fetch(url, { cache: 'no-store' })
+    if (!res.ok) return null
+    return await res.json()
+  } catch { return null }
+}
+
+interface FounderActionSummary {
+  grants: number
+  blockedAuthority: number
+  blockedOperations: number
+  pendingRecommendations: number
+  total: number
+}
+
+async function getFounderActionSummary(grantsCount: number): Promise<FounderActionSummary> {
+  const [authority, operations, recommendations] = await Promise.all([
+    fetchFounderApi('/api/founder/authority'),
+    fetchFounderApi('/api/founder/operations'),
+    fetchFounderApi('/api/founder/recommendations'),
+  ])
+  const blockedAuthority = Array.isArray(authority?.blocked) ? authority.blocked.length : 0
+  const blockedOperations = Array.isArray(operations?.blocked) ? operations.blocked.length : 0
+  const pendingRecommendations = Array.isArray(recommendations?.recommendations)
+    ? recommendations.recommendations.filter((r: any) => r?.status === 'pending' || !r?.status).length
+    : 0
+  return {
+    grants: grantsCount,
+    blockedAuthority,
+    blockedOperations,
+    pendingRecommendations,
+    total: grantsCount + blockedAuthority + blockedOperations + pendingRecommendations,
+  }
+}
+
 // ── sub-components ────────────────────────────────────────────────
 
 function Panel({ title, link, linkHref, children, className = '' }: {
