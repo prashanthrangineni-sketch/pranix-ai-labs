@@ -329,6 +329,8 @@ export default async function FounderOverviewPage() {
     getBusinessSnapshot(),
   ])
 
+  const founderAction = await getFounderActionSummary(grants.length)
+
   const nextDigest = new Date()
   nextDigest.setUTCHours(3, 30, 0, 0) // 05:00 IST = 03:30 UTC
   if (nextDigest <= new Date()) nextDigest.setDate(nextDigest.getDate() + 1)
