@@ -68,6 +68,54 @@ function providerLabel(status: string) {
   return map[status] ?? status
 }
 
+// ── Founder Action Required summary (task #19) ─────────────────────
+// Consolidates every surface that already tracks something needing a
+// founder decision (grants, blocked authority, blocked operations, pending
+// recommendations) into one count on the main overview page. Read-only and
+// purely additive: reuses the same /api/founder/* endpoints and
+// try/catch-empty pattern already used on the approvals page
+// (app/founder/approvals/page.tsx's fetchFromBase) — doesn't touch that
+// page or its logic at all.
+
+async function fetchFounderApi(path: string) {
+  const base = process.env.NEXT_PUBLIC_APP_URL ?? process.env.VERCEL_URL
+  if (!base) return null
+  const url = `${base.startsWith('http') ? base : `https://${base}`}${path}`
+  try {
+    const res = await fetch(url, { cache: 'no-store' })
+    if (!res.ok) return null
+    return await res.json()
+  } catch { return null }
+}
+
+interface FounderActionSummary {
+  grants: number
+  blockedAuthority: number
+  blockedOperations: number
+  pendingRecommendations: number
+  total: number
+}
+
+async function getFounderActionSummary(grantsCount: number): Promise<FounderActionSummary> {
+  const [authority, operations, recommendations] = await Promise.all([
+    fetchFounderApi('/api/founder/authority'),
+    fetchFounderApi('/api/founder/operations'),
+    fetchFounderApi('/api/founder/recommendations'),
+  ])
+  const blockedAuthority = Array.isArray(authority?.blocked) ? authority.blocked.length : 0
+  const blockedOperations = Array.isArray(operations?.blocked) ? operations.blocked.length : 0
+  const pendingRecommendations = Array.isArray(recommendations?.recommendations)
+    ? recommendations.recommendations.filter((r: any) => r?.status === 'pending' || !r?.status).length
+    : 0
+  return {
+    grants: grantsCount,
+    blockedAuthority,
+    blockedOperations,
+    pendingRecommendations,
+    total: grantsCount + blockedAuthority + blockedOperations + pendingRecommendations,
+  }
+}
+
 // ── sub-components ────────────────────────────────────────────────
 
 function Panel({ title, link, linkHref, children, className = '' }: {
@@ -281,6 +329,8 @@ export default async function FounderOverviewPage() {
     getBusinessSnapshot(),
   ])
 
+  const founderAction = await getFounderActionSummary(grants.length)
+
   const nextDigest = new Date()
   nextDigest.setUTCHours(3, 30, 0, 0) // 05:00 IST = 03:30 UTC
   if (nextDigest <= new Date()) nextDigest.setDate(nextDigest.getDate() + 1)
@@ -308,6 +358,33 @@ export default async function FounderOverviewPage() {
             </div>
             <div className="flex items-center gap-1 text-xs font-semibold text-accent group-hover:translate-x-0.5 transition-transform">
               Review <ChevronRight className="h-3 w-3" />
+            </div>
+          </div>
+        </Link>
+      )}
+
+      {/* ── Founder Action Required (task #19) ── */}
+      {founderAction.total > 0 && (
+        <Link href="/founder/approvals" className="block">
+          <div className="flex items-center justify-between rounded-xl border border-accent/30 bg-accent-subtle hover:bg-accent-subtle/80 p-4 transition-all duration-200 group">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0 bg-accent/10">
+                <AlertCircle className="h-4.5 w-4.5 text-accent" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-fg-primary">Founder Action Required</p>
+                <p className="text-xs text-fg-secondary font-medium">
+                  {founderAction.total} item{founderAction.total > 1 ? 's' : ''} need{founderAction.total === 1 ? 's' : ''} your decision
+                  {founderAction.grants > 0 && ` — ${founderAction.grants} access request${founderAction.grants > 1 ? 's' : ''}`}
+                  {founderAction.blockedAuthority > 0 && `, ${founderAction.blockedAuthority} blocked authorization${founderAction.blockedAuthority > 1 ? 's' : ''}`}
+                  {founderAction.blockedOperations > 0 && `, ${founderAction.blockedOperations} blocked operation${founderAction.blockedOperations > 1 ? 's' : ''}`}
+                  {founderAction.pendingRecommendations > 0 && `, ${founderAction.pendingRecommendations} recommendation${founderAction.pendingRecommendations > 1 ? 's' : ''} awaiting review`}
+                  .
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 text-xs font-semibold text-accent group-hover:translate-x-0.5 transition-transform">
+              Review all <ChevronRight className="h-3 w-3" />
             </div>
           </div>
         </Link>
