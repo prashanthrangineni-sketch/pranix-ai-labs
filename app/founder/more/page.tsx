@@ -1,6 +1,6 @@
 import { getOperations } from '@/lib/operations'
 import Link from 'next/link'
-import { Lock, Activity, Rocket, Settings, CheckCircle2, AlertCircle, Smartphone, Monitor, Image as ImageIcon, Database, Network, Bot, Users, FolderArchive, Cpu, ListTree, KeyRound } from 'lucide-react'
+import { Lock, Activity, Rocket, Settings, CheckCircle2, AlertCircle, Smartphone, Monitor, Image as ImageIcon, Database, Network, Bot, Users, FolderArchive, Cpu, ListTree, KeyRound, Workflow } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'More' }
