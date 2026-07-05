@@ -20,6 +20,7 @@ const SIDEBAR_NAV = [
   { label: 'Ask Pranix',           href: '/founder/ask',          icon: Sparkles,   badgeText: 'NEW' },
   { label: 'Agents',               href: '/founder/workers',      icon: Bot },
   { label: 'Tasks',                href: '/founder/tasks',        icon: ListChecks },
+  { label: 'Automation',           href: '/founder/automation',   icon: Workflow,   badgeText: 'NEW' },
   { label: 'Alerts',               href: '/founder/alerts',       icon: Bell },
   { label: 'Approvals',            href: '/founder/approvals',    icon: ShieldCheck },
   { label: 'Tokens',               href: '/founder/tokens',       icon: KeyRound,   badgeText: 'NEW' },
