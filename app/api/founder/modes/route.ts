@@ -15,6 +15,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { readExecutionMemory, writeExecutionMemory } from '../../../lib/execution-memory'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -91,38 +92,16 @@ const MODES: FounderMode[] = [
 const DEFAULT_MODE_ID: ModeId = 'MODE_A'
 
 // ─── Execution-memory helpers ─────────────────────────────────────────────────
-
-const BASE = process.env.NEXT_PUBLIC_APP_URL ?? process.env.VERCEL_URL
-
-function baseUrl(): string {
-  if (!BASE) return ''
-  return BASE.startsWith('http') ? BASE : `https://${BASE}`
-}
+// Was an internal fetch('/api/founder/execution-memory') round-trip; now calls
+// the shared lib directly (same process, no network hop, no auth to bypass).
 
 async function memRead(key: string): Promise<Record<string, unknown> | null> {
-  try {
-    const res = await fetch(
-      `${baseUrl()}/api/founder/execution-memory?key=${encodeURIComponent(key)}`,
-      { cache: 'no-store' },
-    )
-    if (!res.ok) return null
-    const j = await res.json()
-    return (j?.value ?? null) as Record<string, unknown> | null
-  } catch {
-    return null
-  }
+  const value = await readExecutionMemory('pranix', key)
+  return (value ?? null) as Record<string, unknown> | null
 }
 
 async function memWrite(key: string, value: Record<string, unknown>): Promise<void> {
-  try {
-    await fetch(`${baseUrl()}/api/founder/execution-memory`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ key, value }),
-    })
-  } catch {
-    // non-fatal
-  }
+  await writeExecutionMemory('pranix', key, value)
 }
 
 // ─── Load active mode ─────────────────────────────────────────────────────────

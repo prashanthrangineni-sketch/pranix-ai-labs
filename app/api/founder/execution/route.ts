@@ -15,6 +15,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { readExecutionMemory, writeExecutionMemory } from '../../../lib/execution-memory'
 
 // ────────────────────────────── Types
 
@@ -60,31 +61,19 @@ async function fetchJson(path: string) {
 }
 
 // ────────────────────────────── Execution Memory
+// Was an internal fetch('/api/founder/execution-memory') round-trip; now calls
+// the shared lib directly (same process, no network hop, no auth to bypass).
 
-const EM_BASE    = '/api/founder/execution-memory'
 const EM_PROJECT = 'pranix'
 const emKey      = (op_id: string) => `p11:execution:${op_id}`
 
 async function readFromMemory(op_id: string): Promise<ExecutionRecord | null> {
-  try {
-    const j = await fetchJson(`${EM_BASE}?project=${EM_PROJECT}&key=${emKey(op_id)}`)
-    return (j?.value as ExecutionRecord) ?? null
-  } catch { return null }
+  const value = await readExecutionMemory(EM_PROJECT, emKey(op_id))
+  return (value as ExecutionRecord) ?? null
 }
 
 async function writeToMemory(record: ExecutionRecord): Promise<void> {
-  try {
-    await fetch(`${appBase()}${EM_BASE}`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        project:   EM_PROJECT,
-        key:       emKey(record.operation_id),
-        value:     record,
-        ttl_hours: 48,
-      }),
-    })
-  } catch { /* non-fatal */ }
+  await writeExecutionMemory(EM_PROJECT, emKey(record.operation_id), record, 48)
 }
 
 // ────────────────────────────── Eligibility evaluation
