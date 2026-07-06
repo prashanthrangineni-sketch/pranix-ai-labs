@@ -20,6 +20,7 @@ import type { RoadmapItem }                   from '@/app/api/founder/roadmap/ro
 import type { AuthorityRecord }               from '@/app/api/founder/authority/route'
 import type { ExecutionRecord }               from '@/app/api/founder/execution/route'
 import type { LearningRecord, LearningEngine } from '@/app/api/founder/learning/route'
+import type { StateRecord }                      from '@/app/api/founder/state/route'
 import type { AutonomyEngine, AutonomyStatus } from '@/app/api/founder/autonomy/route'
 import { RecDecisionControls }            from './rec-decision-controls'
 
@@ -119,6 +120,16 @@ async function getAutonomy(): Promise<AutonomyEngine | null> {
   } catch { return null }
 }
 
+async function getStateHealth(): Promise<{
+  summary: { healthy: number; warning: number; critical: number; expired: number }
+  records: StateRecord[]
+}> {
+  const empty = { summary: { healthy: 0, warning: 0, critical: 0, expired: 0 }, records: [] }
+  try {
+    const j = await fetchFromBase('/api/founder/state')
+    return j ? {
+      summary: j.summary ?? empty.summary,
+      records: (j.records ?? []) as StateRecord[],
 async function getRoadmap(): Promise<{
   roadmap:    RoadmapItem[]
   progress: { pct: number; total: number; completed: number; in_progress: number; blocked: number; current: RoadmapItem | null; next: RoadmapItem | null; blocked_items: RoadmapItem[]; milestones: RoadmapItem[] }
@@ -265,6 +276,7 @@ export default async function FounderPermissionsPage() {
     executionData,
     learningData,
     autonomyData,
+    stateHealthData,
     dispatchData,
     activationData,
     queueData,
@@ -281,6 +293,7 @@ export default async function FounderPermissionsPage() {
     getExecution(),
     getLearning(),
     getAutonomy(),
+    getStateHealth(),
     getDispatch(),
     getActivation(),
     getQueue(),
@@ -1234,6 +1247,43 @@ export default async function FounderPermissionsPage() {
         </section>
       )}
 
+      {/* ── S2: State Review ── */}
+      {stateHealthData.records.length > 0 && (
+        <section id="state" className="space-y-3 scroll-mt-4">
+          <div className="flex items-center gap-2">
+            <AlertOctagon className="h-4 w-4 text-accent" />
+            <h2 className="text-[13px] font-semibold text-fg-secondary">State Health Review</h2>
+            <span className="rounded-full bg-elevated px-2 py-0.5 text-[11px] font-medium text-fg-muted">
+              {stateHealthData.summary.healthy} healthy
+              &nbsp;&middot;&nbsp;
+              {stateHealthData.summary.warning} warning
+              &nbsp;&middot;&nbsp;
+              {stateHealthData.summary.critical > 0
+                ? <span className="text-severity-critical font-semibold">{stateHealthData.summary.critical} critical</span>
+                : '0 critical'
+              }
+              &nbsp;&middot;&nbsp;
+              {stateHealthData.summary.expired} expired
+            </span>
+          </div>
+
+          {/* Summary pill row */}
+          <div className="flex flex-wrap gap-2">
+            <StatHealthPill count={stateHealthData.summary.healthy}  label="Healthy"  variant="healthy"  />
+            <StatHealthPill count={stateHealthData.summary.warning}  label="Warning"  variant="warning"  />
+            <StatHealthPill count={stateHealthData.summary.critical} label="Critical" variant="critical" />
+            <StatHealthPill count={stateHealthData.summary.expired}  label="Expired"  variant="expired"  />
+          </div>
+
+          {/* Per-record rows — sorted: critical → warning → healthy → expired */}
+          <div className="divide-y divide-border-subtle rounded-xl border border-border-subtle bg-surface overflow-hidden">
+            {stateHealthData.records.map((rec: StateRecord) => (
+              <StateRecordRow key={rec.key} rec={rec} />
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* ── P13: Autonomy Review ── */}
       {autonomyData && (
         <section id="autonomy" className="space-y-3 scroll-mt-4">
@@ -1951,6 +2001,81 @@ function AutonomyStat({ label, value, cls }: { label: string; value: number; cls
 }
 
 // ─── Plain-language helpers ──────────────────────────────────────
+
+// ─── S2: State Health sub-components ───────────────────────────────────────────────
+
+type StatHealthVariant = 'healthy' | 'warning' | 'critical' | 'expired'
+
+const STAT_HEALTH_PILL_CLS: Record<StatHealthVariant, string> = {
+  healthy:  'bg-severity-success/10 text-severity-success',
+  warning:  'bg-severity-warn/10 text-severity-warn',
+  critical: 'bg-severity-critical/10 text-severity-critical',
+  expired:  'bg-elevated text-fg-disabled',
+}
+
+function StatHealthPill({
+  count, label, variant,
+}: { count: number; label: string; variant: StatHealthVariant }) {
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+      count > 0 ? STAT_HEALTH_PILL_CLS[variant] : 'bg-elevated text-fg-muted'
+    }`}>
+      {label}: {count}
+    </span>
+  )
+}
+
+const STATE_HEALTH_BADGE: Record<StatHealthVariant, { badge: string; label: string }> = {
+  healthy:  { badge: 'bg-severity-success/10 text-severity-success',   label: 'Healthy'  },
+  warning:  { badge: 'bg-severity-warn/10 text-severity-warn',         label: 'Warning'  },
+  critical: { badge: 'bg-severity-critical/10 text-severity-critical', label: 'Critical' },
+  expired:  { badge: 'bg-elevated text-fg-disabled',                   label: 'Expired'  },
+}
+
+function StateRecordRow({ rec }: { rec: StateRecord }) {
+  const meta = STATE_HEALTH_BADGE[rec.health_status] ?? STATE_HEALTH_BADGE.healthy
+  const expiresAt = new Date(rec.expires_at)
+  const expiresLabel = rec.health_status === 'expired'
+    ? `Expired ${timeAgo(rec.expires_at)}`
+    : rec.health_status === 'critical'
+    ? `Expires in ${rec.hours_remaining.toFixed(1)}h`
+    : rec.hours_remaining > 24
+    ? `Expires in ${Math.round(rec.hours_remaining / 24)}d`
+    : `Expires in ${rec.hours_remaining.toFixed(1)}h`
+
+  return (
+    <div className="flex items-start gap-3 px-3 py-3">
+      <div className="flex-1 min-w-0 space-y-0.5">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-[10px] font-semibold text-fg-disabled uppercase tracking-wide">{rec.category.replace('_', ' ')}</span>
+          <span className="text-[12px] font-medium text-fg-primary">{rec.label}</span>
+          {rec.preview && <span className="text-[11px] text-fg-muted truncate max-w-[180px]">&middot; {rec.preview}</span>}
+        </div>
+        <p className={`text-[11px] ${
+          rec.health_status === 'critical' ? 'text-severity-critical' :
+          rec.health_status === 'warning'  ? 'text-severity-warn' :
+          rec.health_status === 'expired'  ? 'text-fg-disabled' :
+          'text-fg-muted'
+        }`}>
+          {expiresLabel}
+          {rec.health_status !== 'expired' && (
+            <span className="text-fg-disabled">
+              {' '}&middot; {expiresAt.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+            </span>
+          )}
+        </p>
+        {rec.refresh_recommended && (
+          <p className="text-[11px] font-semibold text-severity-critical">
+            ⚠ Refresh {rec.health_status === 'expired' ? 'required' : 'immediately'}
+          </p>
+        )}
+      </div>
+      <span className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${meta.badge}`}>
+        {meta.label}
+      </span>
+    </div>
+  )
+}
 
 function accessVerb(scope: string): string {
   switch (scope) {
