@@ -3,7 +3,7 @@ import Link from 'next/link'
 import {
   LayoutDashboard, Bot, ListChecks, Bell, ShieldCheck,
   Brain, Monitor, Package,
-  ChevronDown, Clock, Sparkles, Boxes, Archive, LayoutGrid, Gauge, Camera, KeyRound,
+  ChevronDown, Clock, Sparkles, Boxes, Archive, LayoutGrid, Gauge, Camera, KeyRound, Workflow,
 } from 'lucide-react'
 import { getFounderSession } from '@/lib/auth'
 
@@ -20,6 +20,7 @@ const SIDEBAR_NAV = [
   { label: 'Ask Pranix',           href: '/founder/ask',          icon: Sparkles,   badgeText: 'NEW' },
   { label: 'Agents',               href: '/founder/workers',      icon: Bot },
   { label: 'Tasks',                href: '/founder/tasks',        icon: ListChecks },
+  { label: 'Automation',           href: '/founder/automation',   icon: Workflow,   badgeText: 'NEW' },
   { label: 'Alerts',               href: '/founder/alerts',       icon: Bell },
   { label: 'Approvals',            href: '/founder/approvals',    icon: ShieldCheck },
   { label: 'Tokens',               href: '/founder/tokens',       icon: KeyRound,   badgeText: 'NEW' },

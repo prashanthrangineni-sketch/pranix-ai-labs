@@ -1,6 +1,6 @@
 import { getOperations } from '@/lib/operations'
 import Link from 'next/link'
-import { Lock, Activity, Rocket, Settings, CheckCircle2, AlertCircle, Smartphone, Monitor, Image as ImageIcon, Database, Network, Bot, Users, FolderArchive, Cpu, ListTree, KeyRound } from 'lucide-react'
+import { Lock, Activity, Rocket, Settings, CheckCircle2, AlertCircle, Smartphone, Monitor, Image as ImageIcon, Database, Network, Bot, Users, FolderArchive, Cpu, ListTree, KeyRound, Workflow } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'More' }
@@ -13,6 +13,7 @@ const CONSOLE_LINKS: { href: string; label: string; sub: string; icon: React.Rea
   { href: '/founder/artifacts', label: 'Artifacts', sub: 'Artifact governance', icon: <ImageIcon className="h-4 w-4" /> },
   { href: '/founder/workers', label: 'Workers', sub: 'Worker runs', icon: <Cpu className="h-4 w-4" /> },
   { href: '/founder/orchestrate', label: 'Orchestrate', sub: 'Inference & routing', icon: <Network className="h-4 w-4" /> },
+  { href: '/founder/automation', label: 'Automation', sub: 'Cowork orchestrator status', icon: <Workflow className="h-4 w-4" /> },
   { href: '/founder/ai', label: 'AI Workspace', sub: 'Operational layer', icon: <Bot className="h-4 w-4" /> },
   { href: '/founder/actions', label: 'Actions', sub: 'Action registry', icon: <ListTree className="h-4 w-4" /> },
   { href: '/founder/memory', label: 'Memory', sub: 'Pranix memory', icon: <Database className="h-4 w-4" /> },
