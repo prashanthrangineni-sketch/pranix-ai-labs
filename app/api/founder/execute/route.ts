@@ -3,14 +3,108 @@ import { createServerClient } from '@/lib/supabase'
 import { getControlPlane } from '../../../lib/control-plane'
 import type { PlanStep, TimelineEvent, PersistedTask } from '@/app/founder/ask/ask-chat'
 
-export const dynamic = 'force-dynamic'
+export const dynamic    = 'force-dynamic'
 export const maxDuration = 60  // Vercel: up to 60s for sequential MCP calls
 
 const PROJECT   = 'pranix-dashboard'
 const KEY_NS    = 'ask:task:'
 const TTL_HOURS = 168
 
-// ─── Auth gate ────────────────────────────────────────────────────────────────
+// ─── S1: Extended step status ───────────────────────────────────────────────────────────────────
+// Extends PlanStep status without replacing the existing schema.
+// New states patch onto existing queued | executing | completed | failed:
+//   unverified   — terminal: step ran but gateway was unreachable, result unconfirmed
+//   retry_pending — founder-initiated retry queued for an unverified step
+//
+// New fields added to existing PlanStep records (all optional for back-compat):
+//   gateway_live        boolean   — was gateway reachable when this step executed?
+//   execution_verified  boolean   — result confirmed via live gateway round-trip
+//   verification_reason string    — human-readable reason for verified/unverified state
+//
+// Compatibility guarantees:
+//   Replay Engine  (P3)  — reads plan[] steps; new fields are additive, ignored if absent
+//   Learning Engine(P12) — filters on status === 'completed'; unverified is non-matching, safe
+//   Autonomy Engine(P13) — gates on execution_verified via the summary block below
+//   Authority Layer(P10) — reads snapshot.status; unverified task-level status added
+
+export type S1StepStatus =
+  | 'queued'
+  | 'executing'
+  | 'completed'
+  | 'failed'
+  | 'unverified'
+  | 'retry_pending'
+
+// Augmented step type — back-compatible extension of PlanStep
+export type VerifiedStep = PlanStep & {
+  result_summary?:      string
+  raw_result?:          unknown
+  started_at?:          string
+  completed_at?:        string
+  // S1 verification fields (all optional for back-compat)
+  gateway_live?:         boolean
+  execution_verified?:   boolean
+  verification_reason?:  string
+}
+
+// Per-task execution summary consumed by analyze/route.ts, P12, P13, P10
+export interface ExecutionVerificationSummary {
+  task_id:          string
+  total_steps:      number
+  verified_steps:   number
+  unverified_steps: number
+  failed_steps:     number
+  retry_pending:    number
+  has_unverified:   boolean   // safety gate consumed by analyze/route.ts
+}
+
+function buildVerificationSummary(
+  taskId: string,
+  steps: VerifiedStep[]
+): ExecutionVerificationSummary {
+  return {
+    task_id:          taskId,
+    total_steps:      steps.length,
+    verified_steps:   steps.filter(s => s.execution_verified === true).length,
+    unverified_steps: steps.filter(s => s.status === 'unverified').length,
+    failed_steps:     steps.filter(s => s.status === 'failed').length,
+    retry_pending:    steps.filter(s => s.status === 'retry_pending').length,
+    has_unverified:   steps.some(s => s.status === 'unverified' || s.execution_verified === false),
+  }
+}
+
+// ─── S1: Gateway verification (calls dedicated /health endpoint) ──────────────────────
+interface GatewayState {
+  gateway_live:       boolean
+  verification_reason: string
+}
+
+async function verifyGateway(): Promise<GatewayState> {
+  const base = process.env.NEXT_PUBLIC_APP_URL ??
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
+  try {
+    const res = await fetch(`${base}/api/founder/health`, {
+      cache:  'no-store',
+      signal: AbortSignal.timeout(6_000),
+    })
+    if (!res.ok) return { gateway_live: false, verification_reason: `Health endpoint returned ${res.status}` }
+    const j = await res.json().catch(() => ({}))
+    const live = j.gateway_live === true
+    return {
+      gateway_live:        live,
+      verification_reason: live
+        ? `Gateway verified in ${j.gateway_latency_ms ?? '?'}ms`
+        : 'Gateway unreachable — execution unverified',
+    }
+  } catch (e) {
+    return {
+      gateway_live:        false,
+      verification_reason: `Health check failed: ${e instanceof Error ? e.message : String(e)}`,
+    }
+  }
+}
+
+// ─── Auth gate ───────────────────────────────────────────────────────────────────────────
 async function assertFounder(): Promise<{ ok: boolean; email?: string }> {
   try {
     const supa = createServerClient()
@@ -23,7 +117,7 @@ async function assertFounder(): Promise<{ ok: boolean; email?: string }> {
   } catch { return { ok: false } }
 }
 
-// ─── Execution memory helpers ─────────────────────────────────────────────────
+// ─── Execution memory helpers ─────────────────────────────────────────────────────────
 async function loadSnapshot(taskId: string): Promise<PersistedTask | null> {
   const { data } = await getControlPlane()
     .from('execution_memory')
@@ -48,7 +142,7 @@ async function saveSnapshot(snapshot: PersistedTask): Promise<void> {
     )
 }
 
-// ─── Tool dispatcher (read-only only) ────────────────────────────────────────
+// ─── Tool dispatcher (read-only only) ────────────────────────────────────────────────────
 //
 // Each tool maps to a Pranix MCP internal API call via getControlPlane().
 // No write tools are listed — any attempt to call one returns an error.
@@ -59,7 +153,7 @@ type ToolResult = { summary: string; raw: unknown }
 async function dispatchTool(tool: string, step: PlanStep): Promise<ToolResult> {
   const cp = getControlPlane()
 
-  // ── GitHub read-only ──────────────────────────────────────────────────────
+  // ── GitHub read-only ────────────────────────────────────────────────────────────────────
   if (tool === 'github_read_repo_tree') {
     // step.description may contain "repo: owner/name" or "path: src/"
     const repoMatch = step.description?.match(/repo[:\s]+([\w.\-]+\/[\w.\-]+)/i)
@@ -100,7 +194,7 @@ async function dispatchTool(tool: string, step: PlanStep): Promise<ToolResult> {
     return { summary: `Inspected repo structure for ${repo}`, raw: { repo, path, note: 'gateway unavailable — summary inferred' } }
   }
 
-  // ── Supabase read-only ────────────────────────────────────────────────────
+  // ── Supabase read-only ──────────────────────────────────────────────────────────────────
   if (tool === 'supabase_list_tables') {
     // Enumerate all known project IDs from env or default to first Pranix project
     const projectIds = (process.env.SUPABASE_PROJECT_IDS ?? 'mvdjyjccvioxircxuzgz').split(',')
@@ -168,7 +262,7 @@ async function dispatchTool(tool: string, step: PlanStep): Promise<ToolResult> {
     return { summary: `SELECT executed on Supabase (${pid})`, raw: { sql, note: 'gateway unavailable — summary inferred' } }
   }
 
-  // ── Vercel read-only ──────────────────────────────────────────────────────
+  // ── Vercel read-only ──────────────────────────────────────────────────────────────────
   if (tool === 'vercel_get_deployment') {
     const urlMatch = step.description?.match(/(https:\/\/[\w.\-]+\.vercel\.app|dpl_[\w]+)/i)
     const target   = urlMatch?.[1] ?? 'latest'
@@ -223,7 +317,7 @@ async function dispatchTool(tool: string, step: PlanStep): Promise<ToolResult> {
     return { summary: `Fetched runtime logs for ${pid}`, raw: { pid, note: 'gateway unavailable — summary inferred' } }
   }
 
-  // ── Doppler read-only ─────────────────────────────────────────────────────
+  // ── Doppler read-only ───────────────────────────────────────────────────────────────────
   if (tool === 'doppler_list_projects') {
     const res = await fetch(
       `${process.env.PRANIX_GATEWAY_URL ?? 'https://mcp.pranix.ai'}/doppler/projects`,
@@ -283,14 +377,14 @@ async function dispatchTool(tool: string, step: PlanStep): Promise<ToolResult> {
     return { summary: `Drift check: ${proj} ${ca} vs ${cb}`, raw: { proj, ca, cb, note: 'gateway unavailable — summary inferred' } }
   }
 
-  // ── Unknown / blocked tool ────────────────────────────────────────────────
+  // ── Unknown / blocked tool ───────────────────────────────────────────────────────────────────
   return {
     summary: `Tool \`${tool}\` not in read-only allowlist — skipped`,
     raw:     { tool, blocked: true },
   }
 }
 
-// ─── POST /api/founder/execute ────────────────────────────────────────────────
+// ─── POST /api/founder/execute ───────────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
   const gate = await assertFounder()
   if (!gate.ok) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 })
@@ -315,10 +409,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, task_id: taskId, message: 'already_completed' })
   }
 
+  // ─ S1: Verify gateway ONCE before execution begins ────────────────────────────────────
+  const gatewayState = await verifyGateway()
+
   // Mark executing
   const startTimeline: TimelineEvent[] = [
     ...(snapshot.timeline ?? []),
-    { id: `exec-start-${Date.now()}`, kind: 'executing', label: 'Execution started', timestamp: new Date().toISOString() },
+    {
+      id:        `exec-start-${Date.now()}`,
+      kind:      'executing',
+      label:     gatewayState.gateway_live
+        ? 'Execution started (gateway verified)'
+        : '⚠ Execution started — gateway unreachable, steps will be unverified',
+      timestamp: new Date().toISOString(),
+    },
   ]
   let current: PersistedTask = {
     ...snapshot,
@@ -329,15 +433,23 @@ export async function POST(req: NextRequest) {
   }
   await saveSnapshot(current)
 
-  const steps = (snapshot.plan ?? []) as Array<PlanStep & { result_summary?: string; raw_result?: unknown; started_at?: string; completed_at?: string }>
+  const steps = (snapshot.plan ?? []) as VerifiedStep[]
 
-  // ── Execute steps sequentially ────────────────────────────────────────────
+  // ── Execute steps sequentially ────────────────────────────────────────────────────────────
   let failed = false
   for (let i = 0; i < steps.length; i++) {
     const step = steps[i]
 
     // Mark step as executing
-    steps[i] = { ...step, status: 'executing', started_at: new Date().toISOString() }
+    steps[i] = {
+      ...step,
+      status:     'executing',
+      started_at: new Date().toISOString(),
+      // S1: stamp gateway state onto every step at start
+      gateway_live:        gatewayState.gateway_live,
+      execution_verified:  false,               // will be set true on successful completion
+      verification_reason: gatewayState.verification_reason,
+    }
     const stepStartTimeline: TimelineEvent[] = [
       ...current.timeline,
       {
@@ -350,17 +462,47 @@ export async function POST(req: NextRequest) {
     current = { ...current, plan: [...steps] as PlanStep[], timeline: stepStartTimeline, updated_at: new Date().toISOString() }
     await saveSnapshot(current)
 
-    // Dispatch the actual MCP tool
+    // ─ S1: If gateway is offline, mark step unverified immediately — do not dispatch
+    if (!gatewayState.gateway_live) {
+      steps[i] = {
+        ...steps[i],
+        status:              'unverified',
+        completed_at:        new Date().toISOString(),
+        result_summary:      `⚠ Unverified — ${gatewayState.verification_reason}`,
+        gateway_live:        false,
+        execution_verified:  false,
+        verification_reason: gatewayState.verification_reason,
+      }
+      const unverTimeline: TimelineEvent[] = [
+        ...current.timeline,
+        {
+          id:        `step-${i}-unverified-${Date.now()}`,
+          kind:      'failed' as const,    // maps to existing timeline kind for rendering
+          label:     `⚠ Unverified Execution — Step ${i + 1}: ${step.title}`,
+          timestamp: new Date().toISOString(),
+        },
+      ]
+      current = { ...current, plan: [...steps] as PlanStep[], timeline: unverTimeline, updated_at: new Date().toISOString() }
+      await saveSnapshot(current)
+      failed = true
+      break  // stop execution — unverified is terminal for this run
+    }
+
+    // Dispatch the actual MCP tool (gateway is live)
     try {
       const tool   = step.tool ?? ''
       const result = await dispatchTool(tool, step)
 
       steps[i] = {
         ...steps[i],
-        status:         'completed',
-        completed_at:   new Date().toISOString(),
-        result_summary: result.summary,
-        raw_result:     result.raw,
+        status:              'completed',
+        completed_at:        new Date().toISOString(),
+        result_summary:      result.summary,
+        raw_result:          result.raw,
+        // S1: mark verified on successful dispatch
+        gateway_live:        true,
+        execution_verified:  true,
+        verification_reason: gatewayState.verification_reason,
       }
       const stepDoneTimeline: TimelineEvent[] = [
         ...current.timeline,
@@ -378,9 +520,13 @@ export async function POST(req: NextRequest) {
       const msg = err instanceof Error ? err.message : String(err)
       steps[i] = {
         ...steps[i],
-        status:         'failed',
-        completed_at:   new Date().toISOString(),
-        result_summary: `Error: ${msg}`,
+        status:              'failed',
+        completed_at:        new Date().toISOString(),
+        result_summary:      `Error: ${msg}`,
+        // S1: failed steps are also not verified
+        gateway_live:        gatewayState.gateway_live,
+        execution_verified:  false,
+        verification_reason: `Step failed: ${msg.slice(0, 120)}`,
       }
       const stepFailTimeline: TimelineEvent[] = [
         ...current.timeline,
@@ -398,16 +544,28 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // ── Final state ───────────────────────────────────────────────────────────
-  const finalStatus: PersistedTask['status'] = failed ? 'failed' : 'completed'
+  // ── Final state ─────────────────────────────────────────────────────────────────────────────
+  // S1: task-level status is 'unverified' if ANY step is unverified
+  const hasUnverified = steps.some(s => s.status === 'unverified')
+  const finalStatus: PersistedTask['status'] =
+    hasUnverified ? 'failed'    // use 'failed' for snapshot compat — summary has has_unverified flag
+    : failed      ? 'failed'
+    : 'completed'
+
+  const verSummary = buildVerificationSummary(taskId, steps)
+
+  const finalLabel = hasUnverified
+    ? `⚠ Unverified Execution — ${verSummary.unverified_steps} step(s) unverified (gateway offline)`
+    : failed
+    ? 'Execution stopped — one or more steps failed'
+    : `Execution completed — ${steps.length} step${steps.length === 1 ? '' : 's'} finished (✓ ${verSummary.verified_steps} verified)`
+
   const finalTimeline: TimelineEvent[] = [
     ...current.timeline,
     {
       id:        `exec-end-${Date.now()}`,
-      kind:      failed ? 'failed' : 'completed',
-      label:     failed
-        ? 'Execution stopped — one or more steps failed'
-        : `Execution completed — ${steps.length} step${steps.length === 1 ? '' : 's'} finished`,
+      kind:      (failed || hasUnverified) ? 'failed' : 'completed',
+      label:     finalLabel,
       timestamp: new Date().toISOString(),
     },
   ]
@@ -432,10 +590,14 @@ export async function POST(req: NextRequest) {
   }).catch(() => { /* analysis failure does not block execute response */ })
 
   return NextResponse.json({
-    ok:      !failed,
-    task_id: taskId,
-    status:  finalStatus,
+    ok:              !failed && !hasUnverified,
+    task_id:         taskId,
+    status:          finalStatus,
     steps_completed: steps.filter(s => s.status === 'completed').length,
     steps_total:     steps.length,
+    // S1: surface verification summary to caller (ask-chat.tsx, P13, P10)
+    verification:    verSummary,
+    gateway_live:    gatewayState.gateway_live,
+    timeline_label:  hasUnverified ? '⚠ Unverified Execution' : undefined,
   })
 }
