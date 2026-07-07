@@ -21,7 +21,8 @@ export type PlanStep = {
   title:       string
   description: string
   tool?:       string
-  status:      'planned' | 'approved' | 'executing' | 'completed' | 'failed'
+  status:      'planned' | 'approved' | 'executing' | 'completed' | 'failed' | 'unverified'
+  execution_verified?: boolean
 }
 
 export type TimelineEvent = {
