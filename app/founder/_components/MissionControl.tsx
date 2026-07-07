@@ -392,6 +392,10 @@ export function MissionControl() {
         summary:    j.summary    ?? { healthy: 0, warning: 0, critical: 0, expired: 0 },
         records:    j.records    ?? [],
         scanned_at: j.scanned_at ?? '',
+      })
+    } catch { /* non-fatal */ }
+  }, [])
+
   // S4 — Activation
   const [activation, setActivation] = useState<{
     pending:    number
