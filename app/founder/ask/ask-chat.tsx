@@ -21,7 +21,7 @@ export type PlanStep = {
   title:       string
   description: string
   tool?:       string
-  status:      'planned' | 'approved' | 'executing' | 'completed' | 'failed' | 'unverified'
+  status:      'planned' | 'approved' | 'executing' | 'completed' | 'failed' | 'unverified' | 'retry_pending'
   execution_verified?: boolean
 }
 
