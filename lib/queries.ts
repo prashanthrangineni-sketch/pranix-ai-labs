@@ -260,6 +260,32 @@ export async function getFailurePatterns(): Promise<FailurePattern[]> {
   return (data as FailurePattern[]) || []
 }
 
+export type SemanticMemoryEntry = {
+  id: string
+  project: string
+  scope: string
+  content: string
+  salience: number
+  source_kind: string | null
+  created_at: string
+  is_protected: boolean
+  is_anchor: boolean
+}
+
+export async function getSemanticMemoryEntries(): Promise<SemanticMemoryEntry[]> {
+  const db = createServerClient()
+  const nowIso = new Date().toISOString()
+  const { data } = await db
+    .from('pranix_memory')
+    .select('id, project, scope, content, salience, source_kind, created_at, is_protected, is_anchor')
+    .is('superseded_by', null)
+    .or(`expires_at.is.null,expires_at.gt.${nowIso}`)
+    .order('salience', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(200)
+  return (data as SemanticMemoryEntry[]) || []
+}
+
 export async function getProductHealth(): Promise<ProductHealth[]> {
   const db = createServerClient()
   // Phase G3 — replace hardcoded zeros with real audit telemetry.
