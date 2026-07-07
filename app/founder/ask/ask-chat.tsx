@@ -21,7 +21,8 @@ export type PlanStep = {
   title:       string
   description: string
   tool?:       string
-  status:      'planned' | 'approved' | 'executing' | 'completed' | 'failed'
+  status:      'planned' | 'approved' | 'executing' | 'completed' | 'failed' | 'unverified' | 'retry_pending'
+  execution_verified?: boolean
 }
 
 export type TimelineEvent = {
@@ -949,6 +950,8 @@ function StepRow({ step, active }: { step: RichPlanStep; active: boolean }) {
     executing: <Loader2      className="h-3.5 w-3.5 text-accent animate-spin" />,
     completed: <CheckCircle2 className="h-3.5 w-3.5 text-accent" />,
     failed:    <AlertCircle  className="h-3.5 w-3.5 text-severity-critical" />,
+    unverified:     <MinusCircle className="h-3.5 w-3.5 text-fg-muted" />,
+    retry_pending:  <RotateCcw   className="h-3.5 w-3.5 text-severity-warn" />,
   }[step.status]
 
   return (

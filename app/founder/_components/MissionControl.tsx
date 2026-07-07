@@ -392,6 +392,10 @@ export function MissionControl() {
         summary:    j.summary    ?? { healthy: 0, warning: 0, critical: 0, expired: 0 },
         records:    j.records    ?? [],
         scanned_at: j.scanned_at ?? '',
+      })
+    } catch { /* non-fatal */ }
+  }, [])
+
   // S4 — Activation
   const [activation, setActivation] = useState<{
     pending:    number
@@ -597,6 +601,7 @@ export function MissionControl() {
     const t = setInterval(() => { loadRecs(); loadOps(); loadSchedule(); loadGovernance(); loadModes(); loadAuthority(); loadExecution(); loadLearning(); loadStateHealth() }, 60_000)
     return () => clearInterval(t)
   }, [loadRecs, loadOps, loadSchedule, loadGovernance, loadModes, loadAuthority, loadExecution, loadLearning, loadStateHealth])
+  useEffect(() => {
     const t = setInterval(() => { loadRecs(); loadOps(); loadSchedule(); loadGovernance(); loadModes(); loadAuthority(); loadExecution(); loadLearning(); loadDispatch(); loadActivation(); loadQueue(); loadExecutor(); loadRoadmap() }, 60_000)
     return () => clearInterval(t)
   }, [loadRecs, loadOps, loadSchedule, loadGovernance, loadModes, loadAuthority, loadExecution, loadLearning, loadDispatch, loadActivation, loadQueue, loadExecutor, loadRoadmap])
@@ -1217,6 +1222,9 @@ export function MissionControl() {
               )}
             </div>
           </>
+        )
+      })()}
+
       {/* ── S3: Dispatch Queue ── */}
       {(() => {
         if (dispatch.records.length === 0 && dispatch.eligible === 0) return null

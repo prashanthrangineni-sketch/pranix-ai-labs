@@ -130,6 +130,10 @@ async function getStateHealth(): Promise<{
     return j ? {
       summary: j.summary ?? empty.summary,
       records: (j.records ?? []) as StateRecord[],
+    } : empty
+  } catch { return empty }
+}
+
 async function getRoadmap(): Promise<{
   roadmap:    RoadmapItem[]
   progress: { pct: number; total: number; completed: number; in_progress: number; blocked: number; current: RoadmapItem | null; next: RoadmapItem | null; blocked_items: RoadmapItem[]; milestones: RoadmapItem[] }
