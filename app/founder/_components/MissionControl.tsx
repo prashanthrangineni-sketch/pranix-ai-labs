@@ -598,9 +598,13 @@ export function MissionControl() {
     return () => clearInterval(t)
   }, [load, loadAutonomy])
   useEffect(() => {
-    const t = setInterval(() => { loadRecs(); loadOps(); loadSchedule(); loadGovernance(); loadModes(); loadAuthority(); loadExecution(); loadLearning(); loadStateHealth(); loadDispatch(); loadActivation(); loadQueue(); loadExecutor(); loadRoadmap() }, 60_000)
+    const t = setInterval(() => { loadRecs(); loadOps(); loadSchedule(); loadGovernance(); loadModes(); loadAuthority(); loadExecution(); loadLearning(); loadStateHealth() }, 60_000)
     return () => clearInterval(t)
-  }, [loadRecs, loadOps, loadSchedule, loadGovernance, loadModes, loadAuthority, loadExecution, loadLearning, loadStateHealth, loadDispatch, loadActivation, loadQueue, loadExecutor, loadRoadmap])
+  }, [loadRecs, loadOps, loadSchedule, loadGovernance, loadModes, loadAuthority, loadExecution, loadLearning, loadStateHealth])
+  useEffect(() => {
+    const t = setInterval(() => { loadRecs(); loadOps(); loadSchedule(); loadGovernance(); loadModes(); loadAuthority(); loadExecution(); loadLearning(); loadDispatch(); loadActivation(); loadQueue(); loadExecutor(); loadRoadmap() }, 60_000)
+    return () => clearInterval(t)
+  }, [loadRecs, loadOps, loadSchedule, loadGovernance, loadModes, loadAuthority, loadExecution, loadLearning, loadDispatch, loadActivation, loadQueue, loadExecutor, loadRoadmap])
 
   if (loading) {
     return (
