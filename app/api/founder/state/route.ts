@@ -34,7 +34,7 @@ export interface StateRecord {
   preview?:             string
 }
 
-interface StateSummary {
+export interface StateSummary {
   healthy:  number
   warning:  number
   critical: number
