@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase'
 import { getControlPlane } from '../../../lib/control-plane'
-import type { PlanStep, TimelineEvent, PersistedTask } from '../../founder/ask/ask-chat'
-import type { VerifiedStep } from '../execute/route'
 import type { PlanStep, TimelineEvent, PersistedTask } from '@/app/founder/ask/ask-chat'
+import type { VerifiedStep } from '../execute/route'
 
 export const dynamic    = 'force-dynamic'
 export const maxDuration = 30
