@@ -1222,6 +1222,9 @@ export function MissionControl() {
               )}
             </div>
           </>
+        )
+      })()}
+
       {/* ── S3: Dispatch Queue ── */}
       {(() => {
         if (dispatch.records.length === 0 && dispatch.eligible === 0) return null
