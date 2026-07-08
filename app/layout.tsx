@@ -14,18 +14,64 @@ const jetbrainsMono = JetBrains_Mono({
   display: 'swap',
 })
 
+const SITE_URL = 'https://www.pranixailabs.com'
+
+const SITE_DESCRIPTION =
+  'Pranix AI Labs is India’s sovereign AI product studio building compliance-first, auditable AI systems for commerce, education, life and ownership. Cart2Save, QuietKeep, QuickScanZ and School OS share a protocol-grade agent engine for real-time decisions.'
+
+const organizationJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'Pranix AI Labs',
+  url: SITE_URL,
+  logo: `${SITE_URL}/icon-512.png`,
+  description: SITE_DESCRIPTION,
+  founder: {
+    '@type': 'Person',
+    name: 'Prashanth Rao Rangineni',
+    jobTitle: 'Principal Architect & Founder',
+  },
+  sameAs: [
+    'https://www.linkedin.com/company/pranix-ai-labs-private-limited/',
+    'https://www.linkedin.com/in/prashanth-rao-rangineni-9a3b5266',
+  ],
+  address: {
+    '@type': 'PostalAddress',
+    addressLocality: 'Hyderabad',
+    addressRegion: 'Telangana',
+    addressCountry: 'IN',
+  },
+}
+
+const websiteJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'Pranix AI Labs',
+  url: SITE_URL,
+}
+
 export const metadata: Metadata = {
   title: {
-    default: 'Pranix AI Labs',
+    default:
+      'Pranix AI Labs | Sovereign AI Product Studio — Cart2Save, QuietKeep, QuickScanZ & School OS',
     template: '%s — Pranix AI Labs',
   },
-  description:
-    'Protocol-grade operational infrastructure for AI-assisted execution. Deterministic-first orchestration with supervised autonomy.',
-  metadataBase: new URL('https://www.pranixailabs.com'),
+  description: SITE_DESCRIPTION,
+  metadataBase: new URL(SITE_URL),
   openGraph: {
     type: 'website',
     locale: 'en_IN',
     siteName: 'Pranix AI Labs',
+    title: 'Pranix AI Labs | Sovereign AI Product Studio',
+    description: SITE_DESCRIPTION,
+    url: SITE_URL,
+    images: [{ url: '/icon-512.png', alt: 'Pranix AI Labs' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Pranix AI Labs | Sovereign AI Product Studio',
+    description: SITE_DESCRIPTION,
+    images: ['/icon-512.png'],
   },
   robots: {
     index: true,
@@ -59,6 +105,18 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="font-sans min-h-screen antialiased">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(organizationJsonLd),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(websiteJsonLd),
+          }}
+        />
         {children}
       </body>
     </html>
