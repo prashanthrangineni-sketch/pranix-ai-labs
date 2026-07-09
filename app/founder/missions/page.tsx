@@ -134,6 +134,8 @@ export default async function MissionControlPage() {
         </p>
       </div>
 
+      <InstallPranixApp />
+
       {heartbeats.length > 0 && (
         <div className="rounded-lg border border-border-subtle bg-surface p-4">
           <div className="flex items-center gap-2 mb-2">
