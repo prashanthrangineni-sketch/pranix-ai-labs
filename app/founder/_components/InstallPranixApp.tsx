@@ -46,7 +46,6 @@ export default function InstallPranixApp() {
   }, [])
 
   if (isStandalone || installed) return null
-  if (!deferredPrompt && !isIos) return null
 
   const handleInstall = async () => {
     if (!deferredPrompt) return
