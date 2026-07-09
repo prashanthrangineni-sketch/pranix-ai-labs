@@ -46,6 +46,11 @@ export default function manifest(): MetadataRoute.Manifest {
     categories: ['productivity', 'business'],
     shortcuts: [
       {
+        name: 'Mission Control',
+        url: '/founder/missions',
+        description: 'Missions, workers, and verified state',
+      },
+      {
         name: 'Task Queue',
         url: '/founder/tasks',
         description: 'View operational task queue',
