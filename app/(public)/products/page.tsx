@@ -72,12 +72,6 @@ const FUTURE_SYSTEMS = [
   { name: 'IELTS Platform', desc: 'Test preparation and consultancy marketplace' },
 ] as const
 
-const PRODUCTS_JSON_LD = {
-  '@context': 'https://schema.org',
-  '@type': 'ItemList',
-  itemListElement': undefined,
-} as const
-
 function buildProductsJsonLd() {
   return {
     '@context': 'https://schema.org',
