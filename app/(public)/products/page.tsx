@@ -1,9 +1,26 @@
 import type { Metadata } from 'next'
 import { ArrowUpRight } from 'lucide-react'
 
+const PAGE_URL = 'https://www.pranixailabs.com/products'
+const PAGE_TITLE = 'Products | Pranix AI Labs'
+const PAGE_DESCRIPTION = 'Pranix AI Labs product ecosystem — commerce, education, voice intelligence, warranty lifecycle. Cart2Save, EdProSys, VidyaGrid, QuietKeep, QuickScanZ.'
+
 export const metadata: Metadata = {
-  title: 'Products',
-  description: 'Pranix AI Labs product ecosystem — commerce, education, voice intelligence, warranty lifecycle.',
+  title: PAGE_TITLE,
+  description: PAGE_DESCRIPTION,
+  alternates: { canonical: PAGE_URL },
+  openGraph: {
+    type: 'website',
+    url: PAGE_URL,
+    siteName: 'Pranix AI Labs',
+    title: PAGE_TITLE,
+    description: PAGE_DESCRIPTION,
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: PAGE_TITLE,
+    description: PAGE_DESCRIPTION,
+  },
 }
 
 const ACTIVE_PRODUCTS = [
