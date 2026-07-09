@@ -8,6 +8,7 @@ import {
   type MissionStep,
 } from '@/lib/mission-queries'
 import { Rocket, ShieldCheck, AlertTriangle, Users, CheckCircle2, Clock, XCircle } from 'lucide-react'
+import InstallPranixApp from '@/app/founder/_components/InstallPranixApp'
 
 export const metadata: Metadata = { title: 'Mission Control' }
 export const revalidate = 60
