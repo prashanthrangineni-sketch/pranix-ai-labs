@@ -46,7 +46,6 @@ export default function InstallPranixApp() {
   }, [])
 
   if (isStandalone || installed) return null
-  if (!deferredPrompt && !isIos) return null
 
   const handleInstall = async () => {
     if (!deferredPrompt) return
@@ -94,6 +93,21 @@ export default function InstallPranixApp() {
           <p>
             3. Tap <span className="font-medium text-fg-secondary">Add</span> — the Pranix icon appears on your home screen.
           </p>
+        </div>
+      )}
+
+      {showIosHelp && !isIos && (
+        <div className="mt-2 rounded-md bg-canvas p-2 text-xs text-fg-muted space-y-1">
+          <p>
+            <span className="font-medium text-fg-secondary">Chrome / Edge (laptop):</span> open the browser menu (⋮) →{' '}
+            <span className="font-medium text-fg-secondary">"Cast, save and share" → "Install page as app"</span> (Chrome) or{' '}
+            <span className="font-medium text-fg-secondary">"Apps → Install this site as an app"</span> (Edge).
+          </p>
+          <p>
+            <span className="font-medium text-fg-secondary">Android Chrome:</span> menu (⋮) →{' '}
+            <span className="font-medium text-fg-secondary">"Add to Home screen" → "Install"</span>.
+          </p>
+          <p>If the option is missing, reload the page once (the app registers itself on first visit) and try again.</p>
         </div>
       )}
     </div>

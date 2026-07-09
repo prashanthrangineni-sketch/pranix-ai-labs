@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter, JetBrains_Mono } from 'next/font/google'
+import RegisterServiceWorker from '@/app/founder/_components/RegisterServiceWorker'
 import './globals.css'
 
 const inter = Inter({
@@ -105,6 +106,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="font-sans min-h-screen antialiased">
+        <RegisterServiceWorker />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
