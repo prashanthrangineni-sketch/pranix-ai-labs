@@ -8,6 +8,7 @@ import {
   type MissionStep,
 } from '@/lib/mission-queries'
 import { Rocket, ShieldCheck, AlertTriangle, Users, CheckCircle2, Clock, XCircle } from 'lucide-react'
+import InstallPranixApp from '@/app/founder/_components/InstallPranixApp'
 
 export const metadata: Metadata = { title: 'Mission Control' }
 export const revalidate = 60
@@ -132,6 +133,8 @@ export default async function MissionControlPage() {
           when a different identity checked the live source of truth (verifier independence).
         </p>
       </div>
+
+      <InstallPranixApp />
 
       {heartbeats.length > 0 && (
         <div className="rounded-lg border border-border-subtle bg-surface p-4">
