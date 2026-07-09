@@ -1,9 +1,26 @@
 import type { Metadata } from 'next'
 import { Layers, Cpu, GitBranch, Activity, Database, Shield } from 'lucide-react'
 
+const PAGE_URL = 'https://www.pranixailabs.com/infrastructure'
+const PAGE_TITLE = 'Infrastructure | Pranix AI Labs'
+const PAGE_DESCRIPTION = 'The Pranix Agent Engine — sovereign control plane architecture, worker topology, inference cascade, and governance protocols behind every Pranix AI Labs product.'
+
 export const metadata: Metadata = {
-  title: 'Infrastructure',
-  description: 'The Pranix Agent Engine — control plane architecture, worker topology, inference cascade.',
+  title: PAGE_TITLE,
+  description: PAGE_DESCRIPTION,
+  alternates: { canonical: PAGE_URL },
+  openGraph: {
+    type: 'website',
+    url: PAGE_URL,
+    siteName: 'Pranix AI Labs',
+    title: PAGE_TITLE,
+    description: PAGE_DESCRIPTION,
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: PAGE_TITLE,
+    description: PAGE_DESCRIPTION,
+  },
 }
 
 export default function InfrastructurePage() {
