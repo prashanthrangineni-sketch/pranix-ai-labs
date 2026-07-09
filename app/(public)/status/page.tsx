@@ -2,9 +2,26 @@ import type { Metadata } from 'next'
 import { getProductHealth, getWorkerStats, getAlertCounts } from '@/lib/queries'
 import { CheckCircle, AlertTriangle, Clock } from 'lucide-react'
 
+const PAGE_URL = 'https://www.pranixailabs.com/status'
+const PAGE_TITLE = 'Status | Pranix AI Labs'
+const PAGE_DESCRIPTION = 'Live operational status of Pranix AI Labs infrastructure and products — worker health, deployment status, and system uptime.'
+
 export const metadata: Metadata = {
-  title: 'Status',
-  description: 'Operational status of Pranix AI Labs infrastructure and products.',
+  title: PAGE_TITLE,
+  description: PAGE_DESCRIPTION,
+  alternates: { canonical: PAGE_URL },
+  openGraph: {
+    type: 'website',
+    url: PAGE_URL,
+    siteName: 'Pranix AI Labs',
+    title: PAGE_TITLE,
+    description: PAGE_DESCRIPTION,
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: PAGE_TITLE,
+    description: PAGE_DESCRIPTION,
+  },
 }
 
 export const revalidate = 60

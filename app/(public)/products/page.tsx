@@ -1,9 +1,26 @@
 import type { Metadata } from 'next'
 import { ArrowUpRight } from 'lucide-react'
 
+const PAGE_URL = 'https://www.pranixailabs.com/products'
+const PAGE_TITLE = 'Products | Pranix AI Labs'
+const PAGE_DESCRIPTION = 'Pranix AI Labs product ecosystem — commerce, education, voice intelligence, warranty lifecycle. Cart2Save, EdProSys, VidyaGrid, QuietKeep, QuickScanZ.'
+
 export const metadata: Metadata = {
-  title: 'Products',
-  description: 'Pranix AI Labs product ecosystem — commerce, education, voice intelligence, warranty lifecycle.',
+  title: PAGE_TITLE,
+  description: PAGE_DESCRIPTION,
+  alternates: { canonical: PAGE_URL },
+  openGraph: {
+    type: 'website',
+    url: PAGE_URL,
+    siteName: 'Pranix AI Labs',
+    title: PAGE_TITLE,
+    description: PAGE_DESCRIPTION,
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: PAGE_TITLE,
+    description: PAGE_DESCRIPTION,
+  },
 }
 
 const ACTIVE_PRODUCTS = [
@@ -55,9 +72,33 @@ const FUTURE_SYSTEMS = [
   { name: 'IELTS Platform', desc: 'Test preparation and consultancy marketplace' },
 ] as const
 
+function buildProductsJsonLd() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'Pranix AI Labs Products',
+    itemListElement: ACTIVE_PRODUCTS.map((p, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      item: {
+        '@type': 'SoftwareApplication',
+        name: p.name,
+        description: p.tagline,
+        applicationCategory: p.category,
+        ...(p.url ? { url: p.url } : {}),
+        offers: { '@type': 'Offer', availability: 'https://schema.org/InStock' },
+      },
+    })),
+  }
+}
+
 export default function ProductsPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-16">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(buildProductsJsonLd()) }}
+      />
       <h1 className="text-3xl font-bold md:text-4xl">Products</h1>
       <p className="mt-3 max-w-2xl text-[hsl(var(--fg-secondary))]">
         Each product is a standalone system feeding into a unified operational graph.
