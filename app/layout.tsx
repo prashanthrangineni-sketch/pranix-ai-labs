@@ -106,6 +106,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="font-sans min-h-screen antialiased">
+        <RegisterServiceWorker />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
