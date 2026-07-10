@@ -9,6 +9,7 @@ import {
 } from '@/lib/mission-queries'
 import { Rocket, ShieldCheck, AlertTriangle, Users, CheckCircle2, Clock, XCircle } from 'lucide-react'
 import InstallPranixApp from '@/app/founder/_components/InstallPranixApp'
+import VoicePushToTalk from '@/app/founder/_components/VoicePushToTalk'
 
 export const metadata: Metadata = { title: 'Mission Control' }
 export const revalidate = 60
@@ -133,6 +134,8 @@ export default async function MissionControlPage() {
           when a different identity checked the live source of truth (verifier independence).
         </p>
       </div>
+
+      <VoicePushToTalk />
 
       <InstallPranixApp />
 
