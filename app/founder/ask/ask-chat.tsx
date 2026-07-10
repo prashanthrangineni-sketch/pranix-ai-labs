@@ -175,6 +175,19 @@ function useTimeline(workspaceId: string | null) {
 export function AskChat() {
   const [messages, setMessages]               = useState<Msg[]>([])
   const [input, setInput]                     = useState('')
+
+  // Voice handoff (task #29 Phase 1): consume ?q= once on mount so
+  // /founder/ask?q=<transcript> from the Mission Inbox push-to-talk
+  // pre-fills the input. window.location (not useSearchParams) avoids
+  // any Suspense/prerender requirements in this client component.
+  useEffect(() => {
+    try {
+      const q = new URLSearchParams(window.location.search).get('q')
+      if (q) setInput(q)
+    } catch {
+      /* ignore */
+    }
+  }, [])
   const [sending, setSending]                 = useState(false)
   const [sidebarOpen, setSidebarOpen]         = useState(false)
   const [activeWorkspace, setActiveWorkspace] = useState<string | null>(null)
