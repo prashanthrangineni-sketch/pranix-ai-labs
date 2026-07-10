@@ -135,6 +135,8 @@ export default async function MissionControlPage() {
         </p>
       </div>
 
+      <VoicePushToTalk />
+
       <InstallPranixApp />
 
       {heartbeats.length > 0 && (
