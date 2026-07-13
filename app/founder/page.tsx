@@ -6,6 +6,7 @@ import {
   Clock, Zap, RefreshCw,
 } from 'lucide-react'
 import { MissionControl } from './_components/MissionControl'
+import { FounderAlertInbox } from './_components/FounderAlertInbox'
 import {
   getSystemPulse,
   getCriticalAlerts,
@@ -398,6 +399,9 @@ export default async function FounderOverviewPage() {
         <StatCard icon={ListOrdered} iconColor="#f59e0b" label="Task Queue"     value={pulse.taskCounts.pending}                    sub="Pending tasks" valueClass="text-fg-primary" />
         <StatCard icon={ShieldAlert} iconColor="#ef4444" label="Critical Alerts" value={pulse.alertCounts.critical}                 sub="Requires attention" valueClass="text-severity-critical" />
       </div>
+
+      {/* ── Founder Alert Inbox ── */}
+      <FounderAlertInbox initialAlerts={criticalAlerts} />
 
       {/* ── P4 Mission Control ── */}
       <section aria-label="Mission Control">
