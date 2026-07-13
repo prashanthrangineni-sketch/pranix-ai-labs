@@ -243,7 +243,7 @@ export async function getCriticalAlerts(limit = 20) {
   const { data } = await db
     .from('founder_alerts')
     .select('id, level, source, title, body, context, created_at, delivered, severity_tier, auto_whatsapp')
-    .eq('level', 'critical')
+    .in('level', ['critical', 'warn'])
     .order('created_at', { ascending: false })
     .limit(limit)
   return data || []
