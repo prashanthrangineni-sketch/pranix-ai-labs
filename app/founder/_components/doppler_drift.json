@@ -1,0 +1,14 @@
+{
+  "quickscanz": {
+    "missing": ["SUPABASE_SERVICE_ROLE_KEY"]
+  },
+  "cart2save": {
+    "missing": ["CUELINKS_TOKEN", "ADMITAD_API_TOKEN"]
+  },
+  "quietkeep": {
+    "missing": ["BHASHINI_API_KEY"]
+  },
+  "pranix_site": {
+    "missing": ["SUPABASE_URL"]
+  }
+}
