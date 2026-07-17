@@ -563,7 +563,7 @@ export async function getTasksPage(opts: {
 }
 
 export async function getTaskById(id: string): Promise<TaskDetail | null> {
-  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
   if (!UUID_RE.test(id)) return null
   const db = createServerClient()
   const { data, error } = await db.from('tasks').select('*').eq('id', id).maybeSingle()
