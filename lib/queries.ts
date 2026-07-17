@@ -563,7 +563,7 @@ export async function getTasksPage(opts: {
 }
 
 export async function getTaskById(id: string): Promise<TaskDetail | null> {
-  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
   if (!UUID_RE.test(id)) return null
   const db = createServerClient()
   const { data, error } = await db.from('tasks').select('*').eq('id', id).maybeSingle()
@@ -665,5 +665,68 @@ export async function getBusinessSnapshot(): Promise<BusinessSnapshot | null> {
     version: p.version ?? 1,
     products: p.products ?? {},
     totals: p.totals ?? {},
+  }
+}
+
+export type PendingIdea = {
+  id: string
+  text: string
+  status: string
+  created_at: string
+}
+
+export async function getPendingIdeas(): Promise<PendingIdea[]> {
+  try {
+    const db = createServerClient()
+    const { data, error } = await db
+      .from('founder_ideas')
+      .select('*')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false })
+    if (error) return []
+    return (data as PendingIdea[]) || []
+  } catch {
+    return []
+  }
+}
+
+export async function getCompletedTasksStats() {
+  const db = createServerClient()
+  const todayStart = new Date()
+  todayStart.setHours(0,0,0,0)
+  
+  const weekStart = new Date()
+  const day = weekStart.getDay()
+  const diff = weekStart.getDate() - day + (day === 0 ? -6 : 1)
+  weekStart.setDate(diff)
+  weekStart.setHours(0,0,0,0)
+
+  const [todayRes, weekRes] = await Promise.all([
+    db.from('tasks')
+      .select('*', { count: 'exact', head: true })
+      .eq('state', 'completed')
+      .gte('completed_at', todayStart.toISOString()),
+    db.from('tasks')
+      .select('*', { count: 'exact', head: true })
+      .eq('state', 'completed')
+      .gte('completed_at', weekStart.toISOString())
+  ])
+  return {
+    today: todayRes.count ?? 0,
+    week: weekRes.count ?? 0
+  }
+}
+
+export async function getTaskBoardData() {
+  const db = createServerClient()
+  const [missions, steps, heartbeats] = await Promise.all([
+    db.from('missions').select('*').order('created_at', { ascending: false }),
+    db.from('mission_steps').select('*').order('seq', { ascending: true }),
+    db.from('worker_heartbeats').select('*')
+  ])
+  return {
+    missions: missions.data || [],
+    steps: steps.data || [],
+    heartbeats: heartbeats.data || []
   }
 }
