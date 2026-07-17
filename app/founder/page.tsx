@@ -6,7 +6,11 @@ import {
   Clock, Zap, RefreshCw,
 } from 'lucide-react'
 import { MissionControl } from './_components/MissionControl'
-import { FounderAlertInbox } from './_components/FounderAlertInbox'
+import { DopplerDriftWidget } from './_components/DopplerDriftWidget'
+import { AariaControlsWidget } from './_components/AariaControlsWidget'
+import { VideoUIWidget } from './_components/VideoUIWidget'
+import { NeedsYou } from './_components/NeedsYou'
+import { TaskBoard } from './_components/TaskBoard'
 import {
   getSystemPulse,
   getCriticalAlerts,
@@ -21,6 +25,9 @@ import {
   getAlertTierCounts,
   getMemoryCount,
   getBusinessSnapshot,
+  getPendingIdeas,
+  getCompletedTasksStats,
+  getTaskBoardData,
 } from '@/lib/queries'
 
 export const metadata: Metadata = { title: 'Overview' }
@@ -314,6 +321,7 @@ export default async function FounderOverviewPage() {
   const [
     pulse, criticalAlerts, patterns, products, grants, digest,
     workers, providers, activity, forensic, tierCounts, memCount, business,
+    pendingIdeas, completedTasksStats, taskBoardData,
   ] = await Promise.all([
     getSystemPulse(),
     getCriticalAlerts(20),
@@ -328,9 +336,13 @@ export default async function FounderOverviewPage() {
     getAlertTierCounts(),
     getMemoryCount(),
     getBusinessSnapshot(),
+    getPendingIdeas(),
+    getCompletedTasksStats(),
+    getTaskBoardData(),
   ])
 
-  const founderAction = await getFounderActionSummary(grants.length)
+  const recsData = await fetchFounderApi('/api/founder/recommendations')
+  const pendingRecommendations = recsData?.recommendations?.filter((r: any) => r.status === 'pending' || !r.status) || []
 
   const nextDigest = new Date()
   nextDigest.setUTCHours(3, 30, 0, 0) // 05:00 IST = 03:30 UTC
@@ -342,76 +354,53 @@ export default async function FounderOverviewPage() {
   return (
     <div className="p-4 lg:p-6 space-y-5">
 
-      {/* ── Pending Grants Alert ── */}
-      {grants && grants.length > 0 && (
-        <Link href="/founder/approvals" className="block">
-          <div className="flex items-center justify-between rounded-xl border border-severity-warn/30 bg-severity-warn/5 hover:bg-severity-warn/10 p-4 transition-all duration-200 group">
-            <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0 bg-severity-warn/10">
-                <ShieldAlert className="h-4.5 w-4.5 text-severity-warn" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-fg-primary">Pending Approvals</p>
-                <p className="text-xs text-fg-secondary font-medium">
-                  You have {grants.length} pending access request{grants.length > 1 ? 's' : ''} awaiting approval.
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-1 text-xs font-semibold text-accent group-hover:translate-x-0.5 transition-transform">
-              Review <ChevronRight className="h-3 w-3" />
-            </div>
-          </div>
-        </Link>
-      )}
-
-      {/* ── Founder Action Required (task #19) ── */}
-      {founderAction.total > 0 && (
-        <Link href="/founder/approvals" className="block">
-          <div className="flex items-center justify-between rounded-xl border border-accent/30 bg-accent-subtle hover:bg-accent-subtle/80 p-4 transition-all duration-200 group">
-            <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0 bg-accent/10">
-                <AlertCircle className="h-4.5 w-4.5 text-accent" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-fg-primary">Founder Action Required</p>
-                <p className="text-xs text-fg-secondary font-medium">
-                  {founderAction.total} item{founderAction.total > 1 ? 's' : ''} need{founderAction.total === 1 ? 's' : ''} your decision
-                  {founderAction.grants > 0 && ` — ${founderAction.grants} access request${founderAction.grants > 1 ? 's' : ''}`}
-                  {founderAction.blockedAuthority > 0 && `, ${founderAction.blockedAuthority} blocked authorization${founderAction.blockedAuthority > 1 ? 's' : ''}`}
-                  {founderAction.blockedOperations > 0 && `, ${founderAction.blockedOperations} blocked operation${founderAction.blockedOperations > 1 ? 's' : ''}`}
-                  {founderAction.pendingRecommendations > 0 && `, ${founderAction.pendingRecommendations} recommendation${founderAction.pendingRecommendations > 1 ? 's' : ''} awaiting review`}
-                  .
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-1 text-xs font-semibold text-accent group-hover:translate-x-0.5 transition-transform">
-              Review all <ChevronRight className="h-3 w-3" />
-            </div>
-          </div>
-        </Link>
-      )}
+      {/* ── Needs You Queue ── */}
+      <NeedsYou
+        initialAlerts={criticalAlerts}
+        pendingGrants={grants}
+        pendingRecommendations={pendingRecommendations}
+        pendingIdeas={pendingIdeas}
+      />
 
       {/* ── Stat bar ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StatCard icon={HeartPulse}  iconColor="#22c55e" label="System Health"  value={pulse.isOperational ? 'Healthy' : 'Degraded'} sub={`${pulse.needsAttention} signals need attention`}  valueClass={pulse.isOperational ? 'text-severity-success' : 'text-severity-warn'} />
-        <StatCard icon={Cpu}         iconColor="#3b82f6" label="Workers"        value={pulse.workerStats.totalRuns.toLocaleString()} sub="Total runs" valueClass="text-fg-primary" />
+        <StatCard icon={Cpu}         iconColor="#3b82f6" label="Tasks Completed" value={completedTasksStats.today.toLocaleString()} sub={`${completedTasksStats.week.toLocaleString()} completed this week`} valueClass="text-fg-primary" />
         <StatCard icon={Database}    iconColor="#a855f7" label="Memory"         value={memCount.toLocaleString()}                   sub="Total memories" valueClass="text-fg-primary" />
-        <StatCard icon={ListOrdered} iconColor="#f59e0b" label="Task Queue"     value={pulse.taskCounts.pending}                    sub="Pending tasks" valueClass="text-fg-primary" />
         <StatCard icon={ShieldAlert} iconColor="#ef4444" label="Critical Alerts" value={pulse.alertCounts.critical}                 sub="Requires attention" valueClass="text-severity-critical" />
       </div>
-
-      {/* ── Founder Alert Inbox ── */}
-      <FounderAlertInbox initialAlerts={criticalAlerts} />
 
       {/* ── P4 Mission Control ── */}
       <section aria-label="Mission Control">
         <MissionControl />
       </section>
 
+      {/* ── Project-wise Task Board ── */}
+      <section aria-label="Project Task Board">
+        <TaskBoard
+          missions={taskBoardData.missions}
+          steps={taskBoardData.steps}
+          heartbeats={taskBoardData.heartbeats}
+        />
+      </section>
+
       {/* ── Founder Business Command Center (Phase G) ── */}
       <Panel title="Founder Business Command Center" link="All products" linkHref="/founder/products">
         <BusinessCommandCenter business={business} />
       </Panel>
+
+      {/* ── Command Centre Integration (Phase 2) ── */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+        <Panel title="🛡 Doppler Credential Status">
+          <DopplerDriftWidget />
+        </Panel>
+        <Panel title="🎙 Aaria Voice Controls">
+          <AariaControlsWidget />
+        </Panel>
+        <Panel title="🎬 MCQ Explainer Video Engine">
+          <VideoUIWidget />
+        </Panel>
+      </div>
 
       {/* ── Row 1: Worker Topology | Alert Summary | Product Health | Account Settings ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -455,24 +444,27 @@ export default async function FounderOverviewPage() {
         {/* Product Health */}
         <Panel title="Product Health" link="View all" linkHref="/founder/products">
           <div className="space-y-2.5">
-            {products.slice(0, 8).map(p => (
-              <div key={p.project_name} className="flex items-center gap-2.5">
-                {p.deployment_health === 'healthy'
-                  ? <CheckCircle2 className="h-4 w-4 text-severity-success shrink-0" />
-                  : p.deployment_health
-                  ? <AlertCircle className="h-4 w-4 text-severity-warn shrink-0" />
-                  : <Circle className="h-4 w-4 text-border-strong shrink-0" />
-                }
-                <span className="flex-1 text-[12px] text-fg-secondary capitalize">{p.project_name}</span>
-                <span className={`text-[11px] px-1.5 py-0.5 rounded font-medium ${
-                  p.deployment_health === 'healthy' ? 'text-severity-success bg-severity-success/12 border border-severity-success/20'
-                  : p.deployment_health ? 'text-severity-warn bg-severity-warn/12'
-                  : 'text-fg-disabled'
-                }`}>
-                  {p.deployment_health ?? 'No findings'}
-                </span>
-              </div>
-            ))}
+            {products
+              .filter(p => !['incubation_slot_1', 'incubation_slot_2', 'crm', 'language_learning'].includes(p.project_name.toLowerCase()))
+              .slice(0, 8)
+              .map(p => (
+                <div key={p.project_name} className="flex items-center gap-2.5">
+                  {p.deployment_health === 'healthy'
+                    ? <CheckCircle2 className="h-4 w-4 text-severity-success shrink-0" />
+                    : p.deployment_health
+                    ? <AlertCircle className="h-4 w-4 text-severity-warn shrink-0" />
+                    : <Circle className="h-4 w-4 text-border-strong shrink-0" />
+                  }
+                  <span className="flex-1 text-[12px] text-fg-secondary capitalize">{p.project_name}</span>
+                  <span className={`text-[11px] px-1.5 py-0.5 rounded font-medium ${
+                    p.deployment_health === 'healthy' ? 'text-severity-success bg-severity-success/12 border border-severity-success/20'
+                    : p.deployment_health ? 'text-severity-warn bg-severity-warn/12'
+                    : 'text-fg-disabled'
+                  }`}>
+                    {p.deployment_health ?? 'No findings'}
+                  </span>
+                </div>
+              ))}
           </div>
         </Panel>
 
