@@ -6,9 +6,6 @@ import {
   Clock, Zap, RefreshCw,
 } from 'lucide-react'
 import { MissionControl } from './_components/MissionControl'
-import { DopplerDriftWidget } from './_components/DopplerDriftWidget'
-import { AariaControlsWidget } from './_components/AariaControlsWidget'
-import { VideoUIWidget } from './_components/VideoUIWidget'
 import { NeedsYou } from './_components/NeedsYou'
 import { TaskBoard } from './_components/TaskBoard'
 import {
@@ -389,18 +386,7 @@ export default async function FounderOverviewPage() {
         <BusinessCommandCenter business={business} />
       </Panel>
 
-      {/* ── Command Centre Integration (Phase 2) ── */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        <Panel title="🛡 Doppler Credential Status">
-          <DopplerDriftWidget />
-        </Panel>
-        <Panel title="🎙 Aaria Voice Controls">
-          <AariaControlsWidget />
-        </Panel>
-        <Panel title="🎬 MCQ Explainer Video Engine">
-          <VideoUIWidget />
-        </Panel>
-      </div>
+
 
       {/* ── Row 1: Worker Topology | Alert Summary | Product Health | Account Settings ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
