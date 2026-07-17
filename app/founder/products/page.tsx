@@ -47,19 +47,6 @@ export default async function FounderProductsPage() {
         ))}
       </div>
 
-      {placeholders.length > 0 && (
-        <>
-          <h2 className="text-sm font-medium text-fg-muted mt-6">Incubation / Placeholder</h2>
-          <div className="space-y-2">
-            {placeholders.map((p) => (
-              <div key={p.project_name} className="rounded-md border border-border-subtle bg-surface/50 p-3 text-xs text-fg-muted">
-                {p.project_name} · {p.product_type}
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-
       <div className="flex items-center gap-1 text-xs text-fg-disabled pt-2">
         <Clock className="h-3 w-3" />
         <span>Refreshes every 5 minutes</span>
