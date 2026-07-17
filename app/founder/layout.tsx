@@ -6,6 +6,7 @@ import {
   ChevronDown, Clock, Sparkles, Boxes, Archive, LayoutGrid, Gauge, Camera, KeyRound, Workflow,
 } from 'lucide-react'
 import { getFounderSession } from '@/lib/auth'
+import { IdeaCaptureHeader } from './_components/IdeaCaptureHeader'
 
 export const metadata: Metadata = {
   title: { default: 'Founder', template: '%s — Founder — Pranix' },
@@ -105,6 +106,10 @@ export default async function FounderLayout({ children }: { children: React.Reac
           </Link>
 
           <div className="flex-1" />
+
+          {/* Idea Capture Header */}
+          <IdeaCaptureHeader />
+
 
           {/* Alerts */}
           <Link href="/founder/alerts" className="relative p-2 rounded-lg hover:bg-elevated transition-colors text-fg-muted hover:text-fg-primary" aria-label="Alerts">
