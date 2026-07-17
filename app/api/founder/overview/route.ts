@@ -53,6 +53,7 @@ export async function GET() {
   const now   = new Date()
   const todayStart = new Date(now)
   todayStart.setHours(0, 0, 0, 0)
+  const limitTime = Date.now() - 72 * 3600 * 1000
 
   const pendingApprovals = tasks.filter(t =>
     t.status === 'planned' &&
@@ -61,7 +62,10 @@ export async function GET() {
   const activeTasks = tasks.filter(t =>
     t.status === 'approved' || t.status === 'executing'
   )
-  const failedTasks = tasks.filter(t => t.status === 'failed')
+  const failedTasks = tasks.filter(t => 
+    t.status === 'failed' && 
+    (!t.updated_at || new Date(t.updated_at).getTime() > limitTime)
+  )
   const completedToday = tasks.filter(t =>
     t.status === 'completed' &&
     t.updated_at && new Date(t.updated_at) >= todayStart
@@ -92,14 +96,16 @@ export async function GET() {
   const feedItems: FeedItem[] = []
   for (const t of tasks.slice(0, 30)) {
     for (const ev of t.timeline ?? []) {
-      feedItems.push({
-        id:        ev.id ?? `${t.task_id}-${ev.kind}`,
-        kind:      ev.kind,
-        label:     ev.label,
-        sub:       t.title ?? t.goal ?? '',
-        timestamp: ev.timestamp,
-        task_id:   t.task_id,
-      })
+      if (new Date(ev.timestamp).getTime() > limitTime) {
+        feedItems.push({
+          id:        ev.id ?? `${t.task_id}-${ev.kind}`,
+          kind:      ev.kind,
+          label:     ev.label,
+          sub:       t.title ?? t.goal ?? '',
+          timestamp: ev.timestamp,
+          task_id:   t.task_id,
+        })
+      }
     }
   }
   feedItems.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
