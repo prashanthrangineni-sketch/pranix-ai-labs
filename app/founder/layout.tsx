@@ -34,6 +34,7 @@ const SIDEBAR_NAV = [
   { label: 'Test Evidence',        href: '/founder/evidence',     icon: Camera,     badgeText: 'NEW' },
   { label: 'More',                 href: '/founder/more',         icon: ChevronDown },
   { label: 'AI Workspace',         href: '/founder/workspace',    icon: LayoutGrid, badgeText: 'NEW' },
+  { label: 'Charters',             href: '/founder/charters',     icon: BookOpen,   badgeText: 'NEW' },
 ] as const
 
 const BOTTOM_NAV = [
