@@ -14,6 +14,12 @@ const nextConfig = {
       { source: '/founder/orchestrate', destination: '/founder/workspace', permanent: false },
     ]
   },
+  // Charters section (app/founder/charters) reads content/charters/*.md via
+  // fs.readFileSync at request time (see lib/charters.ts) — ensure Vercel's
+  // serverless file-tracer bundles those markdown files into the function output.
+  outputFileTracingIncludes: {
+    '/founder/charters': ['./content/charters/**'],
+  },
 }
 
 module.exports = nextConfig

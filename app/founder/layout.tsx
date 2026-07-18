@@ -3,7 +3,7 @@ import Link from 'next/link'
 import {
   LayoutDashboard, Bot, ListChecks, Bell, ShieldCheck,
   Brain, Monitor, Package,
-  ChevronDown, Clock, Sparkles, Boxes, Archive, LayoutGrid, Gauge, Camera, KeyRound, Workflow,
+  ChevronDown, Clock, Sparkles, Boxes, Archive, LayoutGrid, Gauge, Camera, KeyRound, Workflow, BookOpen,
 } from 'lucide-react'
 import { getFounderSession } from '@/lib/auth'
 import { IdeaCaptureHeader } from './_components/IdeaCaptureHeader'
@@ -34,6 +34,7 @@ const SIDEBAR_NAV = [
   { label: 'Test Evidence',        href: '/founder/evidence',     icon: Camera,     badgeText: 'NEW' },
   { label: 'More',                 href: '/founder/more',         icon: ChevronDown },
   { label: 'AI Workspace',         href: '/founder/workspace',    icon: LayoutGrid, badgeText: 'NEW' },
+  { label: 'Charters',             href: '/founder/charters',     icon: BookOpen,   badgeText: 'NEW' },
 ] as const
 
 const BOTTOM_NAV = [
