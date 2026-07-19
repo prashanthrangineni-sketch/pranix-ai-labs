@@ -10,6 +10,7 @@ import { NeedsYou } from './_components/NeedsYou'
 import { TaskBoard } from './_components/TaskBoard'
 import { AariaControlsWidget } from './_components/AariaControlsWidget'
 import { VideoUIWidget } from './_components/VideoUIWidget'
+import { JarvisStatusPane } from './_components/JarvisStatusPane'
 import {
   getSystemPulse,
   getCriticalAlerts,
@@ -27,6 +28,7 @@ import {
   getPendingIdeas,
   getCompletedTasksStats,
   getTaskBoardData,
+  getLatestVideos,
 } from '@/lib/queries'
 
 export const metadata: Metadata = { title: 'Overview' }
@@ -320,7 +322,7 @@ export default async function FounderOverviewPage() {
   const [
     pulse, criticalAlerts, patterns, products, grants, digest,
     workers, providers, activity, forensic, tierCounts, memCount, business,
-    pendingIdeas, completedTasksStats, taskBoardData,
+    pendingIdeas, completedTasksStats, taskBoardData, recentVideos,
   ] = await Promise.all([
     getSystemPulse(),
     getCriticalAlerts(20),
@@ -338,6 +340,7 @@ export default async function FounderOverviewPage() {
     getPendingIdeas(),
     getCompletedTasksStats(),
     getTaskBoardData(),
+    getLatestVideos(5),
   ])
 
   const recsData = await fetchFounderApi('/api/founder/recommendations')
@@ -368,6 +371,11 @@ export default async function FounderOverviewPage() {
         <StatCard icon={Database}    iconColor="#a855f7" label="Memory"         value={memCount.toLocaleString()}                   sub="Total memories" valueClass="text-fg-primary" />
         <StatCard icon={ShieldAlert} iconColor="#ef4444" label="Critical Alerts" value={pulse.alertCounts.critical}                 sub="Requires attention" valueClass="text-severity-critical" />
       </div>
+
+      {/* ── JARVIS Command Centre status pane & one-tap approvals ── */}
+      <section aria-label="JARVIS Status Pane">
+        <JarvisStatusPane initialGrants={grants} providers={providers} recentVideos={recentVideos} />
+      </section>
 
       {/* ── P4 Mission Control ── */}
       <section aria-label="Mission Control">

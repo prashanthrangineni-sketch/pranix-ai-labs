@@ -730,3 +730,17 @@ export async function getTaskBoardData() {
     heartbeats: heartbeats.data || []
   }
 }
+
+export async function getLatestVideos(limit = 5): Promise<any[]> {
+  const db = createServerClient()
+  try {
+    const { data } = await db
+      .from('generated_videos')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(limit)
+    return data || []
+  } catch {
+    return []
+  }
+}
