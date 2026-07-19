@@ -29,6 +29,7 @@ import {
   getCompletedTasksStats,
   getTaskBoardData,
   getLatestVideos,
+  getScalingHealthScores,
 } from '@/lib/queries'
 
 export const metadata: Metadata = { title: 'Overview' }
@@ -322,7 +323,7 @@ export default async function FounderOverviewPage() {
   const [
     pulse, criticalAlerts, patterns, products, grants, digest,
     workers, providers, activity, forensic, tierCounts, memCount, business,
-    pendingIdeas, completedTasksStats, taskBoardData, recentVideos,
+    pendingIdeas, completedTasksStats, taskBoardData, recentVideos, scalingHealth,
   ] = await Promise.all([
     getSystemPulse(),
     getCriticalAlerts(20),
@@ -341,6 +342,7 @@ export default async function FounderOverviewPage() {
     getCompletedTasksStats(),
     getTaskBoardData(),
     getLatestVideos(5),
+    getScalingHealthScores(),
   ])
 
   const recsData = await fetchFounderApi('/api/founder/recommendations')
@@ -450,24 +452,41 @@ export default async function FounderOverviewPage() {
             {products
               .filter(p => !['incubation_slot_1', 'incubation_slot_2', 'crm', 'language_learning'].includes(p.project_name.toLowerCase()))
               .slice(0, 8)
-              .map(p => (
-                <div key={p.project_name} className="flex items-center gap-2.5">
-                  {p.deployment_health === 'healthy'
-                    ? <CheckCircle2 className="h-4 w-4 text-severity-success shrink-0" />
-                    : p.deployment_health
-                    ? <AlertCircle className="h-4 w-4 text-severity-warn shrink-0" />
-                    : <Circle className="h-4 w-4 text-border-strong shrink-0" />
-                  }
-                  <span className="flex-1 text-[12px] text-fg-secondary capitalize">{p.project_name}</span>
-                  <span className={`text-[11px] px-1.5 py-0.5 rounded font-medium ${
-                    p.deployment_health === 'healthy' ? 'text-severity-success bg-severity-success/12 border border-severity-success/20'
-                    : p.deployment_health ? 'text-severity-warn bg-severity-warn/12'
-                    : 'text-fg-disabled'
-                  }`}>
-                    {p.deployment_health ?? 'No findings'}
-                  </span>
-                </div>
-              ))}
+              .map(p => {
+                const health = scalingHealth?.products?.[p.project_name]
+                const score = health ? health.score : 100
+                const isHealthy = score >= 90
+                const isWarning = score >= 70 && score < 90
+                const isCritical = score < 70
+
+                return (
+                  <div key={p.project_name} className="flex flex-col gap-1 border-b border-border-subtle/30 pb-2 last:border-0 last:pb-0">
+                    <div className="flex items-center gap-2.5">
+                      {isHealthy ? (
+                        <CheckCircle2 className="h-4 w-4 text-severity-success shrink-0" />
+                      ) : isWarning ? (
+                        <AlertCircle className="h-4 w-4 text-severity-warn shrink-0" />
+                      ) : (
+                        <AlertCircle className="h-4 w-4 text-severity-critical shrink-0" />
+                      )}
+                      <span className="flex-1 text-[12px] font-medium text-fg-secondary capitalize">{p.project_name}</span>
+                      <span className={`text-[11px] px-1.5 py-0.5 rounded font-semibold ${
+                        isHealthy ? 'text-severity-success bg-severity-success/12 border border-severity-success/20'
+                        : isWarning ? 'text-severity-warn bg-severity-warn/12 border border-severity-warn/20'
+                        : 'text-severity-critical bg-severity-critical/12 border border-severity-critical/20'
+                      }`}>
+                        {score}%
+                      </span>
+                    </div>
+                    {health && (
+                      <div className="flex justify-between pl-6.5 text-[10px] text-fg-disabled">
+                        <span>Latency: {health.latency_ms}ms</span>
+                        <span>Error: {health.error_rate}%</span>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
           </div>
         </Panel>
 

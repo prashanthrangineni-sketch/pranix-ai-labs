@@ -739,8 +739,26 @@ export async function getLatestVideos(limit = 5): Promise<any[]> {
       .select('*')
       .order('created_at', { ascending: false })
       .limit(limit)
-    return data || []
+      return data || []
   } catch {
     return []
   }
 }
+
+export async function getScalingHealthScores(): Promise<any> {
+  const db = createServerClient()
+  try {
+    const { data } = await db
+      .from('execution_memory')
+      .select('value')
+      .eq('project', 'scaling-ops')
+      .eq('key', 'product_health_scores')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    return data?.value || null
+  } catch {
+    return null
+  }
+}
+
