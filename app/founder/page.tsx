@@ -11,6 +11,8 @@ import { TaskBoard } from './_components/TaskBoard'
 import { AariaControlsWidget } from './_components/AariaControlsWidget'
 import { VideoUIWidget } from './_components/VideoUIWidget'
 import { JarvisStatusPane } from './_components/JarvisStatusPane'
+import { PendingPRsWidget } from './_components/PendingPRsWidget'
+import { ProductChartersWidget } from './_components/ProductChartersWidget'
 import {
   getSystemPulse,
   getCriticalAlerts,
@@ -30,6 +32,8 @@ import {
   getTaskBoardData,
   getLatestVideos,
   getScalingHealthScores,
+  getPendingPRs,
+  getProductChartersSummary,
 } from '@/lib/queries'
 
 export const metadata: Metadata = { title: 'Overview' }
@@ -324,6 +328,7 @@ export default async function FounderOverviewPage() {
     pulse, criticalAlerts, patterns, products, grants, digest,
     workers, providers, activity, forensic, tierCounts, memCount, business,
     pendingIdeas, completedTasksStats, taskBoardData, recentVideos, scalingHealth,
+    pendingPRs, productCharters,
   ] = await Promise.all([
     getSystemPulse(),
     getCriticalAlerts(20),
@@ -343,6 +348,8 @@ export default async function FounderOverviewPage() {
     getTaskBoardData(),
     getLatestVideos(5),
     getScalingHealthScores(),
+    getPendingPRs(),
+    getProductChartersSummary(),
   ])
 
   const recsData = await fetchFounderApi('/api/founder/recommendations')
@@ -366,6 +373,11 @@ export default async function FounderOverviewPage() {
         pendingIdeas={pendingIdeas}
       />
 
+      {/* ── Pending Pull Requests (Awaiting Decision: Merge/Hold) ── */}
+      <section aria-label="Pending Pull Requests">
+        <PendingPRsWidget prs={pendingPRs} />
+      </section>
+
       {/* ── Stat bar ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StatCard icon={HeartPulse}  iconColor="#22c55e" label="System Health"  value={pulse.isOperational ? 'Healthy' : 'Degraded'} sub={`${pulse.needsAttention} signals need attention`}  valueClass={pulse.isOperational ? 'text-severity-success' : 'text-severity-warn'} />
@@ -377,6 +389,11 @@ export default async function FounderOverviewPage() {
       {/* ── JARVIS Command Centre status pane & one-tap approvals ── */}
       <section aria-label="JARVIS Status Pane">
         <JarvisStatusPane initialGrants={grants} providers={providers} recentVideos={recentVideos} />
+      </section>
+
+      {/* ── Product Charters & 1-Line Health Summary (8 Live Products) ── */}
+      <section aria-label="Product Charters Summary">
+        <ProductChartersWidget charters={productCharters} />
       </section>
 
       {/* ── P4 Mission Control ── */}

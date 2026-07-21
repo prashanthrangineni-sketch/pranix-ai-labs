@@ -762,3 +762,149 @@ export async function getScalingHealthScores(): Promise<any> {
   }
 }
 
+export type PendingPR = {
+  id: string
+  repo: string
+  number: number
+  title: string
+  author: string
+  headBranch: string
+  baseBranch: string
+  htmlUrl: string
+  isDraft: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export async function getPendingPRs(): Promise<PendingPR[]> {
+  const token = process.env.PMCP_GITHUB_PAT || process.env.GITHUB_PAT || process.env.GITHUB_SECONDARY_PAT || ''
+  if (!token) return []
+
+  const watchedRepos = [
+    'PranixQuick/pranix-agent-engine',
+    'PranixQuick/pranix-aaria',
+    'PranixQuick/School-OS',
+    'PranixQuick/quickscanz',
+    'PranixQuick/easyvenuez',
+    'PranixQuick/insureupi',
+    'prashanthrangineni-sketch/pranix-ai-labs',
+    'prashanthrangineni-sketch/quietkeep-',
+    'prashanthrangineni-sketch/cart2save',
+  ]
+
+  const prPromises = watchedRepos.map(async (repo) => {
+    try {
+      const res = await fetch(`https://api.github.com/repos/${repo}/pulls?state=open&per_page=10`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28',
+        },
+        next: { revalidate: 60 },
+      })
+      if (!res.ok) return []
+      const prs = await res.json()
+      if (!Array.isArray(prs)) return []
+      return prs.map((pr: any) => ({
+        id: `${repo}#${pr.number}`,
+        repo,
+        number: pr.number,
+        title: pr.title,
+        author: pr.user?.login || 'unknown',
+        headBranch: pr.head?.ref || '',
+        baseBranch: pr.base?.ref || 'main',
+        htmlUrl: pr.html_url,
+        isDraft: pr.draft || pr.title.toLowerCase().includes('hold') || pr.head?.ref?.startsWith('auto-fix/'),
+        createdAt: pr.created_at,
+        updatedAt: pr.updated_at,
+      }))
+    } catch {
+      return []
+    }
+  })
+
+  const results = await Promise.all(prPromises)
+  return results.flat()
+}
+
+export type ProductCharterSummary = {
+  productKey: string
+  name: string
+  status: string
+  health: 'green' | 'yellow' | 'red'
+  healthLabel: string
+  openAlertsCount: number
+  activeSprintMission: string | null
+  lastCheckedAt: string
+}
+
+export async function getProductChartersSummary(): Promise<ProductCharterSummary[]> {
+  const db = createServerClient()
+  
+  const products = [
+    { key: 'schoolos', name: 'School-OS', status: 'live' },
+    { key: 'vidyagrid', name: 'VidyaGrid', status: 'live' },
+    { key: 'quickscanz', name: 'QuickScanZ', status: 'live' },
+    { key: 'cart2save', name: 'Cart2Save', status: 'pilot' },
+    { key: 'quietkeep', name: 'QuietKeep', status: 'pilot' },
+    { key: 'easyvenuez', name: 'EasyVenuez', status: 'live' },
+    { key: 'insureupi', name: 'InsureUPI', status: 'pre_launch' },
+    { key: 'pranix_agents', name: 'Agent Engine', status: 'live' },
+  ]
+
+  try {
+    const [alertsRes, missionsRes] = await Promise.all([
+      db.from('founder_alerts').select('alert_type, level, context').eq('acknowledged', false),
+      db.from('missions').select('product, title, status').eq('status', 'active'),
+    ])
+
+    const openAlerts = alertsRes.data || []
+    const activeMissions = missionsRes.data || []
+
+    return products.map(p => {
+      const prodAlerts = openAlerts.filter(a => 
+        a.alert_type?.toLowerCase().includes(p.key) ||
+        (a.context && typeof a.context === 'object' && JSON.stringify(a.context).toLowerCase().includes(p.key))
+      )
+      const activeMission = activeMissions.find(m => m.product === p.key || (p.key === 'pranix_agents' && !m.product))
+
+      const p1Count = prodAlerts.filter(a => a.level === 'critical').length
+      const hasAlerts = prodAlerts.length > 0
+
+      let health: 'green' | 'yellow' | 'red' = 'green'
+      let healthLabel = 'Healthy'
+
+      if (p1Count > 0) {
+        health = 'red'
+        healthLabel = `${p1Count} Critical`
+      } else if (hasAlerts) {
+        health = 'yellow'
+        healthLabel = `${prodAlerts.length} Warnings`
+      }
+
+      return {
+        productKey: p.key,
+        name: p.name,
+        status: p.status,
+        health,
+        healthLabel,
+        openAlertsCount: prodAlerts.length,
+        activeSprintMission: activeMission ? activeMission.title : null,
+        lastCheckedAt: new Date().toISOString(),
+      }
+    })
+  } catch {
+    return products.map(p => ({
+      productKey: p.key,
+      name: p.name,
+      status: p.status,
+      health: 'green' as const,
+      healthLabel: 'Healthy',
+      openAlertsCount: 0,
+      activeSprintMission: null,
+      lastCheckedAt: new Date().toISOString(),
+    }))
+  }
+}
+
+
