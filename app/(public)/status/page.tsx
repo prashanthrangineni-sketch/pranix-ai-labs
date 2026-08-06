@@ -1,146 +1,29 @@
 import type { Metadata } from 'next'
-import { getProductHealth, getWorkerStats, getAlertCounts } from '@/lib/queries'
-import { CheckCircle, AlertTriangle, Clock } from 'lucide-react'
+import { SectionHead } from '@/components/public/cards'
+import { STATUS } from '@/lib/public/data'
 
-const PAGE_URL = 'https://www.pranixailabs.com/status'
-const PAGE_TITLE = 'Status | Pranix AI Labs'
-const PAGE_DESCRIPTION = 'Live operational status of Pranix AI Labs infrastructure and products — worker health, deployment status, and system uptime.'
+export const metadata: Metadata = { title: 'Status — Pranix AI Labs' }
 
-export const metadata: Metadata = {
-  title: PAGE_TITLE,
-  description: PAGE_DESCRIPTION,
-  alternates: { canonical: PAGE_URL },
-  openGraph: {
-    type: 'website',
-    url: PAGE_URL,
-    siteName: 'Pranix AI Labs',
-    title: PAGE_TITLE,
-    description: PAGE_DESCRIPTION,
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: PAGE_TITLE,
-    description: PAGE_DESCRIPTION,
-  },
-}
-
-export const revalidate = 60
-
-export default async function StatusPage() {
-  const [products, workerStats, alertCounts] = await Promise.all([
-    getProductHealth(),
-    getWorkerStats(),
-    getAlertCounts(),
-  ])
-
-  const activeProducts = products.filter(
-    p => p.account_tier === 'primary' || p.account_tier === 'secondary'
-  )
-
-  const lastHeartbeat = workerStats.lastRun?.completed_at
-    ? Math.round((Date.now() - new Date(workerStats.lastRun.completed_at).getTime()) / 1000)
-    : null
-
-  const workerFresh = lastHeartbeat !== null && lastHeartbeat < 180
-  const hasCritical = alertCounts.critical > 0
-  const allHealthy = !hasCritical && workerFresh
-
+export default function StatusPage() {
   return (
-    <div className="mx-auto max-w-6xl px-4 py-16 md:py-20">
-      <h1 className="text-xl font-semibold md:text-2xl">Operational Status</h1>
-      <p className="mt-2 text-sm text-fg-secondary">
-        Live infrastructure health from the Pranix control plane.
-      </p>
-
-      <div className="mt-10 rounded-lg border border-border-subtle bg-surface p-5">
-        <div className="flex items-center gap-3">
-          {allHealthy ? (
-            <CheckCircle className="h-5 w-5 text-severity-success" />
-          ) : (
-            <AlertTriangle className="h-5 w-5 text-severity-warn" />
-          )}
-          <span className="text-base font-medium text-fg-primary">
-            {allHealthy ? 'All systems operational' : 'Some systems need attention'}
-          </span>
-        </div>
-        {hasCritical && (
-          <p className="mt-2 text-xs text-severity-warn">
-            {alertCounts.critical} critical signal{alertCounts.critical !== 1 ? 's' : ''} under investigation.
-          </p>
-        )}
-      </div>
-
-      <div className="mt-6 rounded-lg border border-border-subtle bg-surface p-5">
-        <h2 className="text-sm font-semibold text-fg-primary">Worker Health</h2>
-        <div className="mt-3 grid grid-cols-2 gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className={`h-2 w-2 rounded-full ${workerFresh ? 'bg-severity-success' : 'bg-severity-warn'}`} />
-              <span className="text-xs text-fg-secondary">
-                Last heartbeat: {lastHeartbeat !== null ? `${lastHeartbeat}s ago` : 'Unknown'}
-              </span>
+    <section className="block wrap">
+      <SectionHead kicker="Transparency" title={<>Product <span className="grad-text">status board</span></>}
+        sub="Where every product stands right now — phase, deployment health, and its road to Google Play." />
+      <div className="sboard rv d1">
+        <div className="srow head"><div>Product</div><div>Phase</div><div>Deployment</div><div className="scol-link">Site</div></div>
+        {STATUS.map(s => (
+          <div className="srow" key={s.n}>
+            <div className="sname">
+              <span className="sdot" style={{ background: s.c, boxShadow: `0 0 8px ${s.c}` }} />{s.n}
+              <span className={`badge ${s.play}`} style={{ marginLeft: 6 }}><span className="bdot" />{s.playTxt}</span>
             </div>
+            <div>{s.phase}</div>
+            <div style={{ color: s.health === 'Healthy' ? 'var(--emerald)' : 'var(--pink)' }}>{s.health === 'Healthy' ? '● Healthy' : '◌ In development'}</div>
+            <div className="scol-link"><a href={s.url} target="_blank" rel="noopener noreferrer">visit ↗</a></div>
           </div>
-          <div>
-            <span className="text-xs text-fg-secondary">
-              {workerStats.totalRuns.toLocaleString()} total worker runs
-            </span>
-          </div>
-        </div>
+        ))}
       </div>
-
-      <div className="mt-6 rounded-lg border border-border-subtle bg-surface p-5">
-        <h2 className="text-sm font-semibold text-fg-primary">Product Status</h2>
-        <div className="mt-3 space-y-3">
-          {activeProducts
-            .filter(p => p.product_type !== 'infrastructure')
-            .map((p) => (
-              <div key={p.project_name} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`h-2 w-2 rounded-full ${
-                      p.deployment_health === 'healthy'
-                        ? 'bg-severity-success'
-                        : p.deployment_health === 'degraded'
-                          ? 'bg-severity-warn'
-                          : 'bg-fg-disabled'
-                    }`}
-                  />
-                  <span className="text-sm text-fg-primary">{p.project_name}</span>
-                </div>
-                <span className="text-xs text-fg-muted">
-                  {p.deployment_health || 'Unknown'}
-                </span>
-              </div>
-            ))}
-        </div>
-      </div>
-
-      <div className="mt-6 rounded-lg border border-border-subtle bg-surface p-5">
-        <h2 className="text-sm font-semibold text-fg-primary">Infrastructure</h2>
-        <div className="mt-3 space-y-2 text-xs text-fg-secondary">
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-severity-success" />
-            MCP Gateway \u2014 operational
-          </div>
-          <div className="flex items-center gap-2">
-            <span className={`h-2 w-2 rounded-full ${workerFresh ? 'bg-severity-success' : 'bg-severity-warn'}`} />
-            Worker topology \u2014 {workerFresh ? 'active' : 'stale heartbeat'}
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-severity-success" />
-            Control plane \u2014 operational
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-6 flex items-center gap-1 text-xs text-fg-disabled">
-        <Clock className="h-3 w-3" />
-        <span>
-          Updated {new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
-          {' \u00b7 '}Refreshes every 60 seconds
-        </span>
-      </div>
-    </div>
+      <p style={{ marginTop: 18, fontSize: '.75rem', color: 'var(--text3)' }} className="rv d2">Phases sync from the Pranix control plane. Play Store statuses update as releases roll out.</p>
+    </section>
   )
 }
