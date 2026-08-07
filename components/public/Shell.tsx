@@ -38,7 +38,7 @@ export default function Shell({ children, fontClass }: { children: React.ReactNo
             {NAV.map(n => (
               <Link key={n.href} href={n.href} className={active(n.href) ? 'active' : ''} onClick={() => setMenuOpen(false)}>{n.label}</Link>
             ))}
-            <Link className="btn btn-primary" href="/founder/login">Founder Login →</Link>
+            <Link className="btn btn-login" href="/founder/login">Founder Login →</Link>
           </div>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
             <button className="theme-toggle" title="Toggle theme" onClick={() => setTheme(t => (t === 'dark' ? 'light' : 'dark'))}>
