@@ -32,7 +32,7 @@ export const PRODUCTS: Product[] = [
     desc: 'Neutral price engine comparing affiliate partners, the ONDC open network and real local stores — groceries to travel. B2C app + B2B2C merchant marketplace.',
     tags: ['ONDC', '1,516+ live links', 'B2C + B2B2C', '0% listing fee'],
     feats: ['Three-layer price check: affiliates + ONDC + local stores', 'Weekly basket comparisons that show real savings', 'Business tier: local stores, delivery partners & pros', 'Neutral by design — no pay-to-rank, ever'],
-    url: 'https://www.cart2save.com', status: 'soon', statusTxt: 'Play Store — days away', logo: 'https://www.cart2save.com/brand/icon-512.png', logoTile: true },
+    url: 'https://www.cart2save.com', status: 'soon', statusTxt: 'Play Store — days away', logoSvg: CART2SAVE_SVG },
   { id: 'insureupi', name: 'InsureUPI', emoji: '🛡️', color: '#10b981', tag: '"One assistor, every bank"',
     desc: "A unified distribution cloud for credit cards, loans and insurance from India's leading banks & NBFCs — with 60-second AI eligibility scoring.",
     tags: ['Fintech', 'AI eligibility', 'DPDP-compliant', '256-bit'],
