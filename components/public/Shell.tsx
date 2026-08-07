@@ -57,7 +57,7 @@ export default function Shell({ children, fontClass }: { children: React.ReactNo
         <div className="wrap">
           <div className="fgrid">
             <div>
-              <Link className="logo" href="/"><span className="logo-badge"><img src="/px-mark.png" alt="" /></span> Pranix AI Labs</Link>
+              <Link className="logo" href="/"><span className="logo-badge"><img src="/px-mark.png" alt="Pranix AI Labs" /></span> Pranix AI Labs</Link>
               <p style={{ fontSize: '.82rem', color: 'var(--text2)', lineHeight: 1.6, marginTop: 12 }}>
                 Protocol-grade operational infrastructure for AI-assisted execution. Building India-first products with supervised AI autonomy.
               </p>
