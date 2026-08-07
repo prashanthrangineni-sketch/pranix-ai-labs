@@ -33,7 +33,7 @@ export default function Shell({ children, fontClass }: { children: React.ReactNo
       <header className="pxheader">
         <nav className="nav">
           <Link className="logo" href="/">
-            <span className="logo-badge"><Image src="/logo.png" alt="Pranix AI Labs" width={38} height={57} /></span> Pranix AI Labs
+            <span className="logo-badge"><img src="/px-mark.png" alt="Pranix AI Labs" /></span> Pranix AI Labs
           </Link>
           <div className={`navlinks ${menuOpen ? 'open' : ''}`}>
             {NAV.map(n => (
