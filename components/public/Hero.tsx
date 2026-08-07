@@ -71,7 +71,7 @@ export default function Hero() {
       <div className="type-line"><span>{typed}</span><span className="caret">▌</span></div>
       <div className="hero-ctas">
         <Link className="btn btn-primary" href="/products">✦ Explore the products</Link>
-        <button className="btn btn-ghost" onClick={scrollFilm}>▶ Watch the film</button>
+        <button className="btn btn-primary" onClick={scrollFilm}>▶ Watch the film</button>
       </div>
       <div className="orbitwrap" ref={orbitRef}>
         {PRODUCTS.map(p => (
