@@ -1,41 +1,17 @@
 // app/px-mark.png/route.ts — square Pranix P-mark for favicon + nav.
-// Rendered at request time from the canonical /logo.png (682x1024) by cropping
-// the P region (x:89, y:191, 507x524) onto a white 192x192 tile via next/og.
-// No embedded binary data — always faithful to the real logo.
-import { ImageResponse } from 'next/og'
+// Embeds the rendered P-mark as base64 — no self-fetch, works on every runtime.
+// Previous edge-runtime approach silently failed (Vercel edge cannot self-fetch).
+import { NextResponse } from 'next/server'
 
-export const runtime = 'edge'
+const PX_MARK_BASE64 =
+  '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'
 
-// scale = 192 / 524 (fit region height); img = 682x1024 * scale ≈ 250x375
-// left = -(89 * scale) + centering ≈ -30 ; top = -(191 * scale) ≈ -70
-export async function GET(req: Request) {
-  const origin = new URL(req.url).origin
-  const el = {
-    type: 'div',
-    props: {
-      style: {
-        width: '100%',
-        height: '100%',
-        display: 'flex',
-        background: '#ffffff',
-        position: 'relative',
-        overflow: 'hidden',
-      },
-      children: {
-        type: 'img',
-        props: {
-          src: `${origin}/logo.png`,
-          width: 250,
-          height: 375,
-          style: { position: 'absolute', left: -30, top: -70 },
-        },
-      },
+export async function GET() {
+  const buf = Buffer.from(PX_MARK_BASE64, 'base64')
+  return new NextResponse(buf, {
+    headers: {
+      'Content-Type': 'image/png',
+      'Cache-Control': 'public, max-age=86400, s-maxage=604800',
     },
-  } as unknown as React.ReactElement
-
-  return new ImageResponse(el, {
-    width: 192,
-    height: 192,
-    headers: { 'Cache-Control': 'public, max-age=86400, s-maxage=604800' },
   })
 }

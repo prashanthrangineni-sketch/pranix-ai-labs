@@ -2,7 +2,7 @@
 import type { Product } from '@/lib/public/data'
 
 export function ProductIcon({ p }: { p: Product }) {
-  if (p.logoSvg) return <div className="picon" dangerouslySetInnerHTML={{ __html: p.logoSvg }} />
+  if (p.logoSvg) return <div className="picon" role="img" aria-label={`${p.name} logo`} dangerouslySetInnerHTML={{ __html: p.logoSvg }} />
   if (p.logo) return <div className={`picon ${p.logoTile ? 'tile' : ''}`}><img src={p.logo} alt={`${p.name} logo`} /></div>
   return <div className="picon" style={{ background: `linear-gradient(135deg,${p.color},${p.color}cc)` }}>{p.emoji}</div>
 }
