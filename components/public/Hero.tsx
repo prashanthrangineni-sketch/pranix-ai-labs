@@ -15,8 +15,8 @@ const LINES = [
 
 function ChipIcon({ id }: { id: string }) {
   const p = PRODUCTS.find(x => x.id === id)!
-  if (p.logoSvg) return <span className="chip-ic" dangerouslySetInnerHTML={{ __html: p.logoSvg }} />
-  if (p.logo) return <img className="chip-ic" src={p.logo} alt="" />
+  if (p.logoSvg) return <span className="chip-ic" role="img" aria-label={`${p.name} logo`} dangerouslySetInnerHTML={{ __html: p.logoSvg }} />
+  if (p.logo) return <img className="chip-ic" src={p.logo} alt={`${p.name} logo`} />
   return <b>{p.emoji}</b>
 }
 
