@@ -32,7 +32,7 @@ export default function Shell({ children, fontClass }: { children: React.ReactNo
       <header className="pxheader">
         <nav className="nav">
           <Link className="logo" href="/">
-            <span className="logo-badge"><img src="/px-mark.png" alt="Pranix AI Labs" /></span> Pranix AI Labs
+            <span className="logo-badge"><svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Pranix AI Labs"><defs><linearGradient id="px-g" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse"><stop stopColor="#7C3AED"/><stop offset="1" stopColor="#4F46E5"/></linearGradient></defs><rect width="32" height="32" rx="8" fill="url(#px-g)"/><text x="16" y="22" textAnchor="middle" fill="white" fontSize="20" fontWeight="700" fontFamily="system-ui,sans-serif">P</text></svg></span> Pranix AI Labs
           </Link>
           <div className={`navlinks ${menuOpen ? 'open' : ''}`}>
             {NAV.map(n => (
@@ -57,7 +57,7 @@ export default function Shell({ children, fontClass }: { children: React.ReactNo
         <div className="wrap">
           <div className="fgrid">
             <div>
-              <Link className="logo" href="/"><span className="logo-badge"><img src="/px-mark.png" alt="Pranix AI Labs" /></span> Pranix AI Labs</Link>
+              <Link className="logo" href="/"><span className="logo-badge"><svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Pranix AI Labs"><defs><linearGradient id="px-g" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse"><stop stopColor="#7C3AED"/><stop offset="1" stopColor="#4F46E5"/></linearGradient></defs><rect width="32" height="32" rx="8" fill="url(#px-g)"/><text x="16" y="22" textAnchor="middle" fill="white" fontSize="20" fontWeight="700" fontFamily="system-ui,sans-serif">P</text></svg></span> Pranix AI Labs</Link>
               <p style={{ fontSize: '.82rem', color: 'var(--text2)', lineHeight: 1.6, marginTop: 12 }}>
                 Protocol-grade operational infrastructure for AI-assisted execution. Building India-first products with supervised AI autonomy.
               </p>
