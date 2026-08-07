@@ -1,7 +1,6 @@
 'use client'
 // components/public/Shell.tsx — public-site chrome: nav, theme, footer, effects, Aaria dock
 import Link from 'next/link'
-import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import Effects from './Effects'
