@@ -9,6 +9,7 @@ const fontM = JetBrains_Mono({ subsets: ['latin'], weight: ['400', '600'], varia
 
 export const metadata: Metadata = {
   title: 'Pranix AI Labs — Innovate. Build. Ascend.',
+  icons: { icon: [{ url: '/px-mark.png', type: 'image/png' }], shortcut: '/px-mark.png', apple: '/px-mark.png' },
   description: 'Pranix AI Labs — an AI-native product studio from Hyderabad building 7 products across commerce, education, fintech, voice AI and events. Powered by Aaria, our multilingual voice engine.',
   openGraph: {
     title: 'Pranix AI Labs — Innovate. Build. Ascend.',
