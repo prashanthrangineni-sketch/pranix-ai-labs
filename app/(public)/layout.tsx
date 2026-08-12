@@ -9,36 +9,24 @@ const fontM = JetBrains_Mono({ subsets: ['latin'], weight: ['400', '600'], varia
 
 export const metadata: Metadata = {
   title: { absolute: 'Pranix AI Labs — Innovate. Build. Ascend.' },
-  icons: { icon: [{ url: '/logo.png', type: 'image/png' }], shortcut: '/logo.png', apple: '/logo.png' },
-  description: 'Pranix AI Labs — an AI-native product studio from Hyderabad building 7 products across commerce, education, fintech, voice AI and events. Powered by Aaria, our multilingual voice engine.',
+  description:
+    'Pranix AI Labs — an AI-native product studio from Hyderabad building 7 products across commerce, education, fintech, voice AI and events. Powered by Aaria, our multilingual voice engine.',
   alternates: { canonical: 'https://www.pranixailabs.com' },
   openGraph: {
     title: 'Pranix AI Labs — Innovate. Build. Ascend.',
     description: 'Seven products. One AI-native lab. Aaria voice inside. Made in Hyderabad.',
     url: 'https://www.pranixailabs.com',
     type: 'website',
+    images: [{ url: '/icon-512.png', width: 512, height: 512, alt: 'Pranix AI Labs' }],
   },
 }
 
-const orgJsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'Organization',
-  name: 'Pranix AI Labs Pvt Ltd',
-  url: 'https://www.pranixailabs.com',
-  email: 'support@pranixailabs.com',
-  telephone: '+91-9515479595',
-  address: { '@type': 'PostalAddress', addressLocality: 'Hyderabad', addressRegion: 'Telangana', addressCountry: 'IN' },
-  sameAs: [
-    'https://www.edprosys.com', 'https://www.quietkeep.com', 'https://www.quickscanz.com',
-    'https://www.cart2save.com', 'https://www.insureupi.com', 'https://www.easyvenuez.com', 'https://www.edgridai.com',
-  ],
-}
+// NOTE: the canonical Organization / WebSite JSON-LD is emitted once in
+// app/layout.tsx. Do not add a second Organization node here — duplicate
+// entities prevent Google from associating the logo with the brand.
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
-    <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }} />
-      <Shell fontClass={`${fontD.variable} ${fontB.variable} ${fontM.variable}`}>{children}</Shell>
-    </>
+    <Shell fontClass={`${fontD.variable} ${fontB.variable} ${fontM.variable}`}>{children}</Shell>
   )
 }
