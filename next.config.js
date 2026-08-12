@@ -12,6 +12,9 @@ const nextConfig = {
       // intact for now — they hold unique flows (activation/vault/actions) not yet folded into
       // workspace; consolidating them is a follow-up to keep this change non-breaking.
       { source: '/founder/orchestrate', destination: '/founder/workspace', permanent: false },
+      // Google's favicon crawler requests /favicon.ico first. It was 404ing,
+      // which is why Google Search rendered no icon at all for this domain.
+      { source: '/favicon.ico', destination: '/icon.png', permanent: false },
     ]
   },
   // Charters section (app/founder/charters) reads content/charters/*.md via
