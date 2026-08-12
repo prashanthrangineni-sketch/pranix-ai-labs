@@ -25,7 +25,7 @@ const organizationJsonLd = {
   '@type': 'Organization',
   name: 'Pranix AI Labs',
   url: SITE_URL,
-  logo: `${SITE_URL}/icon-512.png`,
+  logo: `${SITE_URL}/icon.png`,
   description: SITE_DESCRIPTION,
   founder: {
     '@type': 'Person',
@@ -66,13 +66,13 @@ export const metadata: Metadata = {
     title: 'Pranix AI Labs | Sovereign AI Product Studio',
     description: SITE_DESCRIPTION,
     url: SITE_URL,
-    images: [{ url: '/icon-512.png', alt: 'Pranix AI Labs' }],
+    images: [{ url: '/icon.png', alt: 'Pranix AI Labs' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Pranix AI Labs | Sovereign AI Product Studio',
     description: SITE_DESCRIPTION,
-    images: ['/icon-512.png'],
+    images: ['/icon.png'],
   },
   robots: {
     index: true,
