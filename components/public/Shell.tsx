@@ -52,6 +52,7 @@ export default function Shell({ children, fontClass }: { children: React.ReactNo
         <nav className="nav">
           <Link className="logo" href="/">
             <BrandMark /> Pranix AI Labs
+            <span className="logo-badge"><img src="/icon.png" alt="Pranix AI Labs logo" width={38} height={38} /></span> Pranix AI Labs
           </Link>
           <div className={`navlinks ${menuOpen ? 'open' : ''}`}>
             {NAV.map(n => (
@@ -77,6 +78,7 @@ export default function Shell({ children, fontClass }: { children: React.ReactNo
           <div className="fgrid">
             <div>
               <Link className="logo" href="/"><BrandMark /> Pranix AI Labs</Link>
+              <Link className="logo" href="/"><span className="logo-badge"><img src="/icon.png" alt="Pranix AI Labs logo" width={38} height={38} /></span> Pranix AI Labs</Link>
               <p style={{ fontSize: '.82rem', color: 'var(--text2)', lineHeight: 1.6, marginTop: 12 }}>
                 Protocol-grade operational infrastructure for AI-assisted execution. Building India-first products with supervised AI autonomy.
               </p>

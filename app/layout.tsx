@@ -36,6 +36,7 @@ const organizationJsonLd = {
     height: 512,
   },
   image: `${SITE_URL}/icon-512.png`,
+  logo: `${SITE_URL}/logo.png`,
   description: SITE_DESCRIPTION,
   email: 'support@pranixailabs.com',
   telephone: '+91-9515479595',
@@ -99,12 +100,13 @@ export const metadata: Metadata = {
     description: SITE_DESCRIPTION,
     url: SITE_URL,
     images: [{ url: '/icon-512.png', width: 512, height: 512, alt: 'Pranix AI Labs' }],
+    images: [{ url: '/logo.png', alt: 'Pranix AI Labs' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Pranix AI Labs | Sovereign AI Product Studio',
     description: SITE_DESCRIPTION,
-    images: ['/icon-512.png'],
+    images: ['/logo.png'],
   },
   robots: {
     index: true,

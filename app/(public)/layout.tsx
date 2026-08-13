@@ -11,6 +11,8 @@ export const metadata: Metadata = {
   title: { absolute: 'Pranix AI Labs — Innovate. Build. Ascend.' },
   description:
     'Pranix AI Labs — an AI-native product studio from Hyderabad building 7 products across commerce, education, fintech, voice AI and events. Powered by Aaria, our multilingual voice engine.',
+  icons: { icon: [{ url: '/icon.png', type: 'image/png', sizes: '512x512' }], shortcut: '/icon.png', apple: '/icon.png' },
+  description: 'Pranix AI Labs — an AI-native product studio from Hyderabad building 7 products across commerce, education, fintech, voice AI and events. Powered by Aaria, our multilingual voice engine.',
   alternates: { canonical: 'https://www.pranixailabs.com' },
   openGraph: {
     title: 'Pranix AI Labs — Innovate. Build. Ascend.',
