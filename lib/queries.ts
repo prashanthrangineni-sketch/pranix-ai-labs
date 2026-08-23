@@ -321,34 +321,78 @@ export async function getProductHealth(): Promise<ProductHealth[]> {
   })) as ProductHealth[]
 }
 
+// Shape actually stored in worker_nodes. Note it shares no column names with
+// WorkerNode above except last_seen, so rows have to be mapped, never cast.
+type WorkerNodeRow = {
+  node_id: string | null
+  node_type: string | null
+  region: string | null
+  status: string | null
+  last_seen: string | null
+  tasks_today: number | null
+  max_tier: number | null
+}
+
+const NODE_FRESH_MS = 24 * 60 * 60 * 1000   // registry row still counts as reporting
+const FLEET_FRESH_MS = 15 * 60 * 1000       // tier 0 ticks every 60s, tier 1 every 2min
+
+function isFresh(ts: string | null, withinMs: number): boolean {
+  if (!ts) return false
+  const t = new Date(ts).getTime()
+  return Number.isFinite(t) && Date.now() - t < withinMs
+}
+
 export async function getWorkerNodes(): Promise<WorkerNode[]> {
   const db = createServerClient()
+  // worker_nodes has no 'tier' column — it is 'max_tier'. Ordering by 'tier'
+  // returned PostgREST 400 on every render, so `data` was always null and this
+  // function silently fell through to the fallback below on every page load.
   const { data } = await db
     .from('worker_nodes')
-    .select('*')
-    .order('tier')
-  if (data && data.length > 0) return data as WorkerNode[]
+    .select('node_id, node_type, region, status, last_seen, tasks_today, max_tier')
+    .order('max_tier', { ascending: true })
+
+  const nodeRows = (data as WorkerNodeRow[] | null) ?? []
+
+  // Only trust the registry while something in it is still reporting. Its rows
+  // are currently months stale, and surfacing those would replace the live
+  // worker_runs view below with a snapshot that is no longer true.
+  if (nodeRows.some(r => isFresh(r.last_seen, NODE_FRESH_MS))) {
+    return nodeRows.map(r => ({
+      tier: r.max_tier ?? 0,
+      label: r.node_id ?? 'worker',
+      description: [r.node_type, r.region].filter(Boolean).join(' · ') || 'registered node',
+      online: r.status === 'active' && isFresh(r.last_seen, NODE_FRESH_MS),
+      last_seen: r.last_seen,
+      total_runs: r.tasks_today ?? 0,
+    }))
+  }
+
   // Fallback: synthesise from worker_runs last seen
   const { data: runs } = await db
     .from('worker_runs')
     .select('locked_by, started_at, status')
     .order('started_at', { ascending: false })
     .limit(200)
+  const lastRunAt = runs?.[0]?.started_at ?? null
+  // Derive liveness instead of asserting it — these two used to be hardcoded
+  // `online: true`, so the panel read Online even with the fleet stopped.
+  const fleetOnline = isFresh(lastRunAt, FLEET_FRESH_MS)
   const nodes: WorkerNode[] = [
     {
       tier: 0,
       label: 'Tier 0 — Vercel Cron',
       description: '60s tick, lightweight task claiming',
-      online: true,
-      last_seen: runs?.[0]?.started_at ?? null,
+      online: fleetOnline,
+      last_seen: lastRunAt,
       total_runs: runs?.filter(r => r.locked_by?.includes('vercel') || r.locked_by?.includes('cron')).length ?? 0,
     },
     {
       tier: 1,
       label: 'Tier 1 — Supabase Edge Function',
       description: '2min tick, heavy task processing',
-      online: true,
-      last_seen: runs?.[0]?.started_at ?? null,
+      online: fleetOnline,
+      last_seen: lastRunAt,
       total_runs: runs?.filter(r => r.locked_by?.includes('edge') || r.locked_by?.includes('supabase')).length ?? 0,
     },
     {
