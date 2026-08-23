@@ -414,7 +414,7 @@ export default async function FounderOverviewPage() {
         <Panel title="Worker Topology" link="View all" linkHref="/founder/workers">
           <div className="space-y-3">
             {workers.length > 0 ? workers.map((w) => (
-              <div key={w.tier} className="flex items-start gap-3">
+              <div key={`${w.tier}-${w.label}`} className="flex items-start gap-3">
                 <span className={`mt-1 h-2 w-2 rounded-full shrink-0 ${w.online ? 'bg-severity-success' : 'bg-fg-disabled'}`} />
                 <div className="flex-1 min-w-0">
                   <p className="text-[12px] font-medium text-fg-primary leading-tight">{w.label}</p>
