@@ -98,6 +98,7 @@ jobs:
                  --include='*.mjs' --include='*.json' --include='*.yml' \
                  --exclude-dir=node_modules --exclude-dir=.next \
                  --exclude-dir=.git --exclude-dir=docs \
+                 --exclude-dir=.github \
                  -- "$id" . ; then
               echo "::error::retired model id '$id' is still referenced above"
               FAILED=1
