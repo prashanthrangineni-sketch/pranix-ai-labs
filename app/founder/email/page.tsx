@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Mail, Inbox, AlertCircle, Clock } from 'lucide-react'
+import { Mail, Inbox, AlertCircle, Clock, ExternalLink } from 'lucide-react'
 import { getControlPlane } from '../../lib/control-plane'
 
 export const metadata: Metadata = { title: 'Email' }
@@ -13,10 +13,10 @@ export const revalidate = 60
 // plainly which are connected, is the point: a view that quietly showed only
 // the working ones would hide half the inbox.
 const MAILBOXES = [
-  { addr: 'pranixailabs@gmail.com', via: 'Gmail API' },
-  { addr: 'prashanthrangineni@gmail.com', via: 'Gmail API' },
-  { addr: 'founder@pranixailabs.com', via: 'Hostinger IMAP' },
-  { addr: 'support@pranixailabs.com', via: 'Hostinger IMAP' },
+  { addr: 'pranixailabs@gmail.com', via: 'Gmail API', short: 'pranixailabs' },
+  { addr: 'prashanthrangineni@gmail.com', via: 'Gmail API', short: 'prashanth' },
+  { addr: 'founder@pranixailabs.com', via: 'Hostinger IMAP', short: 'founder@' },
+  { addr: 'support@pranixailabs.com', via: 'Hostinger IMAP', short: 'support@' },
 ] as const
 
 type EmailRow = {
@@ -30,6 +30,7 @@ type EmailRow = {
   requires_response: boolean | null
   acknowledged: boolean | null
   received_at: string | null
+  metadata: { thread_id?: string } | null
 }
 
 // Read through the service-role control-plane client, which is how every other
@@ -42,7 +43,7 @@ async function getTriagedEmail(): Promise<{ rows: EmailRow[]; error: string | nu
     const { data, error } = await db
       .from('founder_email_intelligence')
       .select(
-        'id, email_id, source_account, subject, sender, classification, urgency, requires_response, acknowledged, received_at',
+        'id, email_id, source_account, subject, sender, classification, urgency, requires_response, acknowledged, received_at, metadata',
       )
       .order('received_at', { ascending: false })
       .limit(100)
@@ -53,6 +54,29 @@ async function getTriagedEmail(): Promise<{ rows: EmailRow[]; error: string | nu
     // a visible failure instead of an empty inbox that looks like good news.
     return { rows: [], error: err instanceof Error ? err.message : String(err) }
   }
+}
+
+// Deep link straight to the message in Gmail, in the right account.
+//
+// authuser takes the address rather than an index, so it lands in the correct
+// mailbox even when several Google accounts are signed in — an index would
+// open whichever happened to be first. Thread id is preferred because Gmail's
+// #all/ view is thread-addressed; the message id is a usable fallback.
+//
+// Returns null for anything not on Gmail, so the row renders as plain text
+// rather than a link that goes nowhere.
+function messageUrl(r: EmailRow): string | null {
+  const acct = r.source_account
+  if (!acct || !acct.endsWith('@gmail.com')) return null
+  const ref = r.metadata?.thread_id || r.email_id
+  if (!ref) return null
+  return `https://mail.google.com/mail/u/?authuser=${encodeURIComponent(acct)}#all/${encodeURIComponent(ref)}`
+}
+
+function shortAccount(addr: string | null): string {
+  if (!addr) return 'unknown'
+  const known = MAILBOXES.find((m) => m.addr === addr)
+  return known ? known.short : addr.split('@')[0]
 }
 
 function relTime(iso: string | null): string {
@@ -87,6 +111,8 @@ export default async function FounderEmailPage() {
   }
   const classes = [...byClass.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6)
 
+  const machineOnly = rows.length > 0 && rows.every((r) => r.classification === 'github_alert')
+
   return (
     <div className="px-4 py-6 space-y-6">
       <h1 className="text-lg font-semibold text-fg-primary">Email</h1>
@@ -100,6 +126,17 @@ export default async function FounderEmailPage() {
           <p className="text-xs text-fg-muted">{error}</p>
           <p className="text-xs text-fg-muted mt-1">
             This is a failure, not an empty inbox. Nothing below is trustworthy until it clears.
+          </p>
+        </div>
+      )}
+
+      {machineOnly && (
+        <div className="rounded-lg border border-severity-warn/30 bg-surface p-4">
+          <p className="text-xs text-fg-secondary">
+            Everything below is automated build mail. Human email is not missing — GitHub was
+            producing more notifications than the triage batch could hold, so it filled every slot.
+            Those senders are now muted at the source; the next sweep should reach real
+            correspondence.
           </p>
         </div>
       )}
@@ -164,33 +201,54 @@ export default async function FounderEmailPage() {
         <h2 className="text-sm font-medium text-fg-primary mb-3">Recent ({rows.length})</h2>
         {rows.length > 0 ? (
           <div className="space-y-3">
-            {rows.slice(0, 40).map((r) => (
-              <div
-                key={r.id}
-                className="border-b border-border-subtle pb-3 last:border-b-0 last:pb-0"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <span className="text-xs font-medium text-fg-primary">
-                    {r.subject || '(no subject)'}
-                  </span>
-                  <span className="text-xs text-fg-muted whitespace-nowrap">
-                    {relTime(r.received_at)}
-                  </span>
-                </div>
-                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-fg-muted">
-                  <span className="truncate max-w-[55%]">{r.sender || 'unknown sender'}</span>
-                  <span>· {(r.classification ?? 'unclassified').replace(/_/g, ' ')}</span>
-                  {r.urgency && (
-                    <span className={URGENCY_CLASS[r.urgency] ?? 'text-fg-muted'}>
-                      · {r.urgency}
+            {rows.slice(0, 40).map((r) => {
+              const href = messageUrl(r)
+              return (
+                <div
+                  key={r.id}
+                  className="border-b border-border-subtle pb-3 last:border-b-0 last:pb-0"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    {href ? (
+                      <a
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-medium text-fg-primary hover:text-accent inline-flex items-start gap-1 group"
+                      >
+                        <span>{r.subject || '(no subject)'}</span>
+                        <ExternalLink className="h-3 w-3 shrink-0 mt-0.5 text-fg-disabled group-hover:text-accent" />
+                      </a>
+                    ) : (
+                      <span className="text-xs font-medium text-fg-primary">
+                        {r.subject || '(no subject)'}
+                      </span>
+                    )}
+                    <span className="text-xs text-fg-muted whitespace-nowrap">
+                      {relTime(r.received_at)}
                     </span>
-                  )}
-                  {r.requires_response && (
-                    <span className="text-severity-error">· needs reply</span>
-                  )}
+                  </div>
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-fg-muted">
+                    {/* Which mailbox this arrived in. With four accounts feeding
+                        one list, a row without this is unreadable — the founder's
+                        first question on seeing this page was exactly that. */}
+                    <span className="rounded-sm bg-elevated px-1.5 py-0.5 text-[10px] font-medium text-fg-secondary">
+                      {shortAccount(r.source_account)}
+                    </span>
+                    <span className="truncate max-w-[45%]">{r.sender || 'unknown sender'}</span>
+                    <span>· {(r.classification ?? 'unclassified').replace(/_/g, ' ')}</span>
+                    {r.urgency && (
+                      <span className={URGENCY_CLASS[r.urgency] ?? 'text-fg-muted'}>
+                        · {r.urgency}
+                      </span>
+                    )}
+                    {r.requires_response && (
+                      <span className="text-severity-error">· needs reply</span>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         ) : (
           <p className="text-xs text-fg-muted">
