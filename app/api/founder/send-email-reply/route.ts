@@ -73,7 +73,8 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       ok: true,
-      note: `Email reply sent to ${email.sender}!`
+      sent: false,
+      note: `Marked as handled and the draft recorded. NO email was delivered to ${email.sender} — outbound sending is not configured on this route.`
     })
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 })
