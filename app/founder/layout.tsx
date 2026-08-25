@@ -43,11 +43,14 @@ const BOTTOM_NAV = [
   { label: 'Overview',  href: '/founder',           icon: LayoutDashboard },
   { label: 'Ask',       href: '/founder/ask',       icon: Sparkles },
   { label: 'Approvals', href: '/founder/approvals', icon: ShieldCheck },
-  { label: 'Products',  href: '/founder/products',  icon: Package },
+  { label: 'Email',     href: '/founder/email',     icon: Mail },
   { label: 'Tasks',     href: '/founder/tasks',     icon: ListChecks },
   { label: 'Alerts',    href: '/founder/alerts',    icon: Bell },
   { label: 'More',      href: '/founder/more',      icon: ChevronDown },
 ] as const
+// Products moved off the mobile bar to make room for Email — seven items is
+// already the most a phone bar holds comfortably. Products is still one tap
+// away under More, and remains in the desktop sidebar.
 
 export default async function FounderLayout({ children }: { children: React.ReactNode }) {
   const session = await getFounderSession()
