@@ -23,6 +23,7 @@ const SIDEBAR_NAV = [
   { label: 'Tasks',                href: '/founder/tasks',        icon: ListChecks },
   { label: 'Automation',           href: '/founder/automation',   icon: Workflow,   badgeText: 'NEW' },
   { label: 'Alerts',               href: '/founder/alerts',       icon: Bell },
+  { label: 'Email',                href: '/founder/email',        icon: Mail,       badgeText: 'NEW' },
   { label: 'Approvals',            href: '/founder/approvals',    icon: ShieldCheck },
   { label: 'Tokens',               href: '/founder/tokens',       icon: KeyRound,   badgeText: 'NEW' },
   { label: 'Memory',               href: '/founder/memory',       icon: Brain },
