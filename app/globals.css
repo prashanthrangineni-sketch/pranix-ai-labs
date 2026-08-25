@@ -78,6 +78,14 @@
     --accent-hover: 217 72% 42%;
     --accent-active: 217 72% 38%;
     --accent-subtle: 217 72% 48% / 0.08;
+
+    /* Severity palette — darkened for white surfaces. See note above. */
+    --severity-critical: 358 64% 42%;
+    --severity-error: 14 74% 38%;
+    --severity-warn: 35 92% 30%;
+    --severity-info: 212 74% 40%;
+    --severity-success: 148 58% 28%;
+    --severity-dead: 220 7% 44%;
   }
 }
 
