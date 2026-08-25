@@ -54,7 +54,19 @@ export default async function FounderLayout({ children }: { children: React.Reac
   }
   const readOnly = session?.role === 'readonly'
   return (
-    <div className="flex min-h-screen bg-canvas text-fg-primary" style={{ fontFamily: "'DM Sans', 'Inter', system-ui, sans-serif" }}>
+    // data-theme="light" is set here rather than on <html> in app/layout.tsx
+    // so the public marketing pages are untouched — only the dashboard flips.
+    // The tokens it selects live in app/globals.css.
+    //
+    // The font stack previously led with 'DM Sans', which app/layout.tsx does
+    // not load (only Inter and JetBrains Mono), so every character silently
+    // fell back to Inter. Naming the font we actually load removes a
+    // misleading line rather than changing how anything renders.
+    <div
+      data-theme="light"
+      className="flex min-h-screen bg-canvas text-fg-primary"
+      style={{ fontFamily: "var(--font-inter), 'Inter', system-ui, sans-serif" }}
+    >
 
       {/* ── Sidebar (desktop only) ── */}
       <aside className="hidden lg:flex w-56 flex-col border-r border-border-subtle bg-surface shrink-0 fixed inset-y-0 left-0 z-40 overflow-y-auto">
