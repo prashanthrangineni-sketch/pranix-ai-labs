@@ -8,12 +8,43 @@ import { NextResponse }  from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
 // ── Execution-memory helpers ──────────────────────────────────────────────────
-const sb = () =>
-  createClient(
-    process.env.PRANIX_SUPABASE_URL!,
-    process.env.PRANIX_SUPABASE_SERVICE_KEY!,
-    { auth: { persistSession: false } },
-  )
+//
+// FIXED 2026-08-25.
+//
+// This route built its own Supabase client from PRANIX_SUPABASE_URL and
+// PRANIX_SUPABASE_SERVICE_KEY, with non-null assertions. Nothing else in the
+// repo uses those two names — every other consumer goes through
+// app/lib/control-plane.ts, which reads CONTROL_PLANE_SUPABASE_URL and
+// CONTROL_PLANE_SERVICE_ROLE_KEY. Same database, two different variable names,
+// one of them set.
+//
+// When they were absent, createClient(undefined, undefined) threw, GET threw,
+// and the route returned 500. On Mission Control that is guarded by
+// `{autonomy && ...}` — so the Autonomy panel simply WAS NOT THERE. No error,
+// no placeholder, no hint it had ever existed. A whole section of the founder's
+// dashboard silently absent because of an environment variable name.
+//
+// Two changes: accept either pair of names, and when neither is available,
+// return a valid payload that SAYS SO rather than throwing. A panel that
+// reports "cannot read the control plane" is useful. A panel that quietly
+// disappears teaches you the feature was never built.
+function credentials(): { url: string; key: string } | null {
+  const url = process.env.PRANIX_SUPABASE_URL || process.env.CONTROL_PLANE_SUPABASE_URL
+  const key = process.env.PRANIX_SUPABASE_SERVICE_KEY || process.env.CONTROL_PLANE_SERVICE_ROLE_KEY
+  if (!url || !key) return null
+  return { url, key }
+}
+
+const sb = () => {
+  const creds = credentials()
+  if (!creds) {
+    throw new Error(
+      'Autonomy engine has no control-plane credentials. Set CONTROL_PLANE_SUPABASE_URL and ' +
+      'CONTROL_PLANE_SERVICE_ROLE_KEY (or the legacy PRANIX_SUPABASE_URL / PRANIX_SUPABASE_SERVICE_KEY).',
+    )
+  }
+  return createClient(creds.url, creds.key, { auth: { persistSession: false } })
+}
 
 async function memRead(key: string): Promise<unknown> {
   const { data } = await sb()
