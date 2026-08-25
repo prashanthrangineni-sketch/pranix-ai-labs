@@ -33,7 +33,7 @@ const AUTO: ModelOption = {
 
 // ── Status helpers ─────────────────────────────────────────────────────────────
 function StatusIcon({ status }: { status: ModelStatus }) {
-  if (status === 'available')    return <CheckCircle2 className="h-3 w-3 text-success shrink-0" />
+  if (status === 'available')    return <CheckCircle2 className="h-3 w-3 text-severity-success shrink-0" />
   if (status === 'offline')      return <WifiOff      className="h-3 w-3 text-severity-critical shrink-0" />
   if (status === 'missing_key')  return <KeyRound     className="h-3 w-3 text-severity-warn shrink-0" />
   if (status === 'founder_only') return <Lock         className="h-3 w-3 text-fg-muted shrink-0" />
@@ -49,7 +49,7 @@ function statusLabel(status: ModelStatus): string {
 }
 
 function statusBadge(status: ModelStatus): string {
-  if (status === 'available')    return 'bg-severity-success/10 text-success'
+  if (status === 'available')    return 'bg-severity-success/10 text-severity-success'
   if (status === 'offline')      return 'bg-severity-critical/10 text-severity-critical'
   if (status === 'missing_key')  return 'bg-severity-warn/10 text-severity-warn'
   if (status === 'founder_only') return 'bg-elevated text-fg-disabled'
