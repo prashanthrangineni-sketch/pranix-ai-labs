@@ -88,6 +88,10 @@ jobs:
           # founder it was Active ever since. A label is not a model id, so
           # this check would not have caught it — but the next one, in real
           # code, it will.
+          #
+          # .github is excluded because THIS FILE contains the list, and on
+          # its first run the guard dutifully flagged itself. A scanner whose
+          # own definition trips it is a scanner nobody can keep green.
           set -u
           RETIRED="qwen/qwen3-32b llama-3.3-70b-versatile llama-3.1-8b-instant meta-llama/llama-4-scout-17b-16e-instruct deepseek-r1-distill-llama-70b"
           FAILED=0
