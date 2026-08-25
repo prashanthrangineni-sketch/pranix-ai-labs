@@ -19,6 +19,10 @@ export const metadata: Metadata = {
 // not telemetry.
 const SIDEBAR_NAV = [
   { label: 'Overview',             href: '/founder',              icon: LayoutDashboard },
+  // Both of these were sections of the Overview page until 2026-08-25.
+  // Mission Control alone is ~98 KB and fifteen-plus panes.
+  { label: 'Mission Control',      href: '/founder/mission-control', icon: Radar,   badgeText: 'NEW' },
+  { label: 'Project Board',        href: '/founder/board',        icon: KanbanSquare, badgeText: 'NEW' },
   { label: 'Ask Pranix',           href: '/founder/ask',          icon: Sparkles,   badgeText: 'NEW' },
   { label: 'Agents',               href: '/founder/workers',      icon: Bot },
   { label: 'Tasks',                href: '/founder/tasks',        icon: ListChecks },
