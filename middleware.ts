@@ -116,9 +116,19 @@ export async function middleware(request: NextRequest) {
     cookieOptions: AUTH_COOKIE_OPTIONS,
   })
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // getUser() reaches out over the network. A Supabase blip, a DNS failure or a
+  // timeout throws here, and — same as the missing-key case above — an uncaught
+  // throw in middleware is a 500 for every route on the site. Fail closed for
+  // the dashboard, open for everything else.
+  let user: { email?: string | null } | null = null
+  try {
+    const result = await supabase.auth.getUser()
+    user = result.data.user
+  } catch (err) {
+    console.error('[middleware] auth.getUser() failed:', err)
+    if (!pathname.startsWith('/founder')) return response
+    return redirectToLogin(request, pathname)
+  }
 
   const isFounderRoute = pathname.startsWith('/founder')
   if (!isFounderRoute) {
