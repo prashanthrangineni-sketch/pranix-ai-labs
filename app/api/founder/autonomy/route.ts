@@ -193,6 +193,28 @@ function resolveStatus(
 
 // ── GET ───────────────────────────────────────────────────────────────────────
 export async function GET() {
+  // Answer with a valid, honest payload rather than a 500 the UI hides.
+  // `{autonomy && ...}` in MissionControl means a failed request removes the
+  // panel entirely; a 200 whose status says "blocked" keeps it on screen and
+  // explains itself.
+  if (!credentials()) {
+    return NextResponse.json({
+      status: 'blocked' as AutonomyStatus,
+      next_best_action: '',
+      blocking_reason:
+        'Autonomy engine cannot read the control plane — no credentials in this runtime. ' +
+        'Set CONTROL_PLANE_SUPABASE_URL and CONTROL_PLANE_SERVICE_ROLE_KEY on this project.',
+      ready_operations:     [],
+      pending_approvals:    [],
+      high_risk_operations: [],
+      learning_signals:     [],
+      active_mode:          'unknown',
+      cycle_id:             '',
+      generated_at:         new Date().toISOString(),
+      degraded:             true,
+    })
+  }
+
   try {
     // 1. Fetch all upstream layers in parallel
     const [
