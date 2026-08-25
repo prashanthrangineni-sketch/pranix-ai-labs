@@ -49,7 +49,7 @@ function statusLabel(status: ModelStatus): string {
 }
 
 function statusBadge(status: ModelStatus): string {
-  if (status === 'available')    return 'bg-success/10 text-success'
+  if (status === 'available')    return 'bg-severity-success/10 text-success'
   if (status === 'offline')      return 'bg-severity-critical/10 text-severity-critical'
   if (status === 'missing_key')  return 'bg-severity-warn/10 text-severity-warn'
   if (status === 'founder_only') return 'bg-elevated text-fg-disabled'
