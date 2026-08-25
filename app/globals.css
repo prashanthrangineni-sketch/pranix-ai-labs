@@ -36,7 +36,29 @@
     --severity-dead: 0 0% 40%;
   }
 
-  /* Light theme — public pages */
+  /* Light theme.
+   *
+   * Applied by app/founder/layout.tsx to the dashboard shell, and available
+   * to any other subtree that sets data-theme="light". Scoped rather than
+   * global on <html> so the public marketing pages keep rendering exactly
+   * as they do today.
+   *
+   * The severity block below was MISSING until 2026-08-25. Without it these
+   * six tokens fell through to the dark values defined in :root, which are
+   * tuned for a near-black canvas and are unreadable on white. Measured
+   * against --bg-canvas (#fff) and --bg-surface:
+   *
+   *     token      inherited dark      now
+   *     warn            2.16:1        5.76:1
+   *     success         2.39:1        6.01:1
+   *     error           3.49:1        6.34:1
+   *     info            3.57:1        6.19:1
+   *     critical        4.29:1        6.65:1
+   *
+   * Everything here clears WCAG AA 4.5:1 on both light surfaces. If you
+   * change a hue, re-check the ratio — an amber or green that looks right
+   * on a dark canvas will almost always fail on a white one.
+   */
   [data-theme="light"] {
     --bg-canvas: 0 0% 100%;
     --bg-surface: 220 14% 97%;
@@ -56,6 +78,14 @@
     --accent-hover: 217 72% 42%;
     --accent-active: 217 72% 38%;
     --accent-subtle: 217 72% 48% / 0.08;
+
+    /* Severity palette — darkened for white surfaces. See note above. */
+    --severity-critical: 358 64% 42%;
+    --severity-error: 14 74% 38%;
+    --severity-warn: 35 92% 30%;
+    --severity-info: 212 74% 40%;
+    --severity-success: 148 58% 28%;
+    --severity-dead: 220 7% 44%;
   }
 }
 

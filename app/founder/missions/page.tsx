@@ -26,7 +26,7 @@ const STATE_LABELS: Record<MissionStep['state'], string> = {
 function StepStateBadge({ state }: { state: MissionStep['state'] }) {
   const cls =
     state === 'verified'
-      ? 'text-severity-ok'
+      ? 'text-severity-success'
       : state === 'claimed_done'
         ? 'text-severity-warn'
         : state === 'failed'
@@ -204,7 +204,7 @@ export default async function MissionControlPage() {
               </span>
               <span
                 className={`text-[10px] uppercase tracking-wide shrink-0 ${
-                  v.verdict === 'pass' ? 'text-severity-ok' : v.verdict === 'fail' ? 'text-severity-critical' : 'text-severity-warn'
+                  v.verdict === 'pass' ? 'text-severity-success' : v.verdict === 'fail' ? 'text-severity-critical' : 'text-severity-warn'
                 }`}
               >
                 {v.verdict}
