@@ -59,6 +59,45 @@ export async function middleware(request: NextRequest) {
 
   let response = NextResponse.next({ request })
 
+  const isFounderRouteEarly = pathname.startsWith('/founder')
+
+  // ── Survive a missing anon key ────────────────────────────────────
+  //
+  // SUPABASE_ANON_KEY falls back to '' when NEXT_PUBLIC_SUPABASE_ANON_KEY is
+  // unset. createServerClient() then throws "Your project's URL and Key are
+  // required to create a Supabase client!" — an UNCAUGHT throw inside
+  // middleware, which Next.js turns into a bare HTTP 500.
+  //
+  // Look at the matcher at the bottom of this file: it excludes static assets
+  // and nothing else. This middleware runs on EVERY route. So one unset
+  // environment variable does not degrade the dashboard — it returns 500 for
+  // the entire site, the public marketing pages included. No login screen, no
+  // error page, no clue what happened.
+  //
+  // Found 2026-08-25 by running the app locally without the variable set.
+  //
+  // Degrade instead:
+  //   * public routes carry on completely unaffected — a marketing site does
+  //     not need an auth client to render;
+  //   * founder routes go to the login screen with a named reason, so whoever
+  //     sees it knows it is a configuration problem rather than their password.
+  //
+  // This is not a substitute for the variable being set. It is the difference
+  // between one broken thing and everything being broken.
+  if (!SUPABASE_ANON_KEY) {
+    console.error(
+      '[middleware] NEXT_PUBLIC_SUPABASE_ANON_KEY is not set. Founder auth cannot run. ' +
+      'Public routes are being served normally; founder routes redirect to login.',
+    )
+    if (!isFounderRouteEarly) return response
+    const url = request.nextUrl.clone()
+    url.pathname = '/founder/login'
+    url.search = ''
+    url.searchParams.set('error', 'auth_unavailable')
+    url.searchParams.set('next', pathname)
+    return NextResponse.redirect(url)
+  }
+
   const supabase = createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     cookies: {
       getAll() {
@@ -77,9 +116,19 @@ export async function middleware(request: NextRequest) {
     cookieOptions: AUTH_COOKIE_OPTIONS,
   })
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // getUser() reaches out over the network. A Supabase blip, a DNS failure or a
+  // timeout throws here, and — same as the missing-key case above — an uncaught
+  // throw in middleware is a 500 for every route on the site. Fail closed for
+  // the dashboard, open for everything else.
+  let user: { email?: string | null } | null = null
+  try {
+    const result = await supabase.auth.getUser()
+    user = result.data.user
+  } catch (err) {
+    console.error('[middleware] auth.getUser() failed:', err)
+    if (!pathname.startsWith('/founder')) return response
+    return redirectToLogin(request, pathname)
+  }
 
   const isFounderRoute = pathname.startsWith('/founder')
   if (!isFounderRoute) {
