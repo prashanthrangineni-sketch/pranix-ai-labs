@@ -4,6 +4,7 @@ import {
   LayoutDashboard, Bot, ListChecks, Bell, ShieldCheck,
   Brain, Monitor, Package,
   ChevronDown, Clock, Sparkles, Boxes, Archive, LayoutGrid, Gauge, Camera, KeyRound, Workflow, BookOpen,
+  Mail,
 } from 'lucide-react'
 import { getFounderSession } from '@/lib/auth'
 import { IdeaCaptureHeader } from './_components/IdeaCaptureHeader'
