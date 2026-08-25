@@ -31,9 +31,21 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'No draft reply found for this email' }, { status: 400 })
     }
 
-    // 2. Mock sending the email (SendGrid/SMTP or console log)
-    console.log(`[send-email-reply] Outbound email sent to ${email.sender}: subject: Re: ${email.subject}`);
-    console.log(`[send-email-reply] Reply content:\n${draft}`);
+    // 2. NOTHING IS SENT HERE.
+    //
+    // There is no SendGrid, SMTP or Gmail send wired into this route — these
+    // two log lines are the entire "send" step. Until 2026-08-25 the log said
+    // "Outbound email sent" and the response below said "Email reply sent!",
+    // so a founder pressing one-tap approve was told their reply had gone out
+    // when it had not. The record was then marked acknowledged, removing the
+    // last cue that anything was outstanding.
+    //
+    // The draft is still recorded and the item is still marked handled, which
+    // is what the founder's action means. What changed is that the route no
+    // longer claims delivery it cannot perform. To make it real, send here and
+    // only then set sent: true in the response.
+    console.log(`[send-email-reply] NOT SENT (no transport configured). Would have gone to ${email.sender}, subject: Re: ${email.subject}`);
+    console.log(`[send-email-reply] Draft content:\n${draft}`);
 
     // 3. Mark the email as acknowledged and responded
     const { error: updateErr } = await db
@@ -61,7 +73,8 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       ok: true,
-      note: `Email reply sent to ${email.sender}!`
+      sent: false,
+      note: `Marked as handled and the draft recorded. NO email was delivered to ${email.sender} — outbound sending is not configured on this route.`
     })
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 })

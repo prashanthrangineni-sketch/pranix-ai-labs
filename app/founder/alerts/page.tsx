@@ -24,8 +24,14 @@ export default async function FounderAlertsPage() {
         <CountBadge label="Info" value={counts.info} variant="info" />
       </div>
 
+      {/* These separators used to be written as the six characters
+          backslash-u-0-0-b-7. JSX text is literal — it is not a JavaScript
+          string, so an escape sequence in it is not decoded. The page printed
+          "·" and "×" on screen, next to every failure pattern and
+          every occurrence count, for as long as the page has existed. Use the
+          real characters. */}
       <p className="text-xs text-fg-muted">
-        {total.toLocaleString()} total alerts \u00b7 default view shows failure patterns, not raw alerts
+        {total.toLocaleString()} total alerts · default view shows failure patterns, not raw alerts
       </p>
 
       <div className="rounded-lg border border-border-subtle bg-surface p-4">
@@ -45,14 +51,14 @@ export default async function FounderAlertsPage() {
                     {p.fingerprint}
                   </span>
                   <span className="text-xs font-mono text-severity-warn" data-numeric>
-                    {p.occurrences}\u00d7
+                    {p.occurrences}×
                   </span>
                 </div>
                 <div className="mt-1 flex items-center gap-2 text-xs text-fg-muted">
                   {p.product_name && <span>{p.product_name}</span>}
-                  <span>\u00b7 {p.failure_type}</span>
+                  <span>· {p.failure_type}</span>
                   <span>
-                    \u00b7 last {new Date(p.last_seen_at).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
+                    · last {new Date(p.last_seen_at).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
                   </span>
                 </div>
               </div>
