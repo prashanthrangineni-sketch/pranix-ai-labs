@@ -1,0 +1,115 @@
+# CI for pranix-ai-labs.
+#
+# WHY THIS FILE EXISTS
+#
+# Until 2026-08-25 this repository had NO .github directory at all. No
+# typecheck, no build, no lint, nothing. Every change — including the founder
+# dashboard's light-theme conversion and its new Email section, both shipped
+# the same day — went to production without a single automated check. Vercel
+# builds on deploy, so the first thing that would notice a TypeScript error is
+# a failed production deploy.
+#
+# The gap was closed manually on 25 Aug by running the three commands below on
+# a laptop. They passed. This file is that check, made permanent, so it does
+# not depend on someone remembering.
+#
+# Deliberately minimal: install, typecheck, build. No lint gate yet — adding
+# one to an existing codebase produces a wall of pre-existing findings that
+# teaches everyone to ignore the red X, which is worse than no check.
+#
+# NOTE ON THE OTHER ACCOUNT: PranixQuick's Actions allowance is exhausted and
+# cannot be topped up (RBI regulation blocks recurring payments for Indian
+# customers), so its jobs are refused until 1 September. This repository is on
+# a different account with its own allowance. If these jobs start returning in
+# ~3 seconds with a billing message, that is the same condition arriving here,
+# not a code failure.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  typecheck-and-build:
+    name: Typecheck and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # The build prerenders pages, which touches the Supabase client and logs
+      # "MISSING ENV VAR: NEXT_PUBLIC_SUPABASE_ANON_KEY" when it is absent.
+      # These are throwaway build-time values so that warning does not drown
+      # the log — they are NOT credentials and grant nothing. Real values live
+      # in Vercel's environment and are never needed to compile.
+      NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: build-time-placeholder-not-a-key
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # npm ci requires a lockfile in sync with package.json. Using install
+      # keeps this green if the lockfile drifts — a CI job that fails for a
+      # reason unrelated to the change is a CI job people learn to ignore.
+      - name: Install
+        run: npm install --no-audit --no-fund
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build
+
+  stale-model-ids:
+    name: No retired model ids
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan for model ids the vendor has retired
+        run: |
+          # The sibling repo pranix-agent-engine has a drift guard that reads a
+          # RETIRED map. This repo has no such map, so the list is inline —
+          # keep the two in step when a vendor retires something.
+          #
+          # This matters here because app/founder/page.tsx renders a hardcoded
+          # provider label reading "Groq / Qwen3-32b". Groq decommissioned
+          # qwen/qwen3-32b on 2026-07-17, and that label has been telling the
+          # founder it was Active ever since. A label is not a model id, so
+          # this check would not have caught it — but the next one, in real
+          # code, it will.
+          #
+          # .github is excluded because THIS FILE contains the list, and on
+          # its first run the guard dutifully flagged itself. A scanner whose
+          # own definition trips it is a scanner nobody can keep green.
+          set -u
+          RETIRED="qwen/qwen3-32b llama-3.3-70b-versatile llama-3.1-8b-instant meta-llama/llama-4-scout-17b-16e-instruct deepseek-r1-distill-llama-70b"
+          FAILED=0
+          for id in $RETIRED; do
+            # Search code only. Documentation is allowed to describe history.
+            if grep -rIn --binary-files=without-match \
+                 --include='*.ts' --include='*.tsx' --include='*.js' \
+                 --include='*.mjs' --include='*.json' --include='*.yml' \
+                 --exclude-dir=node_modules --exclude-dir=.next \
+                 --exclude-dir=.git --exclude-dir=docs \
+                 --exclude-dir=.github \
+                 -- "$id" . ; then
+              echo "::error::retired model id '$id' is still referenced above"
+              FAILED=1
+            fi
+          done
+          if [ "$FAILED" -eq 1 ]; then
+            echo "One or more retired model ids are still in the code."
+            exit 1
+          fi
+          echo "No retired model ids found."
