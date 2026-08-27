@@ -6,6 +6,7 @@ import { useState } from 'react'
 import Effects from './Effects'
 import AariaDock from './AariaDock'
 import { PRODUCTS } from '@/lib/public/data'
+import { CIN, UDYAM, DPIIT } from '@/lib/public/legal'
 
 const NAV = [
   { label: 'Home', href: '/' },
@@ -97,16 +98,20 @@ export default function Shell({ children, fontClass }: { children: React.ReactNo
               <li><Link href="/contact">Contact</Link></li>
               <li><Link href="/founder/login">Founder Login</Link></li>
             </ul></div>
-            <div><h4>Contact</h4><ul>
+            <div><h4>Contact &amp; legal</h4><ul>
               <li><a href="mailto:support@pranixailabs.com">support@pranixailabs.com</a></li>
               <li><a href="tel:+919515479595">Services: +91 95154 79595</a></li>
               <li><a href="https://wa.me/919515479595" target="_blank" rel="noopener noreferrer">WhatsApp: 95154 79595</a></li>
+              <li><Link href="/privacy">Privacy Policy</Link></li>
+              <li><Link href="/terms">Terms of Service</Link></li>
+              <li><Link href="/refunds">Refund &amp; Cancellation</Link></li>
+              <li><Link href="/contact">Grievance Officer</Link></li>
             </ul></div>
           </div>
           <div className="fmeta">
-            <span>CIN: U62011TS2026PTC209631</span>
-            <span>MSME: UDYAM-TS-02-0307772</span>
-            <span>DPIIT: DIPP241828</span>
+            <span>CIN: {CIN}</span>
+            <span>MSME: {UDYAM}</span>
+            <span>DPIIT: {DPIIT}</span>
             <span>T-Hub member</span>
             <span>© {new Date().getFullYear()} Pranix AI Labs Pvt Ltd · Hyderabad, Telangana</span>
           </div>
