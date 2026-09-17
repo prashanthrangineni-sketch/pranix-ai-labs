@@ -22,7 +22,7 @@
     "lucide-react": "^0.383.0",
     "framer-motion": "^11.5.0",
     "server-only": "^0.0.1",
-    "sharp": "^0.33.5"
+    "sharp": "^0.35.4"
   },
   "devDependencies": {
     "typescript": "^5.5.0",
