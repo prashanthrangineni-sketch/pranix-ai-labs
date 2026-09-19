@@ -56,6 +56,46 @@ export const EFFECTIVE_DATE = '27 August 2026'
 
 export type LegalSection = { title: string; body: string; list?: string[] }
 
+// ─── Data deletion ───────────────────────────────────────────────────────────
+// Public instructions page (/data-deletion). Meta (Facebook, Instagram, WhatsApp,
+// Threads) and Google (YouTube, sign-in) require a data-deletion URL for apps.
+export const DATA_DELETION: LegalSection[] = [
+  {
+    title: '1. Who can ask',
+    body: `Anyone whose personal data is held by ${ENTITY} — through pranixailabs.com, any Pranix product (QuietKeep, QuickScanZ, EdProSys, InsureUPI, EasyVenuez, Cart2Save, EdGridAI), our social media pages, or an app you connected using Facebook, Instagram, WhatsApp, Google or YouTube — can ask us to delete it. This is your right as a Data Principal under the Digital Personal Data Protection Act 2023.`,
+  },
+  {
+    title: '2. How to ask',
+    body: 'Use whichever is easiest for you:',
+    list: [
+      `Email ${SUPPORT_EMAIL} with the subject "Delete my data". Tell us the product you used and the mobile number or email address on your account.`,
+      `WhatsApp or call ${PHONE_DISPLAY} and say you want your data deleted.`,
+      'If you connected a Pranix app to Facebook or Instagram, you can also remove it yourself: Facebook → Settings & privacy → Settings → Apps and websites → select the Pranix app → Remove. Then email us so we delete what we already received.',
+      'If you connected a Pranix app to your Google or YouTube account, you can remove access at myaccount.google.com/permissions, then email us so we delete what we already received.',
+    ],
+  },
+  {
+    title: '3. What happens next',
+    body: `We acknowledge your request within ${ACK_SLA}. To protect you, we confirm the request comes from the account holder — usually with a one-time code sent to the mobile number or email on the account. We then delete your personal data, including any data received from Facebook, Instagram, WhatsApp, Google or YouTube, from our live systems within ${GRIEVANCE_SLA}, and confirm by email or SMS with a reference number you can quote later.`,
+  },
+  {
+    title: '4. What we delete',
+    body: 'Your profile and contact details, content you created in our products, consent records that are no longer needed, marketing preferences, and any data we received from a connected social or Google account. If you only want to stop receiving offers, tell us — we will stop all promotional SMS and WhatsApp messages without deleting your account.',
+  },
+  {
+    title: '5. What the law requires us to keep',
+    body: 'Some records must be kept for a period set by law even after you ask for deletion — for example tax and invoice records, records needed to resolve a dispute or complaint, and records a regulator requires. We keep only the minimum, block it from any other use, and delete it when the legal period ends. Backups roll over and are fully cleared within 90 days.',
+  },
+  {
+    title: '6. Organisations using our business products',
+    body: 'If a school, business or other organisation added you to a Pranix business product (for example EdProSys or InsureUPI for organisations), that organisation controls your data. Please ask them first; we will act on their instruction. If you cannot reach them, write to us and we will help.',
+  },
+  {
+    title: '7. Grievance Officer',
+    body: `If you are not satisfied, contact our Grievance Officer, ${GRIEVANCE_OFFICER}, at ${GRIEVANCE_EMAIL}. We resolve grievances within ${GRIEVANCE_SLA}. You may also approach the Data Protection Board of India.`,
+  },
+]
+
 // ─── Sub-processors ──────────────────────────────────────────────────────────
 // Union of the processors named in the live per-product privacy policies. Any
 // product may use a subset; the per-product policy is authoritative for that
