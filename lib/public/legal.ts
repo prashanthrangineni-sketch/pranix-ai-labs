@@ -39,6 +39,8 @@ export const REGISTERED_ADDRESS = [
   ...REGISTERED_ADDRESS_LINES,
   [REGISTERED_CITY, REGISTERED_STATE, REGISTERED_PIN].filter(Boolean).join(', '),
   REGISTERED_COUNTRY,
+  `CIN: ${CIN}`,
+  `GSTIN: ${GSTIN}`,
 ].filter(Boolean)
 
 export const SUPPORT_EMAIL = 'support@pranixailabs.com'
