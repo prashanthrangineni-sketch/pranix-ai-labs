@@ -11,6 +11,9 @@ export const ENTITY_SHORT = 'Pranix AI Labs'
 export const CIN = 'U62011TS2026PTC209631'
 export const UDYAM = 'UDYAM-TS-02-0307772'
 export const DPIIT = 'DIPP241828'
+// GST registration approved by the Telangana department on 23-09-2026
+// (application ARN AA3608260501291). Shown on the legal pages and on invoices.
+export const GSTIN = '36AAQCP5776M1ZE'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // REGISTERED OFFICE — as filed on the MCA record for CIN U62011TS2026PTC209631
@@ -36,6 +39,8 @@ export const REGISTERED_ADDRESS = [
   ...REGISTERED_ADDRESS_LINES,
   [REGISTERED_CITY, REGISTERED_STATE, REGISTERED_PIN].filter(Boolean).join(', '),
   REGISTERED_COUNTRY,
+  `CIN: ${CIN}`,
+  `GSTIN: ${GSTIN}`,
 ].filter(Boolean)
 
 export const SUPPORT_EMAIL = 'support@pranixailabs.com'
