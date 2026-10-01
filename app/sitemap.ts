@@ -38,6 +38,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'monthly',
     },
     {
+      url: `${BASE}/aaria/numbers`,
+      priority: 0.6,
+      changeFrequency: 'monthly',
+    },
+    {
       url: `${BASE}/contact`,
       priority: 0.7,
       changeFrequency: 'monthly',
