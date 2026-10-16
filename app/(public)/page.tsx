@@ -60,11 +60,11 @@ export default function HomePage() {
 
       <section className="block wrap">
         <div className="stats">
-          <div className="stat rv"><div className="num" data-count="7">0</div><div className="lbl">Products</div></div>
-          <div className="stat rv d1"><div className="num" data-count="5">0</div><div className="lbl">Apps on Play Console</div></div>
-          <div className="stat rv d2"><div className="num" data-count="1516" data-plus="1">0</div><div className="lbl">Live price links</div></div>
-          <div className="stat rv d3"><div className="num" data-count="6">0</div><div className="lbl">Indian languages</div></div>
-          <div className="stat rv d4"><div className="num" data-count="90" data-plus="1">0</div><div className="lbl">Warranty catalog items</div></div>
+          <div className="stat rv"><div className="num" data-count="7">7</div><div className="lbl">Products</div></div>
+          <div className="stat rv d1"><div className="num" data-count="3">3</div><div className="lbl">Apps on Google Play</div></div>
+          <div className="stat rv d2"><div className="num" data-count="1516" data-plus="1">1,516+</div><div className="lbl">Live price links</div></div>
+          <div className="stat rv d3"><div className="num" data-count="6">6</div><div className="lbl">Indian languages</div></div>
+          <div className="stat rv d4"><div className="num" data-count="90" data-plus="1">90+</div><div className="lbl">Warranty catalog items</div></div>
         </div>
       </section>
 

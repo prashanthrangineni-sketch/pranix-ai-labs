@@ -15,7 +15,7 @@ export const EDGRID_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 
 export const PRODUCTS: Product[] = [
   { id: 'edprosys', name: 'EdProSys', emoji: '🏫', color: '#6366f1', tag: '"The Operating System for Indian Education"',
     desc: 'AI-powered school management for Indian K-12 — attendance, fees, AI report cards in English & Telugu, WhatsApp parent bots and principal briefings.',
-    tags: ['School OS', 'WhatsApp bots', 'AI report cards', 'Razorpay fees'],
+    tags: ['EdProSys', 'WhatsApp bots', 'AI report cards', 'Razorpay fees'],
     feats: ['WhatsApp parent communication with automated alerts', 'AI-generated report cards (English + Telugu)', 'Mobile-first attendance, marks & fee management', 'Principal dashboards with AI daily briefings'],
     url: 'https://www.edprosys.com', status: 'play', statusTxt: 'On Google Play', logo: 'https://www.edprosys.com/brand/icon.png', logoTile: true, aariaLive: true },
   { id: 'quietkeep', name: 'QuietKeep', emoji: '🎙️', color: '#5b5ef4', tag: '"Your Personal Life OS"',
@@ -81,7 +81,7 @@ export const SERVICES = [
   { e: '🎙️', t: 'Voice AI integration', d: 'Put Aaria inside your product — multilingual voice queries and actions for Indian users, on a Bhashini-first stack.', tag: 'Aaria · ASR · TTS · NMT' },
   { e: '🤖', t: 'AI agents & automation', d: 'Founder-supervised AI agent fleets for your operations — support, back-office, reporting — governed by deterministic rules.', tag: 'MCP · agents · guardrails' },
   { e: '🛒', t: 'Commerce & ONDC', d: 'Storefronts, price engines and ONDC network integrations — we run one in production ourselves.', tag: 'ONDC · marketplaces' },
-  { e: '🏫', t: 'Institution software', d: 'School management, adaptive learning and WhatsApp-first communication systems for Indian institutions.', tag: 'School OS · WhatsApp bots' },
+  { e: '🏫', t: 'Institution software', d: 'School management, adaptive learning and WhatsApp-first communication systems for Indian institutions.', tag: 'EdProSys · WhatsApp bots' },
   { e: '🎬', t: 'Marketing & video content', d: 'Pranix Motion generates your marketing for you — scripts, multilingual voiceovers and finished promo videos for products, launches and social.', tag: 'Pranix Motion · promo videos' },
   { e: '🛰️', t: 'Agent infrastructure (MCP)', d: 'We set up your own Pranix-style MCP gateway — AI agents wired to your tools with permissions, guardrails and audit logs.', tag: 'Pranix MCP · integrations' },
 ]

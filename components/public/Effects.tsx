@@ -79,25 +79,11 @@ export default function Effects() {
     return () => document.removeEventListener('mousemove', onMove)
   }, [])
 
-  // scroll reveal + counters — rescan on route change
+  // scroll reveal — rescan on route change
   useEffect(() => {
-    const countUp = (el: HTMLElement) => {
-      if (el.dataset.done) return
-      el.dataset.done = '1'
-      const target = +(el.dataset.count || 0), plus = el.dataset.plus ? '+' : ''
-      const t0 = performance.now()
-      const step = (t: number) => {
-        const k = Math.min((t - t0) / 1400, 1)
-        el.textContent = Math.floor(target * (1 - Math.pow(1 - k, 3))).toLocaleString() + (k === 1 ? plus : '')
-        if (k < 1) requestAnimationFrame(step)
-      }
-      requestAnimationFrame(step)
-    }
     const io = new IntersectionObserver(es => es.forEach(en => {
       if (!en.isIntersecting) return
       en.target.classList.add('in')
-      en.target.querySelectorAll?.('[data-count]').forEach(c => countUp(c as HTMLElement))
-      if ((en.target as HTMLElement).dataset?.count) countUp(en.target as HTMLElement)
     }), { threshold: .12 })
     const t = setTimeout(() => {
       document.querySelectorAll('.pxp .rv, .pxp .stat').forEach(el => io.observe(el))
