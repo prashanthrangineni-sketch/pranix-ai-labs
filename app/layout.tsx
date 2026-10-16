@@ -18,7 +18,7 @@ const jetbrainsMono = JetBrains_Mono({
 const SITE_URL = 'https://www.pranixailabs.com'
 
 const SITE_DESCRIPTION =
-  'Pranix AI Labs is India’s sovereign AI product studio building compliance-first, auditable AI systems for commerce, education, life and ownership. Cart2Save, QuietKeep, QuickScanZ and School OS share a protocol-grade agent engine for real-time decisions.'
+  'Pranix AI Labs is India’s sovereign AI product studio building compliance-first, auditable AI systems for commerce, education, life and ownership. Cart2Save, QuietKeep, QuickScanZ and EdProSys share a protocol-grade agent engine for real-time decisions.'
 
 // Single canonical Organization node for the whole site.
 //
@@ -74,7 +74,7 @@ const websiteJsonLd = {
 export const metadata: Metadata = {
   title: {
     default:
-      'Pranix AI Labs | Sovereign AI Product Studio — Cart2Save, QuietKeep, QuickScanZ & School OS',
+      'Pranix AI Labs | Sovereign AI Product Studio — Cart2Save, QuietKeep, QuickScanZ & EdProSys',
     template: '%s — Pranix AI Labs',
   },
   description: SITE_DESCRIPTION,

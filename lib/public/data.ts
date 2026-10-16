@@ -15,14 +15,14 @@ export const EDGRID_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 
 export const PRODUCTS: Product[] = [
   { id: 'edprosys', name: 'EdProSys', emoji: '🏫', color: '#6366f1', tag: '"The Operating System for Indian Education"',
     desc: 'AI-powered school management for Indian K-12 — attendance, fees, AI report cards in English & Telugu, WhatsApp parent bots and principal briefings.',
-    tags: ['School OS', 'WhatsApp bots', 'AI report cards', 'Razorpay fees'],
+    tags: ['EdProSys', 'WhatsApp bots', 'AI report cards', 'Razorpay fees'],
     feats: ['WhatsApp parent communication with automated alerts', 'AI-generated report cards (English + Telugu)', 'Mobile-first attendance, marks & fee management', 'Principal dashboards with AI daily briefings'],
     url: 'https://www.edprosys.com', status: 'play', statusTxt: 'On Google Play', logo: 'https://www.edprosys.com/brand/icon.png', logoTile: true, aariaLive: true },
   { id: 'quietkeep', name: 'QuietKeep', emoji: '🎙️', color: '#5b5ef4', tag: '"Your Personal Life OS"',
     desc: 'A voice-first assistant that acts, not just answers — driving, daily briefs, finance, family and documents. Personal and Business editions.',
     tags: ['Voice-first', 'Personal + Business', 'Acts for you', 'PWA'],
     feats: ['Voice assistant that executes tasks, not just replies', 'Personal edition: life, finance, family & documents', 'Business edition: scanner-led payments, inventory & ops', 'Learns your patterns to work like a real assistant'],
-    url: 'https://www.quietkeep.com', status: 'soon', statusTxt: 'Play Store — days away', logo: 'https://www.quietkeep.com/icon-512.png' },
+    url: 'https://www.quietkeep.com', status: 'play', statusTxt: 'On Google Play', logo: 'https://www.quietkeep.com/icon-512.png' },
   { id: 'quickscanz', name: 'QuickScanZ', emoji: '🧾', color: '#f59e0b', tag: '"Never lose a warranty or invoice again"',
     desc: 'Digital warranty & invoice vault for Indian households — expiry alerts, AI claim assistance and service-center lookup in 6 languages.',
     tags: ['90+ products', '12+ brands', '6 languages', 'Free forever'],
@@ -81,12 +81,12 @@ export const SERVICES = [
   { e: '🎙️', t: 'Voice AI integration', d: 'Put Aaria inside your product — multilingual voice queries and actions for Indian users, on a Bhashini-first stack.', tag: 'Aaria · ASR · TTS · NMT' },
   { e: '🤖', t: 'AI agents & automation', d: 'Founder-supervised AI agent fleets for your operations — support, back-office, reporting — governed by deterministic rules.', tag: 'MCP · agents · guardrails' },
   { e: '🛒', t: 'Commerce & ONDC', d: 'Storefronts, price engines and ONDC network integrations — we run one in production ourselves.', tag: 'ONDC · marketplaces' },
-  { e: '🏫', t: 'Institution software', d: 'School management, adaptive learning and WhatsApp-first communication systems for Indian institutions.', tag: 'School OS · WhatsApp bots' },
+  { e: '🏫', t: 'Institution software', d: 'School management, adaptive learning and WhatsApp-first communication systems for Indian institutions.', tag: 'EdProSys · WhatsApp bots' },
   { e: '🎬', t: 'Marketing & video content', d: 'Pranix Motion generates your marketing for you — scripts, multilingual voiceovers and finished promo videos for products, launches and social.', tag: 'Pranix Motion · promo videos' },
   { e: '🛰️', t: 'Agent infrastructure (MCP)', d: 'We set up your own Pranix-style MCP gateway — AI agents wired to your tools with permissions, guardrails and audit logs.', tag: 'Pranix MCP · integrations' },
 ]
 
-export const TICKER = ['✦ 7 products, one lab', '🎙️ Aaria — multilingual voice inside', '🛰️ Pranix MCP — advanced agent gateway', '🎬 Pranix Motion — AI video engine', '🏢 T-Hub member', '🏅 DPIIT recognized', '☁️ Microsoft for Startups', '🚀 AWS Startup Program', '🛒 ONDC network integrated', '📱 3 apps on Google Play — 3 more landing this week', "🗣️ Built for India, in India's languages", '🇮🇳 Made in Hyderabad', '🧑‍💻 Websites · Apps · AI — 95154 79595', '🤖 Founder-supervised AI engineering']
+export const TICKER = ['✦ 7 products, one lab', '🎙️ Aaria — multilingual voice inside', '🛰️ Pranix MCP — advanced agent gateway', '🎬 Pranix Motion — AI video engine', '🏢 T-Hub member', '🏅 DPIIT recognized', '☁️ Microsoft for Startups', '🚀 AWS Startup Program', '🛒 ONDC network integrated', '📱 4 apps on Google Play — more on the way', "🗣️ Built for India, in India's languages", '🇮🇳 Made in Hyderabad', '🧑‍💻 Websites · Apps · AI — 95154 79595', '🤖 Founder-supervised AI engineering']
 
 export const A_LANGS = [
   { c: 'en-IN', l: 'English' }, { c: 'hi-IN', l: 'हिंदी' }, { c: 'te-IN', l: 'తెలుగు' },

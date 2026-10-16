@@ -6,10 +6,10 @@ import { useEffect, useRef, useState } from 'react'
 import { PRODUCTS } from '@/lib/public/data'
 
 const LINES = [
-  '> building EdProSys — the school OS…',
+  '> building EdProSys for Indian education…',
   '> QuietKeep: a voice that acts, not answers…',
   '> Cart2Save: every price in India, one honest answer…',
-  '> shipping to Google Play this week…',
+  '> 4 apps on Google Play — more on the way…',
   '> supervised autonomy: humans merge, agents build…',
 ]
 
@@ -64,7 +64,7 @@ export default function Hero() {
 
   return (
     <section className="hero wrap">
-      <div className="hero-lockup"><Image src="/logo.png" alt="Pranix AI Labs logo" width={140} height={210} priority /></div><br />
+      <div className="hero-lockup"><Image src="/logo.png" alt="Pranix AI Labs logo" width={48} height={72} priority /></div>
       <span className="hero-kicker"><span className="dot" /> DPIIT-recognized · T-Hub member · Hyderabad 🇮🇳</span>
       <h1 className="mega">Innovate. Build.<br /><span className="grad-text">Ascend.</span></h1>
       <p className="hero-sub">One AI-native lab. Seven products shipping across commerce, education, fintech, voice AI and events — engineered by a founder-supervised fleet of AI agents.</p>
