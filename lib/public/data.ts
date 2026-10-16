@@ -22,7 +22,7 @@ export const PRODUCTS: Product[] = [
     desc: 'A voice-first assistant that acts, not just answers — driving, daily briefs, finance, family and documents. Personal and Business editions.',
     tags: ['Voice-first', 'Personal + Business', 'Acts for you', 'PWA'],
     feats: ['Voice assistant that executes tasks, not just replies', 'Personal edition: life, finance, family & documents', 'Business edition: scanner-led payments, inventory & ops', 'Learns your patterns to work like a real assistant'],
-    url: 'https://www.quietkeep.com', status: 'soon', statusTxt: 'Play Store — days away', logo: 'https://www.quietkeep.com/icon-512.png' },
+    url: 'https://www.quietkeep.com', status: 'play', statusTxt: 'On Google Play', logo: 'https://www.quietkeep.com/icon-512.png' },
   { id: 'quickscanz', name: 'QuickScanZ', emoji: '🧾', color: '#f59e0b', tag: '"Never lose a warranty or invoice again"',
     desc: 'Digital warranty & invoice vault for Indian households — expiry alerts, AI claim assistance and service-center lookup in 6 languages.',
     tags: ['90+ products', '12+ brands', '6 languages', 'Free forever'],
@@ -86,7 +86,7 @@ export const SERVICES = [
   { e: '🛰️', t: 'Agent infrastructure (MCP)', d: 'We set up your own Pranix-style MCP gateway — AI agents wired to your tools with permissions, guardrails and audit logs.', tag: 'Pranix MCP · integrations' },
 ]
 
-export const TICKER = ['✦ 7 products, one lab', '🎙️ Aaria — multilingual voice inside', '🛰️ Pranix MCP — advanced agent gateway', '🎬 Pranix Motion — AI video engine', '🏢 T-Hub member', '🏅 DPIIT recognized', '☁️ Microsoft for Startups', '🚀 AWS Startup Program', '🛒 ONDC network integrated', '📱 3 apps on Google Play — 3 more landing this week', "🗣️ Built for India, in India's languages", '🇮🇳 Made in Hyderabad', '🧑‍💻 Websites · Apps · AI — 95154 79595', '🤖 Founder-supervised AI engineering']
+export const TICKER = ['✦ 7 products, one lab', '🎙️ Aaria — multilingual voice inside', '🛰️ Pranix MCP — advanced agent gateway', '🎬 Pranix Motion — AI video engine', '🏢 T-Hub member', '🏅 DPIIT recognized', '☁️ Microsoft for Startups', '🚀 AWS Startup Program', '🛒 ONDC network integrated', '📱 4 apps on Google Play — more on the way', "🗣️ Built for India, in India's languages", '🇮🇳 Made in Hyderabad', '🧑‍💻 Websites · Apps · AI — 95154 79595', '🤖 Founder-supervised AI engineering']
 
 export const A_LANGS = [
   { c: 'en-IN', l: 'English' }, { c: 'hi-IN', l: 'हिंदी' }, { c: 'te-IN', l: 'తెలుగు' },

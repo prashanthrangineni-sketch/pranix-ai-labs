@@ -9,7 +9,7 @@ const LINES = [
   '> building EdProSys for Indian education…',
   '> QuietKeep: a voice that acts, not answers…',
   '> Cart2Save: every price in India, one honest answer…',
-  '> 3 apps on Google Play — 3 more landing soon…',
+  '> 4 apps on Google Play — more on the way…',
   '> supervised autonomy: humans merge, agents build…',
 ]
 
