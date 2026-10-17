@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { SectionHead } from '@/components/public/cards'
+import { NVIDIA_INCEPTION_BADGE } from '@/lib/public/gallery'
 
 export const metadata: Metadata = { title: 'About — Pranix AI Labs' }
 
@@ -9,7 +11,7 @@ export default function AboutPage() {
       <SectionHead kicker="The lab" title={<>An AI-native company, <span className="grad-text">built differently</span></>} />
       <div className="grid g2" style={{ marginTop: 34 }}>
         <div className="pcard rv"><h3>🎌 The origin</h3>
-          <p className="pdesc" style={{ marginTop: 12 }}>Pranix AI Labs Pvt Ltd is a DPIIT-recognized startup and T-Hub member from Hyderabad, Telangana. We build consumer and institutional products for India — priced for India, in India&apos;s languages, on any phone.</p>
+          <p className="pdesc" style={{ marginTop: 12 }}>Pranix AI Labs Pvt Ltd is a DPIIT-recognized startup, T-Hub member and NVIDIA Inception member from Hyderabad, Telangana. We build consumer and institutional products for India — priced for India, in India&apos;s languages, on any phone.</p>
           <p className="pdesc">Instead of a large engineering org, Pranix runs a supervised fleet of AI agents on protocol-grade infrastructure. Humans decide. Agents execute. Every merge is founder-approved.</p>
         </div>
         <div className="pcard rv d1"><h3>⚙️ The operating model</h3>
@@ -26,13 +28,20 @@ export default function AboutPage() {
       <div className="rv d2" style={{ marginTop: 44 }}>
         <div className="sec-kicker">Recognitions &amp; registrations</div>
         <div className="certs">
+          <span className="cert">🟩 NVIDIA Inception member</span>
           <span className="cert">🏢 T-Hub member</span>
+          <span className="cert">🔷 Google for Startups Hub</span>
           <span className="cert">🏅 DPIIT: DIPP241828</span>
           <span className="cert">🏭 MSME: UDYAM-TS-02-0307772</span>
           <span className="cert">📜 CIN: U62011TS2026PTC209631</span>
           <span className="cert">☁️ Microsoft for Startups</span>
           <span className="cert">🚀 AWS Startup Program</span>
           <span className="cert">🛒 ONDC network participant</span>
+        </div>
+        <div className="about-badge">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={NVIDIA_INCEPTION_BADGE} alt="NVIDIA Inception Program member badge" width={200} height={86} />
+          <Link className="plink" href="/gallery">See us at NVIDIA, Google for Startups and T-Hub events →</Link>
         </div>
       </div>
     </section>

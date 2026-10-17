@@ -65,7 +65,7 @@ export default function Hero() {
   return (
     <section className="hero wrap">
       <div className="hero-lockup"><Image src="/logo.png" alt="Pranix AI Labs logo" width={48} height={72} priority /></div>
-      <span className="hero-kicker"><span className="dot" /> DPIIT-recognized · T-Hub member · Hyderabad 🇮🇳</span>
+      <span className="hero-kicker"><span className="dot" /> DPIIT-recognized · NVIDIA Inception · T-Hub member · Hyderabad 🇮🇳</span>
       <h1 className="mega">Innovate. Build.<br /><span className="grad-text">Ascend.</span></h1>
       <p className="hero-sub">One AI-native lab. Seven products shipping across commerce, education, fintech, voice AI and events — engineered by a founder-supervised fleet of AI agents.</p>
       <div className="type-line"><span>{typed}</span><span className="caret">▌</span></div>

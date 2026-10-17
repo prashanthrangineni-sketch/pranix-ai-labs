@@ -86,7 +86,7 @@ export const SERVICES = [
   { e: '🛰️', t: 'Agent infrastructure (MCP)', d: 'We set up your own Pranix-style MCP gateway — AI agents wired to your tools with permissions, guardrails and audit logs.', tag: 'Pranix MCP · integrations' },
 ]
 
-export const TICKER = ['✦ 7 products, one lab', '🎙️ Aaria — multilingual voice inside', '🛰️ Pranix MCP — advanced agent gateway', '🎬 Pranix Motion — AI video engine', '🏢 T-Hub member', '🏅 DPIIT recognized', '☁️ Microsoft for Startups', '🚀 AWS Startup Program', '🛒 ONDC network integrated', '📱 4 apps on Google Play — more on the way', "🗣️ Built for India, in India's languages", '🇮🇳 Made in Hyderabad', '🧑‍💻 Websites · Apps · AI — 95154 79595', '🤖 Founder-supervised AI engineering']
+export const TICKER = ['✦ 7 products, one lab', '🎙️ Aaria — multilingual voice inside', '🛰️ Pranix MCP — advanced agent gateway', '🎬 Pranix Motion — AI video engine', '🟩 NVIDIA Inception member', '🏢 T-Hub member', '🏅 DPIIT recognized', '☁️ Microsoft for Startups', '🚀 AWS Startup Program', '🛒 ONDC network integrated', '📱 4 apps on Google Play — more on the way', "🗣️ Built for India, in India's languages", '🇮🇳 Made in Hyderabad', '🧑‍💻 Websites · Apps · AI — 95154 79595', '🤖 Founder-supervised AI engineering']
 
 export const A_LANGS = [
   { c: 'en-IN', l: 'English' }, { c: 'hi-IN', l: 'हिंदी' }, { c: 'te-IN', l: 'తెలుగు' },
@@ -114,7 +114,7 @@ export const A_KB: { k: string[]; a: string }[] = [
   { k: ['aaria', 'voice', 'आरिया', 'ఆరియా', 'who are you', 'yourself'], a: "I'm Aaria — Pranix's multilingual voice engine, built on a Bhashini-first Indian-language stack. I live inside every Pranix product, so you can just talk to your software." },
   { k: ['mcp', 'agent', 'gateway', 'automation'], a: 'Pranix MCP is our advanced agent gateway — it routes work to a fleet of AI agents with role-based permissions, deterministic guardrails and full audit logs. It builds and tests all seven products, and we can set one up for your business too.' },
   { k: ['motion', 'video', 'content', 'marketing', 'promo'], a: 'Pranix Motion is our content engine — it generates scripts, multilingual voiceovers and finished promo videos automatically. Self-marketing, powered by AI. Want one for your brand? Call 95154 79595.' },
-  { k: ['pranix', 'company', 'founder', 'lab'], a: 'Pranix AI Labs is a DPIIT-recognized, T-Hub member AI product studio from Hyderabad — seven products, one control plane, founder-supervised AI engineering.' },
+  { k: ['pranix', 'company', 'founder', 'lab'], a: 'Pranix AI Labs is a DPIIT-recognized, T-Hub and NVIDIA Inception member AI product studio from Hyderabad — seven products, one control plane, founder-supervised AI engineering.' },
 ]
 
 export function aariaAnswer(q: string): string {
