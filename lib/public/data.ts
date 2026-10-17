@@ -61,7 +61,7 @@ export const INFRA = [
 
 export const ENGINES = [
   { e: '🎙️', n: 'ENGINE 01', t: 'Aaria — Voice', d: 'Multilingual voice intelligence across every product. Ask, and your software answers and acts — in English, हिंदी, తెలుగు and more.' },
-  { e: '🛰️', n: 'ENGINE 02', t: 'Pranix MCP — Agents', d: 'Our advanced agent gateway: routes tasks to a fleet of AI agents with role-based permissions, deterministic guardrails and a full audit log. It builds, tests and ships all seven products — the founder approves every merge.' },
+  { e: '🛰️', n: 'ENGINE 02', t: 'Pranix MCP — Agents', d: 'Our advanced agent gateway: routes tasks to a fleet of AI agents with role-based permissions, deterministic guardrails and a full audit log. It builds and tests all seven products — the founder approves every merge.' },
   { e: '🎬', n: 'ENGINE 03', t: 'Pranix Motion — Content', d: 'A self-marketing content engine: scripts, voiceovers and finished promo videos generated end-to-end for our products — the same engine that can produce yours.' },
 ]
 
