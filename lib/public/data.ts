@@ -69,9 +69,9 @@ export const STATUS = [
   { n: 'EdProSys', c: '#6366f1', phase: 'Phase 2 — RBAC', health: 'Healthy', play: 'play', playTxt: 'On Google Play', url: 'https://www.edprosys.com' },
   { n: 'QuickScanZ', c: '#f59e0b', phase: 'Ready for release', health: 'Healthy', play: 'play', playTxt: 'On Google Play', url: 'https://www.quickscanz.com' },
   { n: 'InsureUPI', c: '#10b981', phase: 'MVP', health: 'Healthy', play: 'play', playTxt: 'On Google Play', url: 'https://www.insureupi.com' },
-  { n: 'Cart2Save', c: '#2563eb', phase: 'Advanced MVP', health: 'Healthy', play: 'soon', playTxt: 'Days away', url: 'https://www.cart2save.com' },
-  { n: 'QuietKeep', c: '#5b5ef4', phase: 'MVP', health: 'Healthy', play: 'soon', playTxt: 'Days away', url: 'https://www.quietkeep.com' },
-  { n: 'EasyVenuez', c: '#a855f7', phase: 'Pilot — Hyderabad', health: 'Healthy', play: 'soon', playTxt: 'Days away', url: 'https://www.easyvenuez.com' },
+  { n: 'Cart2Save', c: '#2563eb', phase: 'Advanced MVP', health: 'Healthy', play: 'soon', playTxt: 'Web app — live', url: 'https://www.cart2save.com' },
+  { n: 'QuietKeep', c: '#5b5ef4', phase: 'MVP', health: 'Healthy', play: 'play', playTxt: 'On Google Play', url: 'https://www.quietkeep.com' },
+  { n: 'EasyVenuez', c: '#a855f7', phase: 'Signing first venues', health: 'Not live yet', play: 'dev', playTxt: 'Relaunch later', url: 'https://www.easyvenuez.com' },
   { n: 'EdGridAI', c: '#14b8a6', phase: 'Building', health: 'In development', play: 'dev', playTxt: 'In development', url: 'https://www.edgridai.com' },
 ]
 
