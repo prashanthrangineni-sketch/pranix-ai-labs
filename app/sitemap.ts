@@ -43,6 +43,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'monthly',
     },
     {
+      url: `${BASE}/gallery`,
+      priority: 0.6,
+      changeFrequency: 'monthly',
+    },
+    {
       url: `${BASE}/contact`,
       priority: 0.7,
       changeFrequency: 'monthly',

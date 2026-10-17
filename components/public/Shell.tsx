@@ -7,6 +7,7 @@ import Effects from './Effects'
 import AariaDock from './AariaDock'
 import { PRODUCTS } from '@/lib/public/data'
 import { CIN, UDYAM, DPIIT } from '@/lib/public/legal'
+import { NVIDIA_INCEPTION_BADGE } from '@/lib/public/gallery'
 
 const NAV = [
   { label: 'Home', href: '/' },
@@ -15,6 +16,7 @@ const NAV = [
   { label: 'Services', href: '/services' },
   { label: 'Infrastructure', href: '/infrastructure' },
   { label: 'Status', href: '/status' },
+  { label: 'Gallery', href: '/gallery' },
   { label: 'About', href: '/about' },
   { label: 'Contact', href: '/contact' },
 ]
@@ -85,12 +87,16 @@ export default function Shell({ children, fontClass }: { children: React.ReactNo
               <p style={{ fontSize: '.82rem', color: 'var(--text2)', lineHeight: 1.6, marginTop: 12 }}>
                 Protocol-grade operational infrastructure for AI-assisted execution. Building India-first products with supervised AI autonomy.
               </p>
+              <a href="/gallery" className="foot-badge" aria-label="Pranix AI Labs is a member of NVIDIA Inception">
+                <img src={NVIDIA_INCEPTION_BADGE} alt="NVIDIA Inception Program member" width={150} height={65} loading="lazy" />
+              </a>
             </div>
             <div><h4>Products</h4><ul>
               {PRODUCTS.map(p => <li key={p.id}><a href={p.url} target="_blank" rel="noopener noreferrer">{p.name}</a></li>)}
             </ul></div>
             <div><h4>Company</h4><ul>
               <li><Link href="/about">About</Link></li>
+              <li><Link href="/gallery">Gallery</Link></li>
               <li><Link href="/services">Services</Link></li>
               <li><Link href="/infrastructure">Infrastructure</Link></li>
               <li><Link href="/status">Status</Link></li>
@@ -112,6 +118,7 @@ export default function Shell({ children, fontClass }: { children: React.ReactNo
             <span>MSME: {UDYAM}</span>
             <span>DPIIT: {DPIIT}</span>
             <span>T-Hub member</span>
+            <span>NVIDIA Inception member</span>
             <span>© {new Date().getFullYear()} Pranix AI Labs Pvt Ltd · Hyderabad, Telangana</span>
           </div>
         </div>

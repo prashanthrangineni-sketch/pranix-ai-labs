@@ -289,3 +289,19 @@
 .pxp .btn-login:hover{transform:translateY(-2px);box-shadow:0 8px 26px rgba(99,102,241,.6)}
 .pxp .hero-lockup{display:inline-block;background:#fff;border-radius:14px;padding:6px 8px;box-shadow:0 10px 30px rgba(34,150,238,.35);animation:pxfloaty 4.5s ease-in-out infinite;margin-bottom:8px}
 .pxp .hero-lockup img{display:block;border-radius:8px;width:48px;height:72px;object-fit:contain}
+
+/* Gallery + NVIDIA Inception badge */
+.pxp .gal-member{display:flex;gap:24px;align-items:center;flex-wrap:wrap}
+.pxp .gal-badge img,.pxp .about-badge img,.pxp .foot-badge img{display:block;height:auto;border-radius:8px}
+.pxp .gal-badge img{width:220px}
+.pxp .about-badge{display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-top:22px}
+.pxp .about-badge img{width:200px}
+.pxp .foot-badge{display:inline-block;margin-top:14px}
+.pxp .foot-badge img{width:150px}
+.pxp .gal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.pxp .gal-ph{display:block;border-radius:12px;overflow:hidden;border:1px solid var(--stroke);aspect-ratio:4/3}
+.pxp .gal-ph img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .35s}
+.pxp .gal-ph:hover img{transform:scale(1.05)}
+.pxp .gal-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;aspect-ratio:16/7;border-radius:12px;border:1px dashed var(--stroke-hi);background:var(--chipbg);color:var(--text2)}
+.pxp .gal-empty span{font-size:1.8rem}
+@media (min-width:861px) and (max-width:1240px){.pxp .navlinks a{padding:8px 8px;font-size:.8rem}}
