@@ -32,17 +32,17 @@ export const PRODUCTS: Product[] = [
     desc: 'Neutral price engine comparing affiliate partners, the ONDC open network and real local stores — groceries to travel. B2C app + B2B2C merchant marketplace.',
     tags: ['ONDC', '1,516+ live links', 'B2C + B2B2C', '0% listing fee'],
     feats: ['Three-layer price check: affiliates + ONDC + local stores', 'Weekly basket comparisons that show real savings', 'Business tier: local stores, delivery partners & pros', 'Neutral by design — no pay-to-rank, ever'],
-    url: 'https://www.cart2save.com', status: 'soon', statusTxt: 'Play Store — days away', logoSvg: CART2SAVE_SVG },
+    url: 'https://www.cart2save.com', status: 'live', statusTxt: 'Live on the web', logoSvg: CART2SAVE_SVG },
   { id: 'insureupi', name: 'InsureUPI', emoji: '🛡️', color: '#10b981', tag: '"One assistor, every bank"',
-    desc: "A unified distribution cloud for credit cards, loans and insurance from India's leading banks & NBFCs — with 60-second AI eligibility scoring.",
-    tags: ['Fintech', 'AI eligibility', 'DPDP-compliant', '256-bit'],
-    feats: ['Side-by-side comparison across banks & NBFCs', 'AI eligibility scoring in 60 seconds', 'DPDP-compliant consent ledger', 'Paperless verification, WhatsApp/SMS tracking'],
+    desc: 'Compare credit cards and loans from banks and NBFCs across India in one place, in 11 Indian languages. Insurance is not available yet.',
+    tags: ['Fintech', 'Cards + loans', '11 languages', 'Free self-check'],
+    feats: ['Side-by-side comparison across banks & NBFCs', 'Free self-check: which kinds of cards and loans usually fit you, and why', 'English plus 10 Indian languages', 'Nothing kept unless you give permission'],
     url: 'https://www.insureupi.com', status: 'play', statusTxt: 'On Google Play', logo: 'https://www.insureupi.com/logo.png' },
   { id: 'easyvenuez', name: 'EasyVenuez', emoji: '🎪', color: '#a855f7', tag: '"Festive Spaces. Unforgettable Celebrations."',
-    desc: 'Discover and book premium wedding halls, banquet venues and celebration resorts — verified owners, transparent per-day pricing, concierge support.',
-    tags: ['Weddings', 'Verified venues', 'Hyderabad pilot', 'Concierge'],
+    desc: 'Discover and book wedding halls, banquet venues and celebration resorts, with transparent per-day pricing. We are now signing our first venue partners in Hyderabad.',
+    tags: ['Weddings', 'Venue search', 'Hyderabad first', 'Concierge'],
     feats: ['Search by location, capacity & budget', 'Amenity filters — catering, AV, stage, parking & more', 'Discover → Reserve → Celebrate in three steps', 'Partner dashboard for venue owners'],
-    url: 'https://www.easyvenuez.com', status: 'soon', statusTxt: 'Play Store — days away', logo: 'https://www.easyvenuez.com/logo.png' },
+    url: 'https://www.easyvenuez.com', status: 'dev', statusTxt: 'Signing first venues', logo: 'https://www.easyvenuez.com/logo.png' },
   { id: 'edgridai', name: 'EdGridAI', emoji: '🧠', color: '#14b8a6', tag: '"A personal AI tutor, free, on any phone"',
     desc: 'Adaptive AI learning for Class 9-10 on the SCERT curriculum — practice that adapts to each student, in the language they learn best in.',
     tags: ['AI tutor', 'Class 9-10', 'SCERT', 'English + తెలుగు'],
@@ -61,7 +61,7 @@ export const INFRA = [
 
 export const ENGINES = [
   { e: '🎙️', n: 'ENGINE 01', t: 'Aaria — Voice', d: 'Multilingual voice intelligence across every product. Ask, and your software answers and acts — in English, हिंदी, తెలుగు and more.' },
-  { e: '🛰️', n: 'ENGINE 02', t: 'Pranix MCP — Agents', d: 'Our advanced agent gateway: routes tasks to a fleet of AI agents with role-based permissions, deterministic guardrails and a full audit log. It builds, tests and ships all seven products — the founder approves every merge.' },
+  { e: '🛰️', n: 'ENGINE 02', t: 'Pranix MCP — Agents', d: 'Our advanced agent gateway: routes tasks to a fleet of AI agents with role-based permissions, deterministic guardrails and a full audit log. It builds and tests all seven products — the founder approves every merge.' },
   { e: '🎬', n: 'ENGINE 03', t: 'Pranix Motion — Content', d: 'A self-marketing content engine: scripts, voiceovers and finished promo videos generated end-to-end for our products — the same engine that can produce yours.' },
 ]
 
@@ -69,9 +69,9 @@ export const STATUS = [
   { n: 'EdProSys', c: '#6366f1', phase: 'Phase 2 — RBAC', health: 'Healthy', play: 'play', playTxt: 'On Google Play', url: 'https://www.edprosys.com' },
   { n: 'QuickScanZ', c: '#f59e0b', phase: 'Ready for release', health: 'Healthy', play: 'play', playTxt: 'On Google Play', url: 'https://www.quickscanz.com' },
   { n: 'InsureUPI', c: '#10b981', phase: 'MVP', health: 'Healthy', play: 'play', playTxt: 'On Google Play', url: 'https://www.insureupi.com' },
-  { n: 'Cart2Save', c: '#2563eb', phase: 'Advanced MVP', health: 'Healthy', play: 'soon', playTxt: 'Days away', url: 'https://www.cart2save.com' },
-  { n: 'QuietKeep', c: '#5b5ef4', phase: 'MVP', health: 'Healthy', play: 'soon', playTxt: 'Days away', url: 'https://www.quietkeep.com' },
-  { n: 'EasyVenuez', c: '#a855f7', phase: 'Pilot — Hyderabad', health: 'Healthy', play: 'soon', playTxt: 'Days away', url: 'https://www.easyvenuez.com' },
+  { n: 'Cart2Save', c: '#2563eb', phase: 'Advanced MVP', health: 'Healthy', play: 'soon', playTxt: 'Web app — live', url: 'https://www.cart2save.com' },
+  { n: 'QuietKeep', c: '#5b5ef4', phase: 'MVP', health: 'Healthy', play: 'play', playTxt: 'On Google Play', url: 'https://www.quietkeep.com' },
+  { n: 'EasyVenuez', c: '#a855f7', phase: 'Signing first venues', health: 'Not live yet', play: 'dev', playTxt: 'Relaunch later', url: 'https://www.easyvenuez.com' },
   { n: 'EdGridAI', c: '#14b8a6', phase: 'Building', health: 'In development', play: 'dev', playTxt: 'In development', url: 'https://www.edgridai.com' },
 ]
 
@@ -104,15 +104,15 @@ export const A_GREET: Record<string, string> = {
 
 export const A_KB: { k: string[]; a: string }[] = [
   { k: ['edprosys', 'school', 'स्कूल', 'స్కూల్', 'attendance', 'report card'], a: 'EdProSys is our operating system for Indian schools — attendance, fees, AI report cards in English and Telugu, and WhatsApp bots for parents. I already answer voice queries inside it for all six school roles!' },
-  { k: ['quietkeep', 'life os', 'assistant', 'क्वाइट', 'క్వైట్'], a: 'QuietKeep is your personal Life OS — a voice-first assistant that acts, not just answers. It comes in Personal and Business editions, and its Play Store release is just days away.' },
+  { k: ['quietkeep', 'life os', 'assistant', 'क्वाइट', 'క్వైట్'], a: 'QuietKeep is your personal Life OS — a voice-first assistant that acts, not just answers. It comes in Personal and Business editions, both on Google Play.' },
   { k: ['quickscanz', 'warranty', 'invoice', 'वारंटी', 'వారంటీ', 'bill'], a: 'QuickScanZ keeps every warranty and invoice safe — expiry alerts, AI claim help and service-center lookup in six languages. It is live on Google Play, free forever.' },
   { k: ['cart2save', 'price', 'कीमत', 'ధర', 'compare', 'grocery', 'shopping', 'sasta'], a: 'Cart2Save checks every price in India — affiliate partners, the ONDC network and real local stores — and gives one honest answer. Over 1,516 live price links today.' },
-  { k: ['insureupi', 'insurance', 'loan', 'credit card', 'बीमा', 'భీమా'], a: "InsureUPI compares credit cards, loans and insurance from India's leading banks with 60-second AI eligibility scoring — one assistor, every bank." },
-  { k: ['easyvenuez', 'venue', 'wedding', 'function hall', 'शादी', 'వేడుక', 'banquet', 'book'], a: 'EasyVenuez finds and books premium wedding halls and celebration venues — verified owners, transparent pricing, concierge support. Piloting in Hyderabad right now!' },
+  { k: ['insureupi', 'insurance', 'loan', 'credit card', 'बीमा', 'భీమా'], a: 'InsureUPI compares credit cards and loans from banks and NBFCs across India, in 11 Indian languages, with a free self-check that shows which kinds usually fit you. Insurance is not available yet.' },
+  { k: ['easyvenuez', 'venue', 'wedding', 'function hall', 'शादी', 'వేడుక', 'banquet', 'book'], a: 'EasyVenuez helps you find wedding halls and celebration venues with transparent pricing. We are signing our first venue partners in Hyderabad now.' },
   { k: ['edgrid', 'tutor', 'learn', 'पढ़ाई', 'చదువు', 'scert', 'class 9', 'class 10'], a: 'EdGridAI is a personal AI tutor for Class 9-10 on the SCERT curriculum — free, adaptive, and it teaches in the language you learn best in.' },
   { k: ['service', 'website', 'app', 'build', 'सर्विस', 'సర్వీస్'], a: 'Pranix Studio builds websites, Play Store apps, voice AI and agent automation for your business too — call 95154 79595 or write to support@pranixailabs.com.' },
   { k: ['aaria', 'voice', 'आरिया', 'ఆరియా', 'who are you', 'yourself'], a: "I'm Aaria — Pranix's multilingual voice engine, built on a Bhashini-first Indian-language stack. I live inside every Pranix product, so you can just talk to your software." },
-  { k: ['mcp', 'agent', 'gateway', 'automation'], a: 'Pranix MCP is our advanced agent gateway — it routes work to a fleet of AI agents with role-based permissions, deterministic guardrails and full audit logs. It builds and ships all seven products, and we can set one up for your business too.' },
+  { k: ['mcp', 'agent', 'gateway', 'automation'], a: 'Pranix MCP is our advanced agent gateway — it routes work to a fleet of AI agents with role-based permissions, deterministic guardrails and full audit logs. It builds and tests all seven products, and we can set one up for your business too.' },
   { k: ['motion', 'video', 'content', 'marketing', 'promo'], a: 'Pranix Motion is our content engine — it generates scripts, multilingual voiceovers and finished promo videos automatically. Self-marketing, powered by AI. Want one for your brand? Call 95154 79595.' },
   { k: ['pranix', 'company', 'founder', 'lab'], a: 'Pranix AI Labs is a DPIIT-recognized, T-Hub member AI product studio from Hyderabad — seven products, one control plane, founder-supervised AI engineering.' },
 ]

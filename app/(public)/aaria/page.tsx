@@ -14,7 +14,7 @@ export default function AariaPage() {
       <div className="grid g3" style={{ marginTop: 64 }}>
         <div className="icard rv"><span className="iemj">🗣️</span><h3>Indian languages first</h3><p>English, हिंदी, తెలుగు today — measured on recordings of real people, and on the phone itself with no internet. <Link href="/aaria/numbers">See the numbers</Link>.</p></div>
         <div className="icard rv d1"><span className="iemj">⚡</span><h3>Voice that acts</h3><p>In QuietKeep, Aaria saves spoken notes and reminders and places calls by voice, with a few seconds to cancel before it dials. More actions across Pranix products are next.</p></div>
-        <div className="icard rv d2"><span className="iemj">🕸️</span><h3>Every product, one engine</h3><p>The same Aaria core rolls out across QuietKeep, Cart2Save, EdGridAI, QuickScanZ and EasyVenuez — learn her once, use her everywhere.</p></div>
+        <div className="icard rv d2"><span className="iemj">🕸️</span><h3>Every product, one engine</h3><p>The same Aaria core rolls out across QuietKeep, Cart2Save, EdGridAI and QuickScanZ — learn her once, use her everywhere.</p></div>
       </div>
     </section>
   )
