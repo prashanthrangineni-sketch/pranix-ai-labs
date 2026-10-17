@@ -104,7 +104,7 @@ export const A_GREET: Record<string, string> = {
 
 export const A_KB: { k: string[]; a: string }[] = [
   { k: ['edprosys', 'school', 'स्कूल', 'స్కూల్', 'attendance', 'report card'], a: 'EdProSys is our operating system for Indian schools — attendance, fees, AI report cards in English and Telugu, and WhatsApp bots for parents. I already answer voice queries inside it for all six school roles!' },
-  { k: ['quietkeep', 'life os', 'assistant', 'क्वाइट', 'క్వైట్'], a: 'QuietKeep is your personal Life OS — a voice-first assistant that acts, not just answers. It comes in Personal and Business editions, and its Play Store release is just days away.' },
+  { k: ['quietkeep', 'life os', 'assistant', 'क्वाइट', 'క్వైట్'], a: 'QuietKeep is your personal Life OS — a voice-first assistant that acts, not just answers. It comes in Personal and Business editions, both on Google Play.' },
   { k: ['quickscanz', 'warranty', 'invoice', 'वारंटी', 'వారంటీ', 'bill'], a: 'QuickScanZ keeps every warranty and invoice safe — expiry alerts, AI claim help and service-center lookup in six languages. It is live on Google Play, free forever.' },
   { k: ['cart2save', 'price', 'कीमत', 'ధర', 'compare', 'grocery', 'shopping', 'sasta'], a: 'Cart2Save checks every price in India — affiliate partners, the ONDC network and real local stores — and gives one honest answer. Over 1,516 live price links today.' },
   { k: ['insureupi', 'insurance', 'loan', 'credit card', 'बीमा', 'భీమా'], a: 'InsureUPI compares credit cards and loans from banks and NBFCs across India, in 11 Indian languages, with a free self-check that shows which kinds usually fit you. Insurance is not available yet.' },
