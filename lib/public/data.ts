@@ -42,7 +42,7 @@ export const PRODUCTS: Product[] = [
     desc: 'Discover and book wedding halls, banquet venues and celebration resorts, with transparent per-day pricing. We are now signing our first venue partners in Hyderabad.',
     tags: ['Weddings', 'Venue search', 'Hyderabad first', 'Concierge'],
     feats: ['Search by location, capacity & budget', 'Amenity filters — catering, AV, stage, parking & more', 'Discover → Reserve → Celebrate in three steps', 'Partner dashboard for venue owners'],
-    url: 'https://www.easyvenuez.com', status: 'soon', statusTxt: 'Play Store — days away', logo: 'https://www.easyvenuez.com/logo.png' },
+    url: 'https://www.easyvenuez.com', status: 'dev', statusTxt: 'Signing first venues', logo: 'https://www.easyvenuez.com/logo.png' },
   { id: 'edgridai', name: 'EdGridAI', emoji: '🧠', color: '#14b8a6', tag: '"A personal AI tutor, free, on any phone"',
     desc: 'Adaptive AI learning for Class 9-10 on the SCERT curriculum — practice that adapts to each student, in the language they learn best in.',
     tags: ['AI tutor', 'Class 9-10', 'SCERT', 'English + తెలుగు'],
