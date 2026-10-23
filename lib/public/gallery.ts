@@ -47,6 +47,28 @@ export const HIGHLIGHTS = [
 
 export const GALLERY_EVENTS: GalleryEvent[] = [
   {
+    id: 'tdk-ventures-thub-2026',
+    title: 'Meeting Nicolas Sauvage — TDK Ventures at T-Hub',
+    host: 'TDK Ventures with the T-Hub community',
+    date: 'Oct 2026',
+    place: 'T-Hub, Hyderabad',
+    proud: 'Met Nicolas Sauvage, Founder & President of TDK Ventures and one of the earliest backers of Groq, during his visit to Hyderabad’s founder community.',
+    blurb:
+      'TDK Ventures, the venture arm of Japan’s TDK, came to T-Hub to meet Hyderabad’s founders. Nicolas founded TDK Ventures in 2019 and backed Groq’s inference-chip bet in 2020, years before the generative-AI wave made inference the centre of the industry.',
+    points: [
+      'A lesson we took home: find the bottleneck years before it is obvious, then build for it — the conviction behind his early Groq investment',
+      'India is TDK Ventures’ second-largest country by number of investments, and Nicolas writes openly about why he is bullish on Indian founders',
+      'His question to founders: is building in India an advantage or a disadvantage? For us — Telugu, Hindi and English mixed in one sentence — India is the advantage',
+      'Spent time with the TDK Ventures India team and fellow Hyderabad founders',
+    ],
+    tags: ['TDK Ventures', 'T-Hub', 'Founders', 'Hyderabad'],
+    source: { label: 'Nicolas Sauvage’s field notes from Hyderabad', url: 'https://nicolassauvage.substack.com/p/when-deeptech-startups-become-each' },
+    photos: [
+      { src: '/gallery/tdk-ventures-thub-2026/01.webp', alt: 'Prashanth Rao Rangineni with Nicolas Sauvage of TDK Ventures and fellow founders at T-Hub, Hyderabad' },
+      { src: '/gallery/tdk-ventures-thub-2026/02.webp', alt: 'Selfie of Prashanth Rao Rangineni with Nicolas Sauvage, Founder & President of TDK Ventures, at T-Hub' },
+    ],
+  },
+  {
     id: 'nvidia-voiceai-blr-2026',
     title: 'NVIDIA Voice AI Ecosystem Meetup — BYOP Showcase',
     host: 'NVIDIA Startup Ecosystem, South Asia (Arundhati Banerjee)',
