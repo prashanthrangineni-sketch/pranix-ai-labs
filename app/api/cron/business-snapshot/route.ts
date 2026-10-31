@@ -26,6 +26,19 @@ import { getControlPlane } from '@/app/lib/control-plane'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
+// Give the daily run room; a slow product read must never stop the snapshot from being written.
+export const maxDuration = 60
+
+// Per-product read budget. A product that does not answer in time is recorded as
+// unreadable (with the reason) instead of being counted as zero.
+const PRODUCT_TIMEOUT_MS = 15000
+
+function withTimeout<T>(p: Promise<T>, label: string): Promise<T> {
+  return Promise.race([
+    p,
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error(`${label}: timed out after ${PRODUCT_TIMEOUT_MS / 1000}s`)), PRODUCT_TIMEOUT_MS)),
+  ])
+}
 
 const PRODUCTS = {
   schoolos:   { projectId: 'rqdnxdvuypekpmxbteju', keyEnv: 'SUPABASE_SCHOOLOS_SERVICE_ROLE_KEY' },
@@ -46,13 +59,19 @@ function clientFor(p: { projectId: string; keyEnv: string }) {
   return createClient(`https://${p.projectId}.supabase.co`, key, { auth: { persistSession: false } })
 }
 
-async function headCount(db: any, table: string, build?: (q: any) => any): Promise<number> {
+// Counts rows. A read error is RECORDED in `errs` (never silently turned into 0),
+// so a failed read can be told apart from a real empty table.
+async function headCount(db: any, table: string, errs: string[], build?: (q: any) => any): Promise<number> {
   try {
     let q = db.from(table).select('*', { count: 'exact', head: true })
     if (build) q = build(q)
-    const { count } = await q
+    const { count, error } = await q
+    if (error) { errs.push(`${table}: ${error.message || error.code || 'read error'}`); return 0 }
     return count ?? 0
-  } catch { return 0 }
+  } catch (e: any) {
+    errs.push(`${table}: ${e?.message ?? 'read error'}`)
+    return 0
+  }
 }
 
 // ── Path A: aggregate-count fetch via the read-only `dashboard-readonly` edge function ──
@@ -82,9 +101,9 @@ function normalizeCounts(data: any, tables: string[]): Record<string, number> {
 
 async function readonlyCounts(projectId: string, tables: string[]): Promise<Record<string, number> | null> {
   try {
-    const { data, error } = await getControlPlane().functions.invoke('dashboard-readonly', {
+    const { data, error } = await withTimeout(getControlPlane().functions.invoke('dashboard-readonly', {
       body: { project_id: projectId, mode: 'counts', tables },
-    })
+    }), `dashboard-readonly ${projectId}`)
     if (error || data == null) return null
     return normalizeCounts(data, tables)
   } catch { return null }
@@ -107,31 +126,44 @@ export async function GET(req: Request) {
   const since30 = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10)
 
   // ── SchoolOS (live) ──
+  const unreadable: string[] = []
   const so = clientFor(PRODUCTS.schoolos)
   if (!so) missing.push(PRODUCTS.schoolos.keyEnv)
   else {
-    const [schools, students, attendance30, staff, alertsOpen, risksOpen] = await Promise.all([
-      headCount(so, 'schools'),
-      headCount(so, 'students'),
-      headCount(so, 'attendance', (q) => q.gte('date', since30)),
-      headCount(so, 'school_users', (q) => q.eq('is_active', true)),
-      headCount(so, 'alerts', (q) => q.is('acknowledged_at', null)),
-      headCount(so, 'student_risk_flags', (q) => q.is('resolved_at', null)),
-    ])
-    let feesCollected = 0, feesBilled = 0
+    const errs: string[] = []
     try {
-      const { data: feeRows } = await so.from('fees').select('amount, paid_date')
-      for (const f of (feeRows || []) as { amount: number | null; paid_date: string | null }[]) {
-        feesBilled += Number(f.amount || 0)
-        if (f.paid_date) feesCollected += Number(f.amount || 0)
-      }
-    } catch {}
-    collected += feesCollected; billed += feesBilled
-    products.schoolos = {
-      status: 'live', readable: true,
-      schools_total: schools, students, attendance_30d: attendance30,
-      fees_collected_inr: feesCollected, fees_billed_inr: feesBilled,
-      staff_users_active: staff, alerts_open: alertsOpen, risks_open: risksOpen,
+      await withTimeout((async () => {
+        const [schools, students, attendance30, staff, alertsOpen, risksOpen] = await Promise.all([
+          headCount(so, 'schools', errs),
+          headCount(so, 'students', errs),
+          headCount(so, 'attendance', errs, (q) => q.gte('date', since30)),
+          headCount(so, 'school_users', errs, (q) => q.eq('is_active', true)),
+          headCount(so, 'alerts', errs, (q) => q.is('acknowledged_at', null)),
+          headCount(so, 'student_risk_flags', errs, (q) => q.is('resolved_at', null)),
+        ])
+        let feesCollected = 0, feesBilled = 0
+        const { data: feeRows, error: feeErr } = await so.from('fees').select('amount, paid_date').range(0, 9999)
+        if (feeErr) errs.push(`fees: ${feeErr.message || feeErr.code || 'read error'}`)
+        for (const f of (feeRows || []) as { amount: number | null; paid_date: string | null }[]) {
+          feesBilled += Number(f.amount || 0)
+          if (f.paid_date) feesCollected += Number(f.amount || 0)
+        }
+        if (errs.length === 0) {
+          collected += feesCollected; billed += feesBilled
+          products.schoolos = {
+            status: 'live', readable: true,
+            schools_total: schools, students, attendance_30d: attendance30,
+            fees_collected_inr: feesCollected, fees_billed_inr: feesBilled,
+            staff_users_active: staff, alerts_open: alertsOpen, risks_open: risksOpen,
+          }
+        }
+      })(), 'schoolos')
+    } catch (e: any) {
+      errs.push(e?.message ?? 'schoolos read failed')
+    }
+    if (errs.length > 0) {
+      unreadable.push('schoolos')
+      products.schoolos = { status: 'read_failed', readable: false, errors: errs.slice(0, 5) }
     }
   }
 
@@ -139,18 +171,25 @@ export async function GET(req: Request) {
   const vg = clientFor(PRODUCTS.vidyagrid)
   if (!vg) missing.push(PRODUCTS.vidyagrid.keyEnv)
   else {
-    const [users, testSessions, studentEvents, pilots, contentUnits, genomeAlerts] = await Promise.all([
-      headCount(vg, 'users'),
-      headCount(vg, 'test_sessions'),
-      headCount(vg, 'student_events'),
-      headCount(vg, 'pilot_agreements'),
-      headCount(vg, 'content_units'),
-      headCount(vg, 'genome_alerts'),
-    ])
-    products.vidyagrid = {
-      status: 'pilot', readable: true,
-      users, test_sessions: testSessions, student_events: studentEvents,
-      pilot_agreements: pilots, content_units: contentUnits, genome_alerts: genomeAlerts,
+    const errs: string[] = []
+    try {
+      const [users, testSessions, studentEvents, pilots, contentUnits, genomeAlerts] = await withTimeout(Promise.all([
+        headCount(vg, 'users', errs),
+        headCount(vg, 'test_sessions', errs),
+        headCount(vg, 'student_events', errs),
+        headCount(vg, 'pilot_agreements', errs),
+        headCount(vg, 'content_units', errs),
+        headCount(vg, 'genome_alerts', errs),
+      ]), 'vidyagrid')
+      if (errs.length === 0) products.vidyagrid = {
+        status: 'pilot', readable: true,
+        users, test_sessions: testSessions, student_events: studentEvents,
+        pilot_agreements: pilots, content_units: contentUnits, genome_alerts: genomeAlerts,
+      }
+    } catch (e: any) { errs.push(e?.message ?? 'vidyagrid read failed') }
+    if (errs.length > 0) {
+      unreadable.push('vidyagrid')
+      products.vidyagrid = { status: 'read_failed', readable: false, errors: errs.slice(0, 5) }
     }
   }
 
@@ -158,12 +197,14 @@ export async function GET(req: Request) {
   const qs = clientFor(PRODUCTS.quickscanz)
   if (!qs) missing.push(PRODUCTS.quickscanz.keyEnv)
   else {
-    let signups = 0
     try {
-      const { data } = await qs.auth.admin.listUsers({ page: 1, perPage: 1000 })
-      signups = data?.users?.length ?? 0
-    } catch {}
-    products.quickscanz = { status: 'pre_launch', readable: true, signups, business_rows: 0 }
+      const { data, error } = await withTimeout(qs.auth.admin.listUsers({ page: 1, perPage: 1000 }), 'quickscanz')
+      if (error) throw new Error(`auth users: ${error.message}`)
+      products.quickscanz = { status: 'pre_launch', readable: true, signups: data?.users?.length ?? 0, business_rows: 0 }
+    } catch (e: any) {
+      unreadable.push('quickscanz')
+      products.quickscanz = { status: 'read_failed', readable: false, errors: [e?.message ?? 'read failed'] }
+    }
   }
 
   // ── Cart2Save (account1, pre-revenue) — via read-only dashboard-readonly function ──
@@ -175,6 +216,7 @@ export async function GET(req: Request) {
     ]
     const c = await readonlyCounts(READONLY_PRODUCTS.cart2save.projectId, tables)
     if (!c) {
+      unreadable.push('cart2save')
       products.cart2save = { status: 'unavailable', readable: false, note: 'dashboard-readonly fetch failed' }
     } else {
       const revenueRows = (c.payments ?? 0) + (c.revenue_ledger ?? 0) + (c.cashback_events ?? 0)
@@ -206,6 +248,7 @@ export async function GET(req: Request) {
     ]
     const c = await readonlyCounts(READONLY_PRODUCTS.quietkeep.projectId, tables)
     if (!c) {
+      unreadable.push('quietkeep')
       products.quietkeep = { status: 'unavailable', readable: false, note: 'dashboard-readonly fetch failed' }
     } else {
       const voiceRows = (c.voice_sessions ?? 0) + (c.voice_samples ?? 0)
@@ -228,10 +271,9 @@ export async function GET(req: Request) {
     }
   }
 
+  // Always write the row, even when nothing could be read: a row that says what failed
+  // is the evidence; no row at all (as on 30-31 Oct 2026) tells nobody anything.
   const readableCount = Object.values(products).filter((p: any) => p.readable).length
-  if (readableCount === 0) {
-    return NextResponse.json({ skipped: true, reason: 'no product service-role keys configured', missing })
-  }
 
   const payload = {
     version: 1,
@@ -239,7 +281,9 @@ export async function GET(req: Request) {
     generated_by: 'cron_business_snapshot',
     computed_at: new Date().toISOString(),
     products,
-    totals: { revenue_collected_inr: collected, revenue_billed_inr: billed },
+    // partial=true means at least one product could not be read: its numbers are NOT in
+    // these totals, so a reader must not treat a fall in the totals as real money movement.
+    totals: { revenue_collected_inr: collected, revenue_billed_inr: billed, partial: unreadable.length > 0, unreadable },
   }
 
   try {
@@ -256,5 +300,5 @@ export async function GET(req: Request) {
     return NextResponse.json({ ok: false, error: e?.message ?? 'insert failed', missing }, { status: 500 })
   }
 
-  return NextResponse.json({ ok: true, readableCount, missing, totals: payload.totals })
+  return NextResponse.json({ ok: true, readableCount, missing, unreadable, totals: payload.totals })
 }

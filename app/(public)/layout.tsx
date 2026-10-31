@@ -1,11 +1,8 @@
 import type { Metadata } from 'next'
-import { Space_Grotesk, Inter, JetBrains_Mono } from 'next/font/google'
+import { fontD, fontB, fontM } from '../fonts'
 import Shell from '@/components/public/Shell'
 import './public-site.css'
 
-const fontD = Space_Grotesk({ subsets: ['latin'], weight: ['400', '500', '600', '700'], variable: '--px-font-d', display: 'swap' })
-const fontB = Inter({ subsets: ['latin'], variable: '--px-font-b', display: 'swap' })
-const fontM = JetBrains_Mono({ subsets: ['latin'], weight: ['400', '600'], variable: '--px-font-m', display: 'swap' })
 
 export const metadata: Metadata = {
   title: { absolute: 'Pranix AI Labs — Innovate. Build. Ascend.' },
