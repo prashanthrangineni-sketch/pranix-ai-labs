@@ -1,4 +1,5 @@
 import { createServerClient } from './supabase'
+import { REVIEW_WINDOW_DAYS, currentOpenChecks, comparisonPaths, isBaselineEligible, isImagePath, type ArtifactRow } from './baselines'
 
 // ─── Types ───────────────────────────────────────────────────────
 
@@ -141,6 +142,12 @@ export type ReviewArtifact = {
   storage_path: string
   signed_url: string | null
   created_at: string
+  // claim #4 part 2: the approved and difference pictures when the run was compared with a baseline
+  baseline_url: string | null
+  diff_url: string | null
+  reason: string | null
+  is_image: boolean
+  approvable: boolean
 }
 
 export type WorkerNode = {
@@ -622,21 +629,34 @@ const ARTIFACT_SIGN_TTL_SEC = 86400
 
 export async function getReviewArtifacts(): Promise<ReviewArtifact[]> {
   const db = createServerClient()
+  const since = new Date(Date.now() - REVIEW_WINDOW_DAYS * 86_400_000).toISOString()
+  // every run of the last week (any status), so an approved or passing newest run hides older ones
   const { data, error } = await db
     .from('browser_artifacts')
-    .select('id, project_name, check_name, viewport, status, diff_score, storage_path, created_at')
-    .in('status', ['review', 'fail'])
-    .not('check_name', 'like', 'failure_step_%')
+    .select('id, project_name, check_name, viewport, status, diff_score, storage_path, created_at, metadata_json')
+    .gte('created_at', since)
     .order('created_at', { ascending: false })
-    .limit(50)
+    .limit(2000)
   if (error || !data) return []
-  const withUrls = await Promise.all(
-    data.map(async (a) => {
-      const { data: signed } = await db.storage.from('artifacts').createSignedUrl(a.storage_path, ARTIFACT_SIGN_TTL_SEC)
-      return { ...a, signed_url: signed?.signedUrl || null }
+  const open = currentOpenChecks(data as ArtifactRow[])
+  const sign = async (p: string | null) => {
+    if (!p) return null
+    const { data: signed } = await db.storage.from('artifacts').createSignedUrl(p, ARTIFACT_SIGN_TTL_SEC)
+    return signed?.signedUrl || null
+  }
+  return Promise.all(
+    open.map(async (a) => {
+      const cmp = comparisonPaths(a.metadata_json)
+      const [signed_url, baseline_url, diff_url] = await Promise.all([sign(a.storage_path), sign(cmp.baseline), sign(cmp.diff)])
+      return {
+        id: a.id, project_name: a.project_name, check_name: a.check_name, viewport: a.viewport,
+        status: a.status, diff_score: a.diff_score, storage_path: a.storage_path || '', created_at: a.created_at,
+        signed_url, baseline_url, diff_url, reason: cmp.reason,
+        is_image: isImagePath(a.storage_path),
+        approvable: isBaselineEligible(a.check_name, a.storage_path),
+      }
     })
   )
-  return withUrls as ReviewArtifact[]
 }
 
 export type EvidenceArtifact = {
