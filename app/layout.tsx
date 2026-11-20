@@ -36,6 +36,12 @@ const organizationJsonLd = {
   sameAs: [
     'https://www.linkedin.com/company/pranix-ai-labs-private-limited/',
     'https://www.linkedin.com/in/prashanth-rao-rangineni-9a3b5266',
+    'https://www.instagram.com/pranixailabs/',
+    'https://www.facebook.com/profile.php?id=61596723511915',
+    'https://www.youtube.com/@pranixailabs',
+    'https://x.com/PranixAILabs',
+    'https://www.threads.com/@pranixailabs',
+    'https://t.me/pranixailabs',
     'https://www.edprosys.com',
     'https://www.quietkeep.com',
     'https://www.quickscanz.com',
