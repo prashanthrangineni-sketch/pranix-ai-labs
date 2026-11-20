@@ -41,7 +41,7 @@ const organizationJsonLd = {
     'https://www.youtube.com/@pranixailabs',
     'https://x.com/PranixAILabs',
     'https://www.threads.com/@pranixailabs',
-    'https://t.me/pranixailabs',
+    'https://t.me/+wtzoq2OnCQI4YjQ1',
     'https://www.edprosys.com',
     'https://www.quietkeep.com',
     'https://www.quickscanz.com',
