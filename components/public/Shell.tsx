@@ -126,6 +126,12 @@ export default function Shell({ children, fontClass }: { children: React.ReactNo
               <li><Link href="/contact">Grievance Officer</Link></li>
             </ul></div>
           </div>
+          <nav aria-label="Pranix AI Labs on social media" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 18px', alignItems: 'center', marginTop: 22, fontSize: '.85rem' }}>
+            <span style={{ color: 'var(--text2)' }}>Follow us:</span>
+            {SOCIAL.map(s => (
+              <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer me">{s.label}</a>
+            ))}
+          </nav>
           <div className="fmeta">
             <span>CIN: {CIN}</span>
             <span>MSME: {UDYAM}</span>
